@@ -117,3 +117,15 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 .gameui { position: absolute; inset: 0; pointer-events: none; }
 
 .coin { display: inline-block; width: 0.95em; height: 0.95em; border-radius: 50%; background: radial-gradient(circle at 35% 30%, #fff3a8, #ffcf3f 45%, #e39a12); box-shadow: inset 0 0 0 0.11em #c98a0a; vertical-align: -0.12em; }
+
+.unlock-card { background: #f3f8fa; border-radius: 18px; padding: 14px; margin-top: 6px; }
+.unlock-card h3 { margin: 0 0 4px; font-size: 18px; }
+.unlock-card .get { margin: 0 0 8px; font-size: 13px; color: #4b6b7d; }
+.unlock-card .blocked { background: #fff3dd; border-radius: 10px; padding: 8px 10px; font-weight: 700; font-size: 13px; margin: 0 0 8px; }
+.reqs { list-style: none; margin: 0 0 12px; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+.reqs li { display: flex; align-items: center; gap: 8px; background: #fff; border-radius: 12px; padding: 10px 12px; font-weight: 700; font-size: 14px; }
+.reqs li .rt { flex: 1; }
+.reqs li em { font-style: normal; font-size: 12px; color: #5c7a8c; }
+.reqs li .tick { width: 22px; height: 22px; border-radius: 50%; background: #dbe8ee; display: grid; place-items: center; font-size: 13px; flex: none; }
+.reqs li.met .tick { background: #2fbf71; color: #fff; }
+.unlock-card .go { width: 100%; }

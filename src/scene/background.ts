@@ -74,8 +74,8 @@ export function buildBackground(scene: Phaser.Scene) {
 
   // landmarks
   placeImage(scene, 'lm-rocks', 0, 1.0 * UNIT).setDepth(DEPTH.landmark);
-  placeImage(scene, 'lm-reef', 3.4 * UNIT, 3.9 * UNIT).setDepth(DEPTH.landmark);
-  placeImage(scene, 'lm-fort', MAP - (FORT_SIZE.w - 20), 3.8 * UNIT).setDepth(DEPTH.landmark);
+  placeImage(scene, 'lm-reef', 3.45 * UNIT, 3.9 * UNIT).setDisplaySize(310, 110).setDepth(DEPTH.landmark);
+  placeImage(scene, 'lm-fort', MAP - FORT_SIZE.w + 20, 3.8 * UNIT).setDepth(DEPTH.landmark);
   placeUpright(scene, 'lm-lighthouse', MAP - 42 + 22 - 22, 3.8 * UNIT + 44).setDepth(DEPTH.landmark + 1).setOrigin(0.5, 0.87);
   void ROCKS_SIZE;
   void REEF_SIZE;

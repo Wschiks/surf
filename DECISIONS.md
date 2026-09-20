@@ -32,3 +32,10 @@ Every choice made while building, and why. The concept document (`docs/concept.m
 - Saving: browser local storage (`surf-tycoon-save-v1`), every 5 seconds, when the tab is hidden, and after purchases. Saves from older versions get missing zones/facilities filled in.
 - UI is HTML on top of the map: top bar with coins and reputation, bottom dock (Beach, Collect all), a bottom sheet per zone. Tap targets are at least 44 px. The camera glides to a selected zone and lifts it above the sheet.
 - The coin icon is drawn in CSS because the coin emoji looks different (or missing) on different phones.
+
+## Wave surfing levels (stage 3)
+- Open question "do the four wave levels sit at increasing distance from the beach": yes. Levels 1 and 2 are wide bands right behind the shore (rows 3 and 4), the Reef (Level 3) and Nazaré (Level 4) sit side by side at the far edge of the Wave area (row 5). Nazaré is at the map edge, next to the cliff with the fort and the red lighthouse, so the cliff never covers a zone.
+- Unlock rules, from the "Starting with wave surfing" table: Level 2 = Level 1 has 10 upgrade levels bought + coins. Level 3 = reputation + coins. Level 4 = high reputation + coins. Each level also needs the level before it. The numbers live in `src/config/sports.ts` and are checked by `tests/unlocks.test.ts`.
+- Locked zones show a dark shade on the map with a lock on the tag. Tapping one opens a card that lists what is still needed (with ticks) and the button to buy it.
+- Landmarks the player sees from the start: the reef and Nazaré landmarks are on the map from the start, even while their zones are locked (the concept says the player sees the whole map from the start).
+- A balance bot (`src/core/bot.ts`, run with `npx tsx scripts/simulate.ts 12`) plays the game: taps every waiting zone at once, buys the best-payback upgrade, and saves up when an unlock is near. It is used in the playthrough test.

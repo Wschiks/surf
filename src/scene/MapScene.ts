@@ -46,6 +46,7 @@ export class MapScene extends Phaser.Scene {
       onSelect: (id) => this.onSelect(id),
       onReset: () => location.reload(),
       onCollected: (id, coins) => this.pop(id, coins),
+      onUnlocked: (id, kind) => this.onUnlocked(id, kind),
     });
     this.chips = new ZoneChips(this.labels, {
       onOpen: (id) => this.ui.openZone(id),
@@ -115,6 +116,12 @@ export class MapScene extends Phaser.Scene {
     } else if (this.ui.selectedZone === null && document.querySelector('.sheet.open')) {
       this.view.animateTo(5 * UNIT, 0.8 * UNIT, this.view.width / 3.6, lift);
     }
+  }
+
+  private onUnlocked(id: string, kind: 'sport' | 'level') {
+    const ref = ZONES.find((z) => z.id === id)!;
+    this.ui.toast(kind === 'sport' ? `${ref.sport.icon} ${ref.sport.name} unlocked!` : `🎉 ${ref.def.name} unlocked!`);
+    this.onSelect(id);
   }
 
   private pop(zoneId: string | null, coins: number) {

@@ -5,6 +5,7 @@ import { autoIncomePerSecond, buyFacility, buyManager, buyStat, collectAll, faci
 import type { Game } from '../core/game';
 import type { OfflineReport } from '../core/economy';
 import { resetSave } from '../core/save';
+import { unlockZone, zoneUnlockStatus } from '../core/unlocks';
 import { COIN, fmt, fmtSeconds, fmtTime } from './format';
 
 export interface UICallbacks {
@@ -13,6 +14,8 @@ export interface UICallbacks {
   onReset: () => void;
   /** Coins were collected from a zone, for a floating number on the map. */
   onCollected: (zoneId: string | null, coins: number) => void;
+  /** A level or a whole sport was unlocked. */
+  onUnlocked: (zoneId: string, kind: 'sport' | 'level') => void;
 }
 
 type Sheet = { kind: 'zone'; id: string } | { kind: 'beach' } | null;
@@ -25,6 +28,8 @@ export class GameUI {
   private sheet: Sheet = null;
   private lastFull = 0;
   private refs: Record<string, HTMLElement> = {};
+  /** Whether the zone sheet that is open was built for an owned zone. */
+  private sheetOwned = true;
 
   constructor(
     parent: HTMLElement,
@@ -98,38 +103,31 @@ export class GameUI {
 
   private buildZoneSheet(id: string) {
     const ref = zoneById(id);
-    const { terms } = ref.sport;
-    const rows = STAT_IDS.map(
-      (s) => `
-      <div class="up" data-stat="${s}">
-        <div class="up-ico">${STATS[s].icon}</div>
-        <div class="up-txt"><b>${terms[s]}</b><small data-eff></small></div>
-        <button class="buy" data-buy="${s}"></button>
-      </div>`,
-    ).join('');
-    this.sheetEl.innerHTML = `
+    const owned = this.game.state.zones[id].owned;
+    this.sheetOwned = owned;
+    const need = zoneUnlockStatus(this.game.state, ref);
+    const title = owned || need?.kind !== 'sport' ? ref.def.name : ref.sport.name;
+    const sub = owned || need?.kind !== 'sport' ? `${ref.sport.name} · Level ${ref.level}` : 'New sport to unlock';
+    const head = `
       <div class="sheet-head">
-        <div class="sheet-icon" style="background:${ref.sport.color}">${ref.sport.icon}</div>
-        <div class="sheet-title"><h2>${ref.def.name}</h2><p>${ref.sport.name} · Level ${ref.level}</p></div>
+        <div class="sheet-icon" style="background:${ref.sport.color}">${owned ? ref.sport.icon : '🔒'}</div>
+        <div class="sheet-title"><h2>${title}</h2><p>${sub}</p></div>
         <button class="x" data-close aria-label="Close">✕</button>
       </div>
-      <div class="facts"><span>👤 ${ref.def.guests}</span><span>🌊 ${ref.def.conditions}</span></div>
-      <div data-zone-body>
-        <div class="statline">
-          <div><b data-s="guests"></b><small>guests</small></div>
-          <div><b data-s="each"></b><small>${COIN} each</small></div>
-          <div><b data-s="dur"></b><small>per session</small></div>
-          <div><b data-s="rate"></b><small>${COIN} per sec</small></div>
-        </div>
-        <div class="session"><div class="bar"><i data-bar></i></div><button class="go" data-go></button></div>
-        <div class="ups">${rows}</div>
-        <div class="up mgr" data-mgr>
-          <div class="up-ico">🧑‍🏫</div>
-          <div class="up-txt"><b>${terms.manager}</b><small>${terms.managerBlurb}</small></div>
-          <button class="buy" data-buy="manager"></button>
-        </div>
-      </div>`;
+      <div class="facts"><span>👤 ${ref.def.guests}</span><span>🌊 ${ref.def.conditions}</span></div>`;
+    this.sheetEl.innerHTML = head + (owned ? this.ownedBody(id) : this.lockedBody(id));
     this.sheetEl.querySelector('[data-close]')!.addEventListener('click', () => this.closeSheet());
+    if (!owned) {
+      this.sheetEl.querySelector('[data-unlock]')?.addEventListener('click', () => {
+        const kind = unlockZone(this.game.state, id);
+        if (kind) {
+          this.game.save();
+          this.cb.onUnlocked(id, kind);
+          this.buildSheet();
+        }
+      });
+      return;
+    }
     this.sheetEl.querySelector('[data-go]')!.addEventListener('click', () => {
       const s = this.game.state;
       const before = s.coins;
@@ -148,6 +146,72 @@ export class GameUI {
         this.refreshSheet();
       }),
     );
+  }
+
+  private ownedBody(id: string): string {
+    const ref = zoneById(id);
+    const { terms } = ref.sport;
+    const rows = STAT_IDS.map(
+      (s) => `
+      <div class="up" data-stat="${s}">
+        <div class="up-ico">${STATS[s].icon}</div>
+        <div class="up-txt"><b>${terms[s]}</b><small data-eff></small></div>
+        <button class="buy" data-buy="${s}"></button>
+      </div>`,
+    ).join('');
+    return `
+      <div data-zone-body>
+        <div class="statline">
+          <div><b data-s="guests"></b><small>guests</small></div>
+          <div><b data-s="each"></b><small>${COIN} each</small></div>
+          <div><b data-s="dur"></b><small>per session</small></div>
+          <div><b data-s="rate"></b><small>${COIN} per sec</small></div>
+        </div>
+        <div class="session"><div class="bar"><i data-bar></i></div><button class="go" data-go></button></div>
+        <div class="ups">${rows}</div>
+        <div class="up mgr" data-mgr>
+          <div class="up-ico">🧑‍🏫</div>
+          <div class="up-txt"><b>${terms.manager}</b><small>${terms.managerBlurb}</small></div>
+          <button class="buy" data-buy="manager"></button>
+        </div>
+      </div>`;
+  }
+
+  private lockedBody(id: string): string {
+    const ref = zoneById(id);
+    const need = zoneUnlockStatus(this.game.state, ref)!;
+    const what = need.kind === 'sport' ? `Start ${ref.sport.name}` : `Unlock ${ref.def.name}`;
+    const reqs = need.status.requirements.map((r, i) => `<li data-req="${i}"><span class="tick"></span><span class="rt">${r.text}</span><em></em></li>`).join('');
+    return `
+      <div class="unlock-card">
+        <h3>${what}</h3>
+        <p class="get">You get: ${ref.def.starterBuys.join(', ')}</p>
+        <p class="blocked" data-blocked hidden></p>
+        <ul class="reqs">${reqs}</ul>
+        <button class="go" data-unlock></button>
+      </div>`;
+  }
+
+  private refreshLocked(id: string) {
+    const ref = zoneById(id);
+    const need = zoneUnlockStatus(this.game.state, ref);
+    if (!need) return;
+    const st = need.status;
+    const blocked = this.sheetEl.querySelector<HTMLElement>('[data-blocked]')!;
+    blocked.hidden = !st.blockedBy;
+    blocked.textContent = st.blockedBy ?? '';
+    st.requirements.forEach((r, i) => {
+      const li = this.sheetEl.querySelector<HTMLElement>(`[data-req="${i}"]`);
+      if (!li) return;
+      li.classList.toggle('met', r.met);
+      li.querySelector('.tick')!.textContent = r.met ? '✓' : '○';
+      li.querySelector('em')!.textContent = r.progress;
+    });
+    const btn = this.sheetEl.querySelector<HTMLButtonElement>('[data-unlock]')!;
+    const enoughCoins = this.game.state.coins >= st.coins;
+    btn.disabled = !st.canBuy;
+    btn.className = 'go' + (st.canBuy ? ' ready' : '');
+    btn.innerHTML = `${need.kind === 'sport' ? 'Start it' : 'Unlock'} · ${COIN} ${fmt(st.coins)}${st.ready && !enoughCoins ? ' (need more coins)' : ''}`;
   }
 
   private buildBeachSheet() {
@@ -203,6 +267,8 @@ export class GameUI {
     const id = this.sheet.id;
     const ref = zoneById(id);
     const z = s.zones[id];
+    if (z.owned !== this.sheetOwned) return this.buildSheet();
+    if (!z.owned) return this.refreshLocked(id);
     const st = zoneStats(s, ref);
     const q = <T extends HTMLElement>(sel: string) => this.sheetEl.querySelector<T>(sel)!;
     q('[data-s="guests"]').textContent = String(st.guests);
