@@ -1,0 +1,29 @@
+:root {
+  --ink: #12324a;
+  --paper: #fffdf6;
+  --accent: #ff7a45;
+  --gold: #ffcf3f;
+  --sea: #1b7fc4;
+  --good: #2fbf71;
+  --shadow: 0 2px 8px rgba(8, 40, 70, 0.35);
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; height: 100%; background: #062033; overflow: hidden; overscroll-behavior: none; }
+body { font-family: ui-rounded, 'SF Pro Rounded', 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: var(--ink); user-select: none; -webkit-user-select: none; }
+#app { position: fixed; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); width: 100vw; overflow: hidden; background: #0b5d8a; }
+@media (min-aspect-ratio: 3/5) { #app { width: 50vh; } }
+#game, #game canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#ui { position: absolute; inset: 0; pointer-events: none; }
+#ui button, #ui .panel, #ui .chip, #ui .label, #ui .minimap { pointer-events: auto; }
+button { font: inherit; color: inherit; border: 0; cursor: pointer; }
+.labels { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.label { position: absolute; left: 0; top: 0; display: none; white-space: nowrap; will-change: transform; }
+.label.tappable { cursor: pointer; }
+.label.area { font-weight: 800; letter-spacing: 0.12em; text-transform: uppercase; font-size: 15px; color: #fff; text-shadow: 0 1px 4px rgba(0,30,60,0.8); opacity: 0.85; }
+.label.area small { display: block; font-size: 10px; letter-spacing: 0.04em; text-transform: none; font-weight: 600; text-align: center; opacity: 0.9; }
+.minimap { position: absolute; top: 64px; right: 8px; display: flex; flex-direction: column; align-items: flex-end; gap: 6px; }
+.minimap canvas { background: rgba(6, 32, 51, 0.55); border: 2px solid rgba(255,255,255,0.85); border-radius: 14px; box-shadow: var(--shadow); backdrop-filter: blur(3px); }
+.jumps { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; width: 96px; }
+.chip { background: rgba(255,253,246,0.94); border-radius: 999px; padding: 6px 4px; font-size: 11px; font-weight: 800; box-shadow: var(--shadow); color: var(--ink); min-height: 30px; }
+.chip.locked { opacity: 0.6; }
+.chip:active { transform: scale(0.95); }
