@@ -540,3 +540,499 @@ export function bakeShoreFoam(scene: Phaser.Scene) {
     }
   });
 }
+
+// ---------------------------------------------------------------- water looks
+
+import type { GuestKind, WaterLook } from '../config/sports';
+
+export interface WaveStyle {
+  /** How fast the pattern rolls toward the beach (world px per second). */
+  speed: number;
+  alpha: number;
+  /** Extra tile scale (bigger = larger waves). */
+  scale: number;
+}
+
+export const WAVE_STYLES: Record<WaterLook, WaveStyle> = {
+  flat: { speed: 2, alpha: 0.5, scale: 1 },
+  shallows: { speed: 4, alpha: 0.7, scale: 1 },
+  rolling: { speed: 9, alpha: 0.85, scale: 1 },
+  reef: { speed: 11, alpha: 0.85, scale: 1 },
+  big: { speed: 16, alpha: 0.95, scale: 1.5 },
+  shorebreak: { speed: 12, alpha: 0.9, scale: 1 },
+  chop: { speed: 10, alpha: 0.8, scale: 1 },
+  swell: { speed: 7, alpha: 0.7, scale: 1.8 },
+};
+
+/** One repeating tile per water look (200 x 120 world px). Waves roll toward the top of the tile. */
+export function bakeWaveTile(scene: Phaser.Scene, look: WaterLook) {
+  const key = 'wave-' + look;
+  if (scene.textures.exists(key)) return key;
+  bake(scene, key, 200, 120, 1.5, (ctx, w, h) => {
+    const r = rng(look.length * 31 + 5);
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    const line = (y: number, amp: number, alpha: number, width: number, phase = 0) => {
+      ctx.strokeStyle = `rgba(255,255,255,${alpha})`;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      for (let x = 0; x <= w; x += 4) {
+        const yy = y + Math.sin(((x + phase) / w) * Math.PI * 2) * amp;
+        x ? ctx.lineTo(x, yy) : ctx.moveTo(x, yy);
+      }
+      ctx.stroke();
+    };
+    switch (look) {
+      case 'flat':
+        for (let i = 0; i < 10; i++) {
+          const x = r() * w,
+            y = r() * h;
+          ctx.strokeStyle = 'rgba(255,255,255,0.35)';
+          ctx.lineWidth = 1;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x + 8 + r() * 10, y);
+          ctx.stroke();
+        }
+        break;
+      case 'shallows':
+        for (let i = 0; i < 26; i++) {
+          const x = r() * w,
+            y = r() * h;
+          ctx.strokeStyle = `rgba(255,255,255,${0.25 + r() * 0.3})`;
+          ctx.lineWidth = 1.2;
+          ctx.beginPath();
+          ctx.arc(x, y, 2 + r() * 4, 0, Math.PI * 1.4);
+          ctx.stroke();
+        }
+        line(30, 2, 0.35, 1.5);
+        line(90, 2, 0.35, 1.5, 60);
+        break;
+      case 'rolling':
+        line(20, 5, 0.75, 2.6);
+        line(20 + 3, 5, 0.25, 6);
+        line(80, 6, 0.6, 2.2, 90);
+        break;
+      case 'reef':
+        line(30, 3, 0.85, 3.2);
+        line(34, 3, 0.3, 7);
+        line(95, 4, 0.5, 2, 70);
+        break;
+      case 'big':
+        line(18, 7, 0.95, 4.4);
+        line(24, 7, 0.35, 11);
+        line(78, 8, 0.85, 4, 100);
+        for (let i = 0; i < 18; i++) {
+          ctx.fillStyle = `rgba(255,255,255,${0.4 + r() * 0.4})`;
+          ctx.beginPath();
+          ctx.arc(r() * w, 12 + r() * 20, 1.5 + r() * 3, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.arc(r() * w, 72 + r() * 20, 1.5 + r() * 3, 0, Math.PI * 2);
+          ctx.fill();
+        }
+        break;
+      case 'shorebreak':
+        for (const [y, ph] of [[26, 0], [86, 100]] as const) {
+          for (let k = 0; k < 4; k++) {
+            const x = k * 50 + ph * 0.1 + 6;
+            ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+            ctx.lineWidth = 3.2;
+            ctx.beginPath();
+            ctx.arc(x + 20, y + 14, 18, Math.PI * 1.1, Math.PI * 1.95);
+            ctx.stroke();
+            ctx.fillStyle = 'rgba(255,255,255,0.45)';
+            ctx.beginPath();
+            ctx.arc(x + 20, y + 14, 18, Math.PI * 1.1, Math.PI * 1.95);
+            ctx.lineTo(x + 20, y + 14);
+            ctx.fill();
+          }
+        }
+        break;
+      case 'chop':
+        for (let i = 0; i < 70; i++) {
+          const x = r() * w,
+            y = r() * h,
+            len = 5 + r() * 9;
+          ctx.strokeStyle = `rgba(255,255,255,${0.35 + r() * 0.5})`;
+          ctx.lineWidth = 1.6;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.quadraticCurveTo(x + len / 2, y - 3, x + len, y);
+          ctx.stroke();
+        }
+        break;
+      case 'swell':
+        for (const y of [20, 78]) {
+          const g = ctx.createLinearGradient(0, y - 22, 0, y + 22);
+          g.addColorStop(0, 'rgba(255,255,255,0)');
+          g.addColorStop(0.5, 'rgba(255,255,255,0.28)');
+          g.addColorStop(1, 'rgba(255,255,255,0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(0, y - 22, w, 44);
+          line(y, 4, 0.5, 2, y);
+        }
+        break;
+    }
+  });
+  return key;
+}
+
+// ---------------------------------------------------------------- guests
+
+const SKIN = ['#f2c9a0', '#d9a06f', '#a86b43', '#7a4a2c'];
+const HAIR = ['#3b2a1a', '#e2b04a', '#1c1c1c', '#8a3b1a', '#c9c9c9'];
+
+/** Guests are small upright figures. 26 x 40 world px, feet at the bottom centre. */
+export const GUEST_SIZE = { w: 30, h: 44 };
+export function guestTexture(scene: Phaser.Scene, kind: GuestKind, color: string, idx: number): string {
+  const key = `guest-${kind}-${color}-${idx % 4}`;
+  if (scene.textures.exists(key)) return key;
+  bake(scene, key, GUEST_SIZE.w, GUEST_SIZE.h, 3, (ctx, w, h) => {
+    const cx = w / 2;
+    const skin = SKIN[idx % SKIN.length];
+    const hair = HAIR[(idx * 3) % HAIR.length];
+    const foot = h - 5;
+    // shadow / water ring
+    ctx.fillStyle = 'rgba(0,40,70,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(cx, foot + 1, 12, 3.2, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    const person = (px: number, py: number, s: number, vest: string, wet = '#22303a') => {
+      ctx.save();
+      ctx.translate(px, py);
+      ctx.scale(s, s);
+      ctx.fillStyle = wet; // legs
+      ctx.fillRect(-3.4, -9, 2.8, 9);
+      ctx.fillRect(0.6, -9, 2.8, 9);
+      ctx.fillStyle = vest; // torso
+      ctx.beginPath();
+      ctx.roundRect(-5, -20, 10, 12, 2.4);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.fillRect(-5, -14, 10, 1.6);
+      ctx.fillStyle = skin; // arms
+      ctx.fillRect(-7.4, -19, 2.4, 8);
+      ctx.fillRect(5, -19, 2.4, 8);
+      ctx.beginPath(); // head
+      ctx.arc(0, -24, 4.4, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = hair;
+      ctx.beginPath();
+      ctx.arc(0, -25.2, 4.5, Math.PI, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    };
+
+    switch (kind) {
+      case 'surfer': {
+        ctx.fillStyle = '#fdfdfd';
+        ctx.beginPath();
+        ctx.ellipse(cx, foot, 12.5, 2.8, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.fillStyle = color;
+        ctx.fillRect(cx - 10, foot - 0.6, 20, 1.2);
+        person(cx, foot - 1, 1, color);
+        break;
+      }
+      case 'skimmer': {
+        ctx.fillStyle = '#ffd9a1';
+        ctx.beginPath();
+        ctx.ellipse(cx, foot, 9, 2.6, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = '#a56a2c';
+        ctx.lineWidth = 0.8;
+        ctx.stroke();
+        person(cx, foot - 1, 1, color, '#2b3a55');
+        break;
+      }
+      case 'windsurfer': {
+        ctx.fillStyle = '#fdfdfd';
+        ctx.beginPath();
+        ctx.ellipse(cx, foot, 13, 2.6, 0, 0, Math.PI * 2);
+        ctx.fill();
+        // sail
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(cx + 2, foot - 2);
+        ctx.lineTo(cx + 2, foot - 36);
+        ctx.quadraticCurveTo(cx + 14, foot - 22, cx + 12, foot - 6);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.4)';
+        ctx.fillRect(cx + 2, foot - 24, 10, 2.4);
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(cx + 2, foot - 2);
+        ctx.lineTo(cx + 2, foot - 36);
+        ctx.stroke();
+        person(cx - 3, foot - 1, 0.85, '#2a3a4a');
+        break;
+      }
+      case 'kiter': {
+        ctx.fillStyle = '#fdfdfd';
+        ctx.beginPath();
+        ctx.ellipse(cx, foot, 10, 2.2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        person(cx, foot - 1, 0.8, '#2a3a4a');
+        // lines and kite
+        ctx.strokeStyle = 'rgba(30,30,30,0.6)';
+        ctx.lineWidth = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(cx, foot - 14);
+        ctx.lineTo(cx + 4, 8);
+        ctx.stroke();
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(cx - 9, 8);
+        ctx.quadraticCurveTo(cx + 4, -2, cx + 17, 8);
+        ctx.quadraticCurveTo(cx + 4, 5, cx - 9, 8);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.fillRect(cx - 1, 2.4, 2.4, 3);
+        break;
+      }
+      case 'foiler': {
+        // wing
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(cx - 13, 12);
+        ctx.quadraticCurveTo(cx, -2, cx + 13, 12);
+        ctx.quadraticCurveTo(cx, 8, cx - 13, 12);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.fillRect(cx - 1, 4, 2.4, 3);
+        // foil under the board
+        ctx.strokeStyle = '#8b95a1';
+        ctx.lineWidth = 1.4;
+        ctx.beginPath();
+        ctx.moveTo(cx, foot);
+        ctx.lineTo(cx, foot + 0.5);
+        ctx.stroke();
+        ctx.fillStyle = '#fdfdfd';
+        ctx.beginPath();
+        ctx.ellipse(cx, foot - 3, 9, 2, 0, 0, Math.PI * 2);
+        ctx.fill();
+        person(cx, foot - 4, 0.85, '#2a3a4a');
+        break;
+      }
+      case 'sailor': {
+        // small dinghy with a sail
+        ctx.fillStyle = '#fdfdfd';
+        ctx.beginPath();
+        ctx.moveTo(cx - 14, foot - 4);
+        ctx.quadraticCurveTo(cx, foot + 4, cx + 14, foot - 4);
+        ctx.lineTo(cx + 12, foot - 2);
+        ctx.quadraticCurveTo(cx, foot + 3, cx - 12, foot - 2);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(cx, foot - 4);
+        ctx.lineTo(cx, foot - 38);
+        ctx.quadraticCurveTo(cx + 13, foot - 20, cx + 12, foot - 5);
+        ctx.closePath();
+        ctx.fill();
+        ctx.fillStyle = '#f5f5f5';
+        ctx.beginPath();
+        ctx.moveTo(cx - 1, foot - 6);
+        ctx.lineTo(cx - 1, foot - 32);
+        ctx.lineTo(cx - 10, foot - 7);
+        ctx.closePath();
+        ctx.fill();
+        person(cx - 8, foot - 2, 0.55, color);
+        break;
+      }
+    }
+  });
+  return key;
+}
+
+// ---------------------------------------------------------------- beach buildings (upright, 110 x 100 world px)
+
+export const BUILDING_SIZE = { w: 110, h: 100 };
+
+function awning(ctx: Ctx, x: number, y: number, w: number, c1: string, c2: string, n = 6) {
+  const sw = w / n;
+  for (let i = 0; i < n; i++) {
+    ctx.fillStyle = i % 2 ? c2 : c1;
+    ctx.beginPath();
+    ctx.moveTo(x + i * sw, y);
+    ctx.lineTo(x + (i + 1) * sw, y);
+    ctx.lineTo(x + (i + 1) * sw + 1.5, y + 10);
+    ctx.arc(x + (i + 0.5) * sw + 0.75, y + 10, sw / 2, 0, Math.PI);
+    ctx.lineTo(x + i * sw - 1.5, y + 10);
+    ctx.closePath();
+    ctx.fill();
+  }
+}
+
+export function bakeBuildings(scene: Phaser.Scene) {
+  const S = BUILDING_SIZE;
+  const shadow = (ctx: Ctx) => {
+    ctx.fillStyle = 'rgba(80,50,10,0.22)';
+    ctx.beginPath();
+    ctx.ellipse(S.w / 2 + 8, S.h - 6, 46, 8, 0, 0, Math.PI * 2);
+    ctx.fill();
+  };
+  bake(scene, 'b-shop', S.w, S.h, 3, (ctx) => {
+    shadow(ctx);
+    ctx.fillStyle = '#d9a86a';
+    ctx.fillRect(18, 38, 74, 54);
+    ctx.fillStyle = '#b98543';
+    ctx.fillRect(18, 38, 74, 5);
+    ctx.fillStyle = '#5a3a1c'; // counter opening
+    ctx.fillRect(28, 54, 54, 26);
+    ctx.fillStyle = '#efe0c0';
+    ctx.fillRect(24, 76, 62, 8);
+    awning(ctx, 12, 30, 86, '#e8483d', '#ffffff');
+    // rental boards leaning on the wall
+    const boards = ['#3fc3ff', '#ffd23f', '#ff5fa2'];
+    boards.forEach((c, i) => {
+      ctx.save();
+      ctx.translate(100 + i * 0, 54 + i * 2);
+      ctx.rotate(0.12 - i * 0.06);
+      ctx.fillStyle = c;
+      ctx.beginPath();
+      ctx.ellipse(-6 - i * 5, 30, 4.4, 26, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    });
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('RENT', 55, 25);
+  });
+  bake(scene, 'b-cafe', S.w, S.h, 3, (ctx) => {
+    shadow(ctx);
+    ctx.fillStyle = '#f7ead0';
+    ctx.fillRect(16, 38, 66, 54);
+    ctx.fillStyle = '#e2cfa6';
+    ctx.fillRect(16, 38, 66, 5);
+    ctx.fillStyle = '#7ec8e3';
+    ctx.fillRect(26, 50, 20, 22);
+    ctx.fillRect(52, 50, 20, 22);
+    ctx.fillStyle = 'rgba(255,255,255,0.45)';
+    ctx.fillRect(28, 52, 6, 18);
+    awning(ctx, 10, 30, 78, '#2f8fd6', '#ffffff');
+    // sign with a cup
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.roundRect(30, 8, 30, 18, 4);
+    ctx.fill();
+    ctx.fillStyle = '#8b5a2b';
+    ctx.fillRect(38, 12, 10, 9);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(38, 12, 10, 2.5);
+    ctx.strokeStyle = '#8b5a2b';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(50, 16.5, 3, -1.4, 1.4);
+    ctx.stroke();
+    // table with parasol
+    ctx.fillStyle = '#5a3a1c';
+    ctx.fillRect(96, 60, 2, 30);
+    ctx.fillStyle = '#ff7a45';
+    ctx.beginPath();
+    ctx.moveTo(84, 62);
+    ctx.quadraticCurveTo(97, 40, 110, 62);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.moveTo(92, 55);
+    ctx.quadraticCurveTo(97, 46, 102, 55);
+    ctx.closePath();
+    ctx.fill();
+  });
+  bake(scene, 'b-showers', S.w, S.h, 3, (ctx) => {
+    shadow(ctx);
+    for (let i = 0; i < 3; i++) {
+      const x = 14 + i * 27;
+      ctx.fillStyle = '#c4915a';
+      ctx.fillRect(x, 40, 24, 52);
+      ctx.fillStyle = '#a3763f';
+      for (let k = 0; k < 5; k++) ctx.fillRect(x + 4 + k * 4, 44, 1.2, 44);
+      ctx.fillStyle = '#7a542a';
+      ctx.fillRect(x - 1, 36, 26, 5);
+      // shower head
+      ctx.strokeStyle = '#8b95a1';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(x + 12, 36);
+      ctx.lineTo(x + 12, 22);
+      ctx.lineTo(x + 20, 22);
+      ctx.stroke();
+      ctx.fillStyle = '#8b95a1';
+      ctx.fillRect(x + 17, 21, 7, 3);
+      ctx.fillStyle = 'rgba(120,200,255,0.85)';
+      for (let k = 0; k < 3; k++) ctx.fillRect(x + 18 + k * 2.5, 26 + k * 2, 1, 5);
+    }
+    ctx.fillStyle = '#3fa7e0';
+    ctx.beginPath();
+    ctx.arc(88, 62, 4, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  bake(scene, 'b-lifeguard', S.w, S.h, 3, (ctx) => {
+    shadow(ctx);
+    ctx.strokeStyle = '#8a5a2b';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.moveTo(30, 90);
+    ctx.lineTo(38, 52);
+    ctx.moveTo(80, 90);
+    ctx.lineTo(72, 52);
+    ctx.moveTo(34, 76);
+    ctx.lineTo(76, 66);
+    ctx.stroke();
+    // ladder
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(84, 90);
+    ctx.lineTo(74, 56);
+    ctx.stroke();
+    ctx.lineWidth = 1.5;
+    for (let k = 0; k < 4; k++) {
+      ctx.beginPath();
+      ctx.moveTo(83 - k * 2.6, 86 - k * 8.4);
+      ctx.lineTo(77 - k * 2.6 - 2, 86 - k * 8.4);
+      ctx.stroke();
+    }
+    // cabin
+    ctx.fillStyle = '#ff5a45';
+    ctx.fillRect(28, 28, 52, 26);
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(28, 38, 52, 6);
+    ctx.fillStyle = '#7ec8e3';
+    ctx.fillRect(34, 31, 14, 6);
+    ctx.fillRect(58, 31, 14, 6);
+    // roof
+    ctx.fillStyle = '#fff';
+    ctx.beginPath();
+    ctx.moveTo(22, 28);
+    ctx.lineTo(54, 12);
+    ctx.lineTo(86, 28);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#ff5a45';
+    ctx.beginPath();
+    ctx.moveTo(38, 20);
+    ctx.lineTo(54, 12);
+    ctx.lineTo(70, 20);
+    ctx.lineTo(70, 28);
+    ctx.lineTo(38, 28);
+    ctx.closePath();
+    ctx.fill();
+    // flag
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(54, 12);
+    ctx.lineTo(54, 0);
+    ctx.stroke();
+    ctx.fillStyle = '#ffd23f';
+    ctx.fillRect(54, 0, 10, 6);
+  });
+}
