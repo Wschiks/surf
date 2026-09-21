@@ -203,7 +203,11 @@ export function advanceZone(state: GameState, ref: ZoneRef, dt: number, m: Multi
     z.elapsed -= n * st.duration;
     addCoins(state, n * st.income);
     state.reputation += n * st.rep;
+    z.sessions += n;
+    z.served += n * st.guests;
   } else {
+    z.sessions += 1;
+    z.served += st.guests;
     z.phase = 'ready';
     z.pending = st.income;
     z.pendingRep = st.rep;

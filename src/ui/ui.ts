@@ -163,8 +163,7 @@ export class GameUI {
         ${tile(owned ? ref.sport.icon : 'lock', owned ? ref.sport.color : '#7d92a3', 48)}
         <div class="sheet-title"><h2>${title}</h2><p>${sub}</p></div>
         <button class="x" data-close aria-label="Close">${icon('close')}</button>
-      </div>
-      <div class="facts"><div><b>Guests</b><span>${ref.def.guests}</span></div><div><b>Water</b><span>${ref.def.conditions}</span></div>${owned ? `<div><b>Includes</b><span>${ref.def.starterBuys.join(', ')}</span></div>` : ''}</div>`;
+      </div>`;
     this.sheetEl.innerHTML = head + (owned ? this.ownedBody(id) : this.lockedBody(id));
     this.sheetEl.querySelector('[data-close]')!.addEventListener('click', () => this.closeSheet());
     if (!owned) {
@@ -615,7 +614,7 @@ export class GameUI {
       setHtml(claim, `${v.done ? 'Claim ' : ''}${COIN} ${fmt(v.reward)}`);
       claim.classList.toggle('waiting', !v.done);
     }
-    setHtml(this.refs.qsum, ready ? `${ready} to claim` : 'Finish them for coins');
+    setHtml(this.refs.qsum, ready ? `${ready} to claim` : 'Swipe for more quests');
     this.refs.quests.classList.toggle('ready', ready > 0);
   }
 

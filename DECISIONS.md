@@ -145,3 +145,13 @@ Every choice made while building, and why. The concept document (`docs/concept.m
 ## Quests reworked
 - **Every quest has its own reward**, shown on its card the whole time (not "x each"). The reward is fixed when the quest is made and depends on the kind of job: a level up pays the base amount (about 1.5 minutes of what the beach earns, at least 40 coins), more guests x1.2, a faster level x1.6, hiring a manager x2, a beach building x2.5, unlocking a level or sport x3 and expanding the beach x6. A finished quest shows a yellow Claim button with its coins.
 - **The fold-away arrow works now.** A CSS rule had been overwritten by mistake, so the list never hid. Tapping the header folds the quests into one bar and tapping again opens them. Checked in the browser.
+
+## More and easier quests
+- **The Guests / Water / Includes block is gone** from the zone sheet.
+- **Up to 6 quests at a time** in one row of cards; swipe the row sideways to see them all. Small jobs come first:
+  - Level up a zone to level **10**, then 25, 50, 75, 100...
+  - **Finish 10 sessions** at a zone, and **serve 40 guests** at a zone (zones now count their finished sessions and guests served, also while you are away).
+  - Earn a number of coins, from the moment the quest is made.
+  - A rotating job: unlock the next level or sport, hire a manager, a faster level, a beach building, expand the beach.
+  - "Get 10 surfers in Beginner class" (more guests) only shows up later, after 4 quests were finished.
+- Asks get bigger as you finish more quests (sessions 10 -> 20 -> 30..., guests 40 -> 80 -> 120...). Every quest still has its own reward, by kind.

@@ -16,6 +16,9 @@ export interface ZoneState {
   /** Coins and reputation waiting to be collected (zones without a manager). */
   pending: number;
   pendingRep: number;
+  /** Finished sessions and guests served in this zone (for quests). */
+  sessions: number;
+  served: number;
 }
 
 export interface GameState {
@@ -39,7 +42,7 @@ export interface GameState {
 export const SAVE_VERSION = 3;
 
 export function newZone(owned = false): ZoneState {
-  return { owned, capacity: 0, price: 0, speed: 0, manager: false, phase: 'idle', elapsed: 0, pending: 0, pendingRep: 0 };
+  return { owned, capacity: 0, price: 0, speed: 0, manager: false, phase: 'idle', elapsed: 0, pending: 0, pendingRep: 0, sessions: 0, served: 0 };
 }
 
 export function newGame(now: number): GameState {
@@ -80,6 +83,10 @@ export function openAreas(state: GameState) {
 export function ensureState(state: GameState): GameState {
   for (const s of SPORTS) state.sports[s.id] ??= false;
   for (const z of ZONES) state.zones[z.id] ??= newZone();
+  for (const z of Object.values(state.zones)) {
+    z.sessions ??= 0;
+    z.served ??= 0;
+  }
   for (const f of FACILITIES) state.facilities[f.id] ??= 0;
   state.expansions ??= 0;
   state.quests ??= [];

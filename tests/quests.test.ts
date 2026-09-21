@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BALANCE } from '../src/config/balance';
-import { buyManager, buyStat } from '../src/core/economy';
+import { buyManager, buyStat, tapZone, tick } from '../src/core/economy';
 import { claimQuest, QUEST_SLOTS, questReward, questView, refreshQuests } from '../src/core/quests';
 import { newGame } from '../src/core/state';
 import { expand } from '../src/core/unlocks';
@@ -14,18 +14,63 @@ function game() {
 }
 
 describe('quests', () => {
-  it('there are three at a time, and the first ones ask for a level, guests and one more job', () => {
+  it('there are many at a time, small ones first: level 10, ten sessions, forty guests', () => {
     const s = game();
-    expect(s.quests).toHaveLength(QUEST_SLOTS);
-    expect(s.quests.map((q) => q.kind).slice(0, 2)).toEqual(['level', 'guests']);
+    expect(s.quests).toHaveLength(QUEST_SLOTS - 1); // "get more guests" only comes later
     const texts = s.quests.map((q) => questView(s, q).text);
-    expect(texts[0]).toMatch(/^Level up .* to level 25$/);
-    expect(texts[1]).toMatch(/^Get 10 surfers in /);
-    expect(new Set(texts).size).toBe(3);
+    expect(texts[0]).toBe('Level up Beginner class to level 10');
+    expect(texts).toContain('Finish 10 sessions at Beginner class');
+    expect(texts).toContain('Serve 40 guests at Beginner class');
+    expect(texts.some((t) => /^Earn /.test(t))).toBe(true);
+    expect(texts.some((t) => /^Get \d+ surfers/.test(t))).toBe(false);
+    expect(new Set(texts).size).toBe(texts.length);
+  });
+
+  it('more guests is asked later, when a few quests were finished', () => {
+    const s = game();
+    s.questsDone = 4;
+    s.quests = [];
+    refreshQuests(s);
+    expect(s.quests.map((q) => q.kind)).toContain('guests');
+    const g = s.quests.find((q) => q.kind === 'guests')!;
+    expect(questView(s, g).text).toMatch(/^Get 10 surfers in /);
   });
 
   it('are the same every time for the same game (nothing is random)', () => {
     expect(JSON.stringify(game().quests)).toBe(JSON.stringify(game().quests));
+  });
+
+  it('count sessions and guests served from the moment the quest was made', () => {
+    const s = game();
+    const sessions = s.quests.find((q) => q.kind === 'sessions')!;
+    const served = s.quests.find((q) => q.kind === 'served')!;
+    buyManager(s, 'wave-1'); // (no coins: nothing happens)
+    s.coins = 1e6;
+    buyManager(s, 'wave-1');
+    tick(s, 6 * 5 + 0.1); // five sessions of 6 seconds
+    expect(questView(s, sessions).current).toBe(5);
+    expect(questView(s, served).current).toBe(Math.floor(5 * 3));
+    tick(s, 6 * 5);
+    expect(questView(s, sessions).done).toBe(true);
+    expect(questView(s, served).done).toBe(false); // 30 of 40 guests
+    tick(s, 6 * 4);
+    expect(questView(s, served).done).toBe(true);
+  });
+
+  it('an unmanaged zone counts a session when it is done', () => {
+    const s = game();
+    const sessions = s.quests.find((q) => q.kind === 'sessions')!;
+    tapZone(s, 'wave-1');
+    tick(s, 7);
+    expect(questView(s, sessions).current).toBe(1);
+  });
+
+  it('earn quests count coins earned after they were made', () => {
+    const s = game();
+    const earn = s.quests.find((q) => q.kind === 'earn')!;
+    expect(questView(s, earn).current).toBe(0);
+    s.totalCoins += 33;
+    expect(questView(s, earn).current).toBe(33);
   });
 
   it('finish when the number is reached, and then pay coins', () => {
@@ -34,16 +79,16 @@ describe('quests', () => {
     expect(questView(s, q).done).toBe(false);
     expect(claimQuest(s, 0)).toBe(0);
     s.coins = 1e12;
-    buyStat(s, 'wave-1', 'price', 25);
+    buyStat(s, 'wave-1', 'price', 10);
     expect(questView(s, q).done).toBe(true);
     const before = s.coins;
     const reward = claimQuest(s, 0);
     expect(reward).toBeGreaterThan(0);
     expect(s.coins).toBe(before + reward);
     expect(s.questsDone).toBe(1);
-    expect(s.quests).toHaveLength(QUEST_SLOTS);
+    expect(s.quests.length).toBeGreaterThanOrEqual(QUEST_SLOTS - 1);
     // the next level quest asks for the next step
-    expect(s.quests.find((x) => x.kind === 'level')?.target).toBe(50);
+    expect(s.quests.find((x) => x.kind === 'level')?.target).toBe(25);
   });
 
   it('a manager quest is finished by hiring one', () => {
@@ -92,7 +137,7 @@ describe('quests', () => {
     expand(s);
     refreshQuests(s);
     BALANCE.testAlwaysExpand = false;
-    expect(s.quests).toHaveLength(QUEST_SLOTS);
+    expect(s.quests.length).toBeGreaterThanOrEqual(QUEST_SLOTS - 1);
     for (const q of s.quests) if (q.zone && q.kind !== 'unlock') expect(s.zones[q.zone].owned).toBe(true);
   });
 });
