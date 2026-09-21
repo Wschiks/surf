@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { AREAS, areaById, rgbToHex, seaColorAt, type AreaId } from '../config/areas';
 import { MAP_UNITS, UNIT, WORLD_MARGIN } from '../config/layout';
-import { placeImage, placeTile, bakeCloudTile, bakeFort, bakeLighthouse, placeUpright, bakeReef, bakeRocks, bakeSandTile, bakeShoreFoam, bakeSparkleTile, FORT_SIZE, REEF_SIZE, ROCKS_SIZE } from './art';
+import { placeImage, placeTile, bakeCloudTile, bakeFort, bakeCove, COVE_SIZE, bakeLighthouse, placeUpright, bakeReef, bakeRocks, bakeSandTile, bakeShoreFoam, bakeSparkleTile, FORT_SIZE, REEF_SIZE, ROCKS_SIZE } from './art';
 
 const M = WORLD_MARGIN * UNIT;
 const MAP = MAP_UNITS * UNIT;
@@ -15,6 +15,7 @@ export function buildBackground(scene: Phaser.Scene) {
   bakeCloudTile(scene);
   bakeShoreFoam(scene);
   bakeRocks(scene);
+  bakeCove(scene);
   bakeReef(scene);
   bakeFort(scene);
   bakeLighthouse(scene);
@@ -73,11 +74,13 @@ export function buildBackground(scene: Phaser.Scene) {
   grid.strokeRect(0, 0, MAP, MAP);
 
   // landmarks
-  placeImage(scene, 'lm-rocks', 0, 1.0 * UNIT).setDepth(DEPTH.landmark);
+  placeImage(scene, 'lm-cove', 0, 2.0 * UNIT).setDepth(DEPTH.landmark - 1);
+  placeImage(scene, 'lm-rocks', 0, 0.75 * UNIT).setDepth(DEPTH.landmark);
   placeImage(scene, 'lm-reef', 3.45 * UNIT, 3.9 * UNIT).setDisplaySize(310, 110).setDepth(DEPTH.landmark);
   placeImage(scene, 'lm-fort', MAP - FORT_SIZE.w + 20, 3.8 * UNIT).setDepth(DEPTH.landmark);
   placeUpright(scene, 'lm-lighthouse', MAP - 42 + 22 - 22, 3.8 * UNIT + 44).setDepth(DEPTH.landmark + 1).setOrigin(0.5, 0.87);
   void ROCKS_SIZE;
+  void COVE_SIZE;
   void REEF_SIZE;
 
   return { sparkle, foam };

@@ -39,3 +39,9 @@ Every choice made while building, and why. The concept document (`docs/concept.m
 - Locked zones show a dark shade on the map with a lock on the tag. Tapping one opens a card that lists what is still needed (with ticks) and the button to buy it.
 - Landmarks the player sees from the start: the reef and Nazaré landmarks are on the map from the start, even while their zones are locked (the concept says the player sees the whole map from the start).
 - A balance bot (`src/core/bot.ts`, run with `npx tsx scripts/simulate.ts 12`) plays the game: taps every waiting zone at once, buys the best-payback upgrade, and saves up when an unlock is near. It is used in the playthrough test.
+
+## Unlocks and skimboarding (stage 4)
+- The sport rule from the concept is built exactly: a sport unlocks when the player owns Level 2 of the previous sport and has enough reputation. On top of that the player pays coins to build the sport (its Level 1 zone is then free). Reason: "Each further level is a purchase" and the Sea/Ocean sports are described as bigger investments (kite launch area, boats and jetty), so a coin price makes sense and keeps the player saving. The order is fixed by `order` in `src/config/sports.ts`: wave surfing, skimboarding, windsurfing, kitesurfing, foil and wing, sailing.
+- Level 1 of a locked sport is the "start this sport" card; levels 2-4 of a locked sport say "Unlock the sport first".
+- Skimboarding's four zones are a 2 x 2 block in the left of the Wave area next to the rocks: Shallows and Flatland near the sand, Shore break and Big shore break further out. The cove has clear shallow water and a wet sand bank for Flatland. Level 1 rule: reputation and coins; Level 2 needs 10 upgrades on Level 1, like wave surfing.
+- A "Next goal" bar under the top bar always shows what to aim for (first locked zone in sport order, first missing requirement, progress bar). Tapping it opens that zone. This keeps the player from getting lost in a big map.

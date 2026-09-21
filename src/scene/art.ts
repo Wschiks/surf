@@ -560,6 +560,7 @@ export const WAVE_STYLES: Record<WaterLook, WaveStyle> = {
   reef: { speed: 11, alpha: 0.85, scale: 1 },
   big: { speed: 16, alpha: 0.95, scale: 1.5 },
   shorebreak: { speed: 12, alpha: 0.9, scale: 1 },
+  bigbreak: { speed: 20, alpha: 0.95, scale: 1.5 },
   chop: { speed: 10, alpha: 0.8, scale: 1 },
   swell: { speed: 7, alpha: 0.7, scale: 1.8 },
 };
@@ -633,6 +634,7 @@ export function bakeWaveTile(scene: Phaser.Scene, look: WaterLook) {
         }
         break;
       case 'shorebreak':
+      case 'bigbreak':
         for (const [y, ph] of [[26, 0], [86, 100]] as const) {
           for (let k = 0; k < 4; k++) {
             const x = k * 50 + ph * 0.1 + 6;
@@ -1034,5 +1036,54 @@ export function bakeBuildings(scene: Phaser.Scene) {
     ctx.stroke();
     ctx.fillStyle = '#ffd23f';
     ctx.fillRect(54, 0, 10, 6);
+  });
+}
+
+/** The skimboarding cove: clear shallows, a wet sand bank for flatland. 340 x 320 world px. */
+export const COVE_SIZE = { w: 340, h: 320 };
+export function bakeCove(scene: Phaser.Scene) {
+  bake(scene, 'lm-cove', COVE_SIZE.w, COVE_SIZE.h, 2, (ctx, w, h) => {
+    const r = rng(55);
+    // clear shallow water wash
+    const g = ctx.createRadialGradient(120, 150, 20, 150, 150, 200);
+    g.addColorStop(0, 'rgba(210,255,246,0.85)');
+    g.addColorStop(0.6, 'rgba(160,245,232,0.5)');
+    g.addColorStop(1, 'rgba(160,245,232,0)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+    // wet sand bank where the flatland riders skim
+    const sg = ctx.createLinearGradient(180, 40, 340, 190);
+    sg.addColorStop(0, 'rgba(232,206,150,0.95)');
+    sg.addColorStop(1, 'rgba(214,186,128,0.85)');
+    ctx.fillStyle = sg;
+    blob(ctx, 258, 108, 88, 56, rng(9), 0.07, 24);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // sheen and thin water film on the bank
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    blob(ctx, 250, 104, 62, 34, rng(2), 0.1, 20);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(150,110,60,0.25)';
+    ctx.lineWidth = 1.2;
+    for (let i = 0; i < 6; i++) {
+      const y = 78 + i * 10;
+      ctx.beginPath();
+      ctx.moveTo(190 + r() * 10, y);
+      ctx.bezierCurveTo(230, y - 4, 280, y + 4, 330 - r() * 10, y);
+      ctx.stroke();
+    }
+    // ripples in the shallows
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 1.3;
+    for (let i = 0; i < 18; i++) {
+      const x = 20 + r() * 150,
+        y = 30 + r() * 140;
+      ctx.beginPath();
+      ctx.arc(x, y, 3 + r() * 5, 0, Math.PI * 1.5);
+      ctx.stroke();
+    }
+    void h;
   });
 }

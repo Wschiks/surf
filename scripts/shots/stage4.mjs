@@ -1,0 +1,24 @@
+export default async ({ page, shot, base }) => {
+  await page.goto(base);
+  await page.waitForTimeout(1500);
+  const ev = (fn, a) => page.evaluate(fn, a);
+  await shot('start-goal');
+  await ev(() => { const s = window.__surf.game.state; s.coins = 1e6; s.reputation = 5; const z = s.zones['wave-1']; z.capacity = 4; z.price = 4; z.speed = 2; s.zones['wave-2'].owned = true; });
+  await ev(() => window.__surf.ui.openZone('skimboarding-1'));
+  await page.waitForTimeout(1500);
+  await shot('skim-locked');
+  await ev(() => { window.__surf.game.state.reputation = 30; });
+  await page.waitForTimeout(400);
+  await shot('skim-ready');
+  await page.click('[data-unlock]', { force: true });
+  await page.waitForTimeout(1500);
+  await shot('skim-unlocked');
+  await ev(() => { const s = window.__surf.game.state; s.coins = 1e9; s.reputation = 1000; for (const id of ['skimboarding-2','skimboarding-3','skimboarding-4']) { s.zones[id].owned = true; s.zones[id].manager = true; s.zones[id].capacity = 4; } });
+  await ev(() => window.__surf.ui.closeSheet());
+  await ev(() => { const v = window.__surf.view; v.jumpTo(170, 340, v.width / 3.4); });
+  await page.waitForTimeout(1500);
+  await shot('skim-area');
+  await ev(() => { const v = window.__surf.view; v.jumpTo(170, 230, v.width / 2.2); });
+  await page.waitForTimeout(1000);
+  await shot('rocks');
+};

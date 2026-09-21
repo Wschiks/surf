@@ -4,7 +4,7 @@ import type { Rect } from './layout';
 export type SportId = 'wave' | 'skimboarding' | 'windsurfing' | 'kitesurfing' | 'foil' | 'sailing';
 
 /** What the water looks like in a zone. Used only for drawing. */
-export type WaterLook = 'flat' | 'rolling' | 'reef' | 'big' | 'shallows' | 'shorebreak' | 'chop' | 'swell';
+export type WaterLook = 'flat' | 'rolling' | 'reef' | 'big' | 'shallows' | 'shorebreak' | 'bigbreak' | 'chop' | 'swell';
 
 export type GuestKind = 'surfer' | 'skimmer' | 'windsurfer' | 'kiter' | 'foiler' | 'sailor';
 
@@ -121,6 +121,76 @@ export const SPORTS: SportDef[] = [
         guestColors: ['#222831', '#c1121f', '#0b132b', '#3a0ca3', '#1b1b1e'],
         look: 'big',
         unlock: { coins: 400000, reputation: 250 },
+      },
+    ],
+  },
+  {
+    id: 'skimboarding',
+    name: 'Skimboarding',
+    icon: '🛹',
+    area: 'wave',
+    order: 2,
+    color: '#f2b134',
+    guestKind: 'skimmer',
+    unlock: { reputation: 12, coins: 1500 },
+    terms: {
+      capacity: 'More boards',
+      price: 'Board rental',
+      speed: 'Quicker runs',
+      manager: 'Cove host',
+      managerBlurb: 'Looks after the cove by themselves, even while you are away.',
+    },
+    levels: [
+      {
+        name: 'Shallows',
+        guests: 'Kids and first-timers',
+        conditions: 'Ankle-deep water at the water\'s edge, no waves',
+        starterBuys: ['Rental skimboards', 'A shallow-water flag'],
+        rect: { x: 0, y: 2.45, w: 1.7, h: 1.25 },
+        tier: 2.1,
+        baseGuests: 4,
+        baseSeconds: 7,
+        guestColors: ['#ffb74d', '#4dd0e1', '#f06292', '#aed581', '#ba68c8'],
+        look: 'shallows',
+      },
+      {
+        name: 'Flatland',
+        guests: 'Flatland riders',
+        conditions: 'Wide, flat, wet sand with a thin layer of water',
+        starterBuys: ['Flatland boards', 'A wet-sand track'],
+        rect: { x: 1.7, y: 2.45, w: 1.7, h: 1.25 },
+        tier: 3.0,
+        baseGuests: 4,
+        baseSeconds: 8,
+        guestColors: ['#26a69a', '#ef5350', '#ffca28', '#5c6bc0', '#8d6e63'],
+        look: 'flat',
+        unlock: { coins: 12000, reputation: 0, prevLevelUpgrades: 10 },
+      },
+      {
+        name: 'Shore break',
+        guests: 'Wave riders',
+        conditions: 'Small, steep waves breaking close to the sand',
+        starterBuys: ['Wave boards', 'A shore-break spotter'],
+        rect: { x: 0, y: 3.7, w: 1.7, h: 1.25 },
+        tier: 4.0,
+        baseGuests: 3,
+        baseSeconds: 9,
+        guestColors: ['#00897b', '#e53935', '#fdd835', '#3949ab', '#6d4c41'],
+        look: 'shorebreak',
+        unlock: { coins: 150000, reputation: 60 },
+      },
+      {
+        name: 'Big shore break',
+        guests: 'Pros only',
+        conditions: 'Big, fast waves breaking right on the sand',
+        starterBuys: ['Pro boards', 'A rescue crew on the sand'],
+        rect: { x: 1.7, y: 3.7, w: 1.7, h: 1.25 },
+        tier: 5.2,
+        baseGuests: 2,
+        baseSeconds: 11,
+        guestColors: ['#212121', '#b71c1c', '#0d47a1', '#4a148c', '#1b5e20'],
+        look: 'bigbreak',
+        unlock: { coins: 2500000, reputation: 320 },
       },
     ],
   },

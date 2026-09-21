@@ -110,3 +110,41 @@ export function unlockZone(state: GameState, id: string): 'sport' | 'level' | nu
   if (need.kind === 'sport') return unlockSport(state, ref.sport.id) ? 'sport' : null;
   return unlockLevel(state, id) ? 'level' : null;
 }
+
+export interface Goal {
+  zoneId: string;
+  /** What it is for, such as "Skimboarding". */
+  name: string;
+  /** The first missing requirement, such as "Reputation 12 (5 / 12)". Empty when only coins are missing. */
+  missing: string;
+  /** Coins needed when everything else is done. */
+  coins: number;
+  /** 0 to 1: how close the player is. */
+  progress: number;
+}
+
+/**
+ * What the player should aim for next: the first zone, in sport order and level order, that is not
+ * unlocked yet and whose sport is unlocked (or is the next sport's first level).
+ */
+export function nextGoal(state: GameState): Goal | null {
+  for (const sport of [...SPORTS].sort((a, b) => a.order - b.order)) {
+    for (let level = 1; level <= sport.levels.length; level++) {
+      const id = zoneId(sport.id, level);
+      if (state.zones[id].owned) continue;
+      const ref = zoneById(id);
+      const need = zoneUnlockStatus(state, ref);
+      if (!need) continue;
+      const st = need.status;
+      if (st.blockedBy) break; // the level before comes first
+      const unmet = st.requirements.find((r) => !r.met);
+      const name = need.kind === 'sport' ? sport.name : ref.def.name;
+      if (unmet) {
+        const met = st.requirements.filter((r) => r.met).length;
+        return { zoneId: id, name, missing: `${unmet.text} (${unmet.progress})`, coins: st.coins, progress: met / (st.requirements.length + 1) };
+      }
+      return { zoneId: id, name, missing: '', coins: st.coins, progress: Math.min(1, state.coins / st.coins) };
+    }
+  }
+  return null;
+}

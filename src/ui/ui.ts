@@ -5,7 +5,7 @@ import { autoIncomePerSecond, buyFacility, buyManager, buyStat, collectAll, faci
 import type { Game } from '../core/game';
 import type { OfflineReport } from '../core/economy';
 import { resetSave } from '../core/save';
-import { unlockZone, zoneUnlockStatus } from '../core/unlocks';
+import { nextGoal, unlockZone, zoneUnlockStatus } from '../core/unlocks';
 import { COIN, fmt, fmtSeconds, fmtTime } from './format';
 
 export interface UICallbacks {
@@ -44,6 +44,7 @@ export class GameUI {
         <div class="pill rep" title="Reputation"><span class="ico">⭐</span><b data-ref="rep">0</b></div>
         <button class="pill gear" data-ref="gear" aria-label="Menu">⚙️</button>
       </div>
+      <button class="goal" data-ref="goal" hidden><span class="goal-t"></span><i class="goal-bar"><b></b></i></button>
       <div class="dock">
         <button class="dock-btn" data-ref="beach"><span>🏖️</span>Beach</button>
         <button class="dock-btn collect" data-ref="collect"><span>💰</span>Collect all<i data-ref="waiting">0</i></button>
@@ -56,6 +57,10 @@ export class GameUI {
     this.sheetEl = this.refs.sheet;
     this.dockEl = this.root.querySelector('.dock')!;
     this.refs.beach.addEventListener('click', () => this.openBeach());
+    this.refs.goal.addEventListener('click', () => {
+      const g = nextGoal(this.game.state);
+      if (g) this.openZone(g.zoneId);
+    });
     this.refs.gear.addEventListener('click', () => this.openMenu());
     this.refs.collect.addEventListener('click', () => {
       const got = collectAll(this.game.state);
@@ -325,6 +330,14 @@ export class GameUI {
     this.refs.coins.textContent = fmt(s.coins);
     this.refs.rate.textContent = `+${fmt(autoIncomePerSecond(s))}/s`;
     this.refs.rep.textContent = fmt(Math.floor(s.reputation));
+    const goal = nextGoal(s);
+    this.refs.goal.hidden = !goal || !!this.sheet;
+    if (goal) {
+      const t = goal.missing ? `${goal.name}: ${goal.missing}` : `${goal.name}: save ${COIN} ${fmt(goal.coins)}`;
+      const gt = this.refs.goal.querySelector('.goal-t')!;
+      if (gt.innerHTML !== t) gt.innerHTML = t;
+      (this.refs.goal.querySelector('.goal-bar b') as HTMLElement).style.width = Math.round(goal.progress * 100) + '%';
+    }
     const waiting = waitingZones(s).length;
     this.refs.waiting.textContent = String(waiting);
     this.refs.collect.classList.toggle('pulse', waiting > 0);

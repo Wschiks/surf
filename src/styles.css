@@ -129,3 +129,9 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 .reqs li .tick { width: 22px; height: 22px; border-radius: 50%; background: #dbe8ee; display: grid; place-items: center; font-size: 13px; flex: none; }
 .reqs li.met .tick { background: #2fbf71; color: #fff; }
 .unlock-card .go { width: 100%; }
+
+.goal { position: absolute; top: max(58px, calc(env(safe-area-inset-top) + 48px)); left: 10px; max-width: calc(100% - 128px); pointer-events: auto; background: rgba(18, 50, 74, 0.86); color: #fff; border-radius: 14px; padding: 7px 12px 8px; text-align: left; font-size: 12.5px; font-weight: 700; line-height: 1.25; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 5px; }
+.goal[hidden] { display: none; }
+.goal .goal-t::before { content: 'Next goal · '; color: #ffcf3f; font-weight: 800; }
+.goal-bar { display: block; height: 5px; border-radius: 9px; background: rgba(255,255,255,0.25); overflow: hidden; }
+.goal-bar b { display: block; height: 100%; background: #ffcf3f; border-radius: 9px; }
