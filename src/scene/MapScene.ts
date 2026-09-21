@@ -14,6 +14,7 @@ import { MapInput, MapView } from './MapView';
 import { ZoneView } from './zoneView';
 import { SiteView } from './sites';
 import { OceanView } from './ocean';
+import { Scenery } from './scenery';
 import { fmt } from '../ui/format';
 import { sound } from '../ui/sound';
 
@@ -28,6 +29,7 @@ export class MapScene extends Phaser.Scene {
   private beach!: BeachView;
   private sites!: SiteView;
   private ocean!: OceanView;
+  private scenery!: Scenery;
   private zones: ZoneView[] = [];
   private clearedAreas = new Set<AreaId>(['beach', 'wave']);
   private popCount = 0;
@@ -69,6 +71,7 @@ export class MapScene extends Phaser.Scene {
     this.sites.update(this.game_.state, false);
     this.ocean = new OceanView(this);
     this.ocean.update(this.game_.state, 0, false);
+    this.scenery = new Scenery(this);
     for (const ref of ZONES) this.zones.push(new ZoneView(this, ref, (id, coins) => this.pop(id, coins)));
 
     for (const a of AREAS) {
@@ -208,6 +211,7 @@ export class MapScene extends Phaser.Scene {
     this.beach.animateWalkers(this.game_.state, time);
     this.sites.update(this.game_.state);
     this.ocean.update(this.game_.state, time);
+    this.scenery.update(time);
     this.chips.update(this.game_.state, this.view.ppu, this.ui.selectedZone);
     this.labels.update(this.view);
     this.ui.update(now);

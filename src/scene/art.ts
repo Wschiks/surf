@@ -311,12 +311,27 @@ export function bakeReef(scene: Phaser.Scene) {
   bake(scene, 'lm-reef', REEF_SIZE.w, REEF_SIZE.h, 2.5, (ctx, w, h) => {
     const r = rng(41);
     // deep blue water behind the reef, along the bottom
-    const dg = ctx.createLinearGradient(0, h * 0.55, 0, h);
+    // (drawn on its own layer and faded out toward both ends, so it has no hard rectangle edge)
+    const deep = document.createElement('canvas');
+    deep.width = w * 2.5;
+    deep.height = h * 2.5;
+    const dc = deep.getContext('2d')!;
+    dc.scale(2.5, 2.5);
+    const dg = dc.createLinearGradient(0, h * 0.55, 0, h);
     dg.addColorStop(0, 'rgba(10,60,140,0)');
-    dg.addColorStop(0.5, 'rgba(10,60,140,0.55)');
-    dg.addColorStop(1, 'rgba(6,40,110,0.75)');
-    ctx.fillStyle = dg;
-    ctx.fillRect(0, 0, w, h);
+    dg.addColorStop(0.5, 'rgba(10,60,140,0.5)');
+    dg.addColorStop(1, 'rgba(6,40,110,0.7)');
+    dc.fillStyle = dg;
+    dc.fillRect(0, 0, w, h);
+    dc.globalCompositeOperation = 'destination-in';
+    const hm = dc.createLinearGradient(0, 0, w, 0);
+    hm.addColorStop(0, 'rgba(0,0,0,0)');
+    hm.addColorStop(0.18, 'rgba(0,0,0,1)');
+    hm.addColorStop(0.82, 'rgba(0,0,0,1)');
+    hm.addColorStop(1, 'rgba(0,0,0,0)');
+    dc.fillStyle = hm;
+    dc.fillRect(0, 0, w, h);
+    ctx.drawImage(deep, 0, 0, w, h);
     // turquoise shallows
     const tg = ctx.createLinearGradient(0, 0, 0, h * 0.75);
     tg.addColorStop(0, 'rgba(120,255,230,0.7)');
@@ -1480,6 +1495,26 @@ export function bakeDecor(scene: Phaser.Scene) {
     ctx.closePath();
     ctx.fill();
   });
+  // splash: a foamy ring with droplets, shown when a rider lands
+  bake(scene, 'fx-splash', 48, 48, 3, (ctx) => {
+    ctx.strokeStyle = 'rgba(255,255,255,0.95)';
+    ctx.lineWidth = 3.2;
+    ctx.beginPath();
+    ctx.ellipse(24, 24, 15, 13, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(255,255,255,0.5)';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.ellipse(24, 24, 9, 8, 0, 0, Math.PI * 2);
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2 + 0.3;
+      ctx.beginPath();
+      ctx.arc(24 + Math.cos(a) * 19, 24 + Math.sin(a) * 17, 1.6 + (i % 3) * 0.5, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
   // wake behind a rider (vertical, the rider is at the top)
   bake(scene, 'fx-wake', 14, 34, 3, (ctx) => {
     const g = ctx.createLinearGradient(0, 0, 0, 34);
@@ -1510,5 +1545,158 @@ export function bakeDecor(scene: Phaser.Scene) {
       ctx.fill();
     }
     void h;
+  });
+}
+
+
+/** Soft, wide wisps of mist (512 x 256 world px at 1.6x scale, tiles in both directions). */
+export function bakeMistTile(scene: Phaser.Scene, key: string, seed: number, blobs: number, alpha: number) {
+  bake(scene, key, 512, 256, 0.75, (ctx, w, h) => {
+    const r = rng(seed);
+    for (let i = 0; i < blobs; i++) {
+      const x = r() * w;
+      const y = r() * h;
+      const rx = 90 + r() * 90;
+      const ry = rx * (0.5 + r() * 0.35);
+      for (const ox of [-w, 0, w])
+        for (const oy of [-h, 0, h]) {
+          ctx.save();
+          ctx.translate(x + ox, y + oy);
+          ctx.scale(1, ry / rx);
+          const g = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+          g.addColorStop(0, `rgba(255,255,255,${alpha})`);
+          g.addColorStop(0.55, `rgba(240,248,255,${alpha * 0.45})`);
+          g.addColorStop(1, 'rgba(240,248,255,0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(-rx, -rx, rx * 2, rx * 2);
+          ctx.restore();
+        }
+    }
+  });
+}
+
+/** A vertical ramp from clear to fog, stretched over the edge of a hazy area. */
+export function bakeFogRamp(scene: Phaser.Scene) {
+  bake(scene, 'fog-ramp', 8, 128, 1, (ctx, w, h) => {
+    const g = ctx.createLinearGradient(0, 0, 0, h);
+    g.addColorStop(0, 'rgba(226,240,250,0)');
+    g.addColorStop(0.35, 'rgba(226,240,250,0.22)');
+    g.addColorStop(0.7, 'rgba(226,240,250,0.55)');
+    g.addColorStop(1, 'rgba(226,240,250,0.78)');
+    ctx.fillStyle = g;
+    ctx.fillRect(0, 0, w, h);
+  });
+}
+
+// ---------------------------------------------------------------- Sea and Ocean scenery
+
+/** Wind turbine tower (upright) 26 x 120 world px, base at the bottom centre. */
+export function bakeTurbine(scene: Phaser.Scene) {
+  bake(scene, 'sc-tower', 26, 120, 3, (ctx) => {
+    ctx.fillStyle = 'rgba(0,50,80,0.2)';
+    ctx.beginPath();
+    ctx.ellipse(15, 116, 12, 3.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    const g = ctx.createLinearGradient(9, 0, 17, 0);
+    g.addColorStop(0, '#ffffff');
+    g.addColorStop(1, '#c9d6de');
+    ctx.fillStyle = g;
+    poly(ctx, [[10.5, 10], [15.5, 10], [17.5, 114], [8.5, 114]]);
+    ctx.fill();
+    ctx.fillStyle = '#e8483d';
+    ctx.fillRect(9.4, 96, 7.2, 5);
+    ctx.fillStyle = '#e9eef2';
+    ctx.beginPath();
+    ctx.roundRect(9, 5, 8, 9, 3);
+    ctx.fill();
+  });
+  // three blades around the middle of the picture (100 x 100)
+  bake(scene, 'sc-blades', 100, 100, 3, (ctx) => {
+    for (let i = 0; i < 3; i++) {
+      ctx.save();
+      ctx.translate(50, 50);
+      ctx.rotate((i * Math.PI * 2) / 3);
+      ctx.fillStyle = '#f4f7f9';
+      ctx.beginPath();
+      ctx.moveTo(-2.2, -3);
+      ctx.quadraticCurveTo(-4.2, -24, -1.2, -48);
+      ctx.lineTo(1.6, -48);
+      ctx.quadraticCurveTo(3, -22, 2.4, -3);
+      ctx.closePath();
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(70,90,110,0.35)';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+      ctx.restore();
+    }
+    ctx.fillStyle = '#e8483d';
+    ctx.beginPath();
+    ctx.arc(50, 50, 4.2, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+/** A small sandbank island with a turquoise halo, drawn flat. 170 x 130 world px. */
+export const ISLAND_SIZE = { w: 170, h: 130 };
+export function bakeIsland(scene: Phaser.Scene) {
+  bake(scene, 'sc-island', ISLAND_SIZE.w, ISLAND_SIZE.h, 2.5, (ctx, w, h) => {
+    const r = rng(13);
+    const halo = ctx.createRadialGradient(w / 2, h / 2, 20, w / 2, h / 2, 82);
+    halo.addColorStop(0, 'rgba(190,255,240,0.85)');
+    halo.addColorStop(0.7, 'rgba(120,235,230,0.4)');
+    halo.addColorStop(1, 'rgba(120,235,230,0)');
+    ctx.fillStyle = halo;
+    ctx.fillRect(0, 0, w, h);
+    ctx.fillStyle = '#efdca9';
+    blob(ctx, w / 2, h / 2, 52, 34, rng(5), 0.09, 22);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(255,255,255,0.9)';
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.fillStyle = '#dcc48a';
+    blob(ctx, w / 2 + 8, h / 2 + 4, 26, 15, rng(9), 0.1, 16);
+    ctx.fill();
+    ctx.fillStyle = '#5fb54a';
+    for (let i = 0; i < 6; i++) {
+      ctx.beginPath();
+      ctx.arc(w / 2 - 22 + r() * 40, h / 2 - 6 + r() * 12, 2.5 + r() * 2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+}
+
+/** A container ship seen from above, bow up. 34 x 140 world px. */
+export function bakeShip(scene: Phaser.Scene) {
+  bake(scene, 'sc-ship', 34, 140, 3, (ctx) => {
+    ctx.fillStyle = 'rgba(0,40,70,0.22)';
+    ctx.beginPath();
+    ctx.ellipse(19, 74, 15, 66, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // hull
+    ctx.fillStyle = '#25324a';
+    ctx.beginPath();
+    ctx.moveTo(17, 2);
+    ctx.quadraticCurveTo(31, 22, 30, 50);
+    ctx.lineTo(30, 130);
+    ctx.lineTo(4, 130);
+    ctx.lineTo(4, 50);
+    ctx.quadraticCurveTo(3, 22, 17, 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = '#d9534f';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // deck and containers
+    const cols = ['#e8483d', '#2f8fd6', '#ffc233', '#3fbf7f', '#f2f2f2', '#ff8a3d'];
+    for (let row = 0; row < 9; row++)
+      for (let c = 0; c < 2; c++) {
+        ctx.fillStyle = cols[(row * 3 + c * 2 + (row % 2)) % cols.length];
+        ctx.fillRect(6 + c * 11.5, 40 + row * 8.6, 10.2, 7.6);
+      }
+    // bridge at the back
+    ctx.fillStyle = '#f7f7f7';
+    ctx.fillRect(7, 116, 20, 11);
+    ctx.fillStyle = '#7ec8e3';
+    ctx.fillRect(9, 118, 16, 3);
   });
 }

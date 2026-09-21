@@ -20,6 +20,9 @@ export class ZoneView {
   private guests: Phaser.GameObjects.Image[] = [];
   private wakes: Phaser.GameObjects.Image[] = [];
   private baseScale: { x: number; y: number }[] = [];
+  private prevLift: number[] = [];
+  private prevHeading: number[] = [];
+  private splashes = 0;
   private lockedShown = true;
   private lastElapsed = 0;
   private selected = false;
@@ -75,10 +78,32 @@ export class ZoneView {
       const img = this.scene.add.image(0, 0, key).setOrigin(look.ox, look.oy).setDepth(DEPTH.things);
       img.setDisplaySize(look.w, look.h);
       this.baseScale.push({ x: img.scaleX, y: img.scaleY });
+      this.prevLift.push(0);
+      this.prevHeading.push(0);
       this.guests.push(img);
       const wake = this.scene.add.image(0, 0, 'fx-wake').setOrigin(0.5, 0).setDepth(DEPTH.things - 0.2).setDisplaySize(11, 26);
       this.wakes.push(wake);
     }
+  }
+
+  /** A ring of foam that spreads and fades where a rider lands. */
+  private splash(x: number, y: number, kind: string) {
+    if (this.splashes >= 6) return;
+    this.splashes++;
+    const big = kind === 'kiter' ? 1.5 : 1;
+    const img = this.scene.add.image(x, y, 'fx-splash').setDepth(DEPTH.things - 0.3).setDisplaySize(18 * big, 16 * big).setAlpha(0.9);
+    this.scene.tweens.add({
+      targets: img,
+      scaleX: img.scaleX * 2.6,
+      scaleY: img.scaleY * 2.6,
+      alpha: 0,
+      duration: 650,
+      ease: 'Cubic.easeOut',
+      onComplete: () => {
+        img.destroy();
+        this.splashes--;
+      },
+    });
   }
 
   update(time: number, state: GameState, view: MapView) {
@@ -139,7 +164,15 @@ export class ZoneView {
       // the picture points up; the heading is the direction of travel
       const heading = Math.abs(dx) + Math.abs(dy) > 1e-6 ? Math.atan2(dx, -dy) : g.rotation;
       g.setPosition(gx, gy).setRotation(heading + here.tilt);
-      g.setScale(this.baseScale[i].x * (1 + here.lift * 0.6), this.baseScale[i].y * (1 + here.lift * 0.6));
+      // lean into turns: the faster the heading changes, the more the rider is squeezed sideways
+      let turn = heading - this.prevHeading[i];
+      turn = Math.atan2(Math.sin(turn), Math.cos(turn));
+      this.prevHeading[i] = heading;
+      const lean = 1 - Math.min(0.16, Math.abs(turn) * 7);
+      g.setScale(this.baseScale[i].x * (1 + here.lift * 0.6) * lean, this.baseScale[i].y * (1 + here.lift * 0.6));
+      // landing after a hop or jump: a splash
+      if (this.prevLift[i] > 0.2 && here.lift < 0.12 && here.wake !== false) this.splash(gx, gy, kind);
+      this.prevLift[i] = here.lift;
       g.setAlpha(presence(kind, t));
       wake.setPosition(gx, gy + here.lift * 7).setRotation(heading).setVisible(here.wake).setAlpha(0.6 * g.alpha);
     }

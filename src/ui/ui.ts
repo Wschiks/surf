@@ -1,7 +1,7 @@
 import { STATS, STAT_IDS, type StatId } from '../config/balance';
 import { FACILITIES } from '../config/facilities';
 import { SPORTS, sportById, zoneById, zoneId } from '../config/sports';
-import { autoIncomePerSecond, buyFacility, buyManager, buyStat, costOf, discounts, facilityCost, managerCost, planBuy, tapZone, zoneStats, type BuyMode } from '../core/economy';
+import { autoIncomePerSecond, buyFacility, buyManager, buyStat, costOf, discounts, facilityCost, managerCost, planBuy, statCost, tapZone, zoneStats, type BuyMode } from '../core/economy';
 import { milestoneMult, nextMilestone } from '../config/balance';
 import type { Game } from '../core/game';
 import type { OfflineReport } from '../core/economy';
@@ -77,6 +77,7 @@ export class GameUI {
         <button class="q-head" data-ref="qhead"><b>Quests</b><small data-ref="qsum"></small><span class="q-chev">${icon('arrow')}</span></button>
         <div class="q-list" data-ref="qlist">${Array.from({ length: QUEST_SLOTS }, (_, i) => `<div class="q-row" data-q="${i}"><div class="q-body"><span class="q-t"></span><i class="q-bar"><b></b></i><small class="q-n"></small></div><button class="q-claim"></button></div>`).join('')}</div>
       </div>
+      <button class="tip" data-ref="tip" hidden></button>
       <div class="dock">
         <button class="dock-btn" data-ref="beach">${icon('beach')}<em>Beach</em></button>
         <button class="dock-btn" data-ref="sports">${icon('sports')}<em>Sports</em></button>
@@ -99,6 +100,11 @@ export class GameUI {
     this.refs.gembtn.addEventListener('click', () => this.openSkills());
     this.refs.gear.addEventListener('click', () => this.openMenu());
     this.refs.expand.addEventListener('click', () => this.openExpand());
+    this.refs.tip.addEventListener('click', () => {
+      const kind = this.refs.tip.dataset.kind;
+      this.openZone('wave-1');
+      if (kind === 'manager') setTimeout(() => this.sheetEl.scrollTo({ top: this.sheetEl.scrollHeight, behavior: 'smooth' }), 400);
+    });
     // tapping the dark area around a dialog closes it
     this.refs.modal.addEventListener('click', (e) => {
       if (e.target === this.refs.modal) this.closeModal();
@@ -130,6 +136,7 @@ export class GameUI {
   }
 
   openZone(id: string) {
+    if (this.game.state.zones[id]?.owned) this.game.state.tips.upgrade = true; // the player found the zone panel
     this.sheet = { kind: 'zone', id };
     this.buildSheet();
     this.cb.onSelect(id);
@@ -613,9 +620,34 @@ export class GameUI {
     this.refs.skills.classList.toggle('pulse', hasAffordableSkill(s));
     this.refs.mult.hidden = s.expansions === 0;
     this.refs.mult.textContent = `x${Math.pow(EXPANSION_MULT, s.expansions)}`;
+    this.refreshTip();
     this.refs.expand.classList.toggle('ready', canExpand(s));
     this.refs.expand.classList.toggle('pulse', canExpand(s));
     this.refreshQuests();
+  }
+
+  /** A short hint above the bottom bar for the first steps: buy an upgrade, then hire a manager. Each is shown until followed. */
+  private refreshTip() {
+    const s = this.game.state;
+    const z = s.zones['wave-1'];
+    const ref = zoneById('wave-1');
+    let text = '';
+    let kind = '';
+    if (s.expansions === 0 && !this.sheet && z.owned) {
+      const upgrades = z.price + z.capacity + z.speed;
+      if (!s.tips.upgrade && s.totalCoins > 0 && upgrades === 0 && s.coins >= statCost(ref, 'price', 0)) {
+        text = 'You can buy an upgrade! Tap the zone on the map.';
+        kind = 'upgrade';
+      } else if (!s.tips.manager && upgrades >= 3 && !z.manager && s.coins >= managerCost(ref, discounts(s, 'wave').manager)) {
+        text = 'Hire a manager: the zone runs by itself, even when you are away.';
+        kind = 'manager';
+      }
+      if (z.manager) s.tips.manager = true;
+      if (upgrades > 0) s.tips.upgrade = true;
+    }
+    this.refs.tip.hidden = !text;
+    this.refs.tip.dataset.kind = kind;
+    if (text && this.refs.tip.textContent !== text) this.refs.tip.textContent = text;
   }
 
   private refreshQuests() {

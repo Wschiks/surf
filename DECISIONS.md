@@ -204,3 +204,9 @@ Every choice made while building, and why. The concept document (`docs/concept.m
 ## Sideways riders and a first-run hint
 - Board riders (surfers, skimboarders, windsurfers, kitesurfers, foilers) now stand **sideways** on the board like real surfers: shoulders and arms along the board, the head a little to one side (regular/goofy alternating by guest). Sailors and beach walkers stay front-facing.
 - A new game shows a yellow "Tap to start" pill under the first zone's badge until the first session is started.
+
+## Mist, scenery, splashes and first steps
+- **Mist (the haze over closed areas) redone**: the old flat white veil with grey blotches had a hard edge. Now the fog fades in over 0.9 unit from the open area, with two layers of wide soft wisps drifting at different speeds (14 fading strips so there is no banding), and fades out over 2.2 s when the area opens.
+- **Scenery for the Sea and the Ocean** (just outside the map edges): three turning wind turbines and a sandbank island with palms (Sea), a container ship sailing past (Ocean). The reef picture lost its hard dark rectangle (its deep-water layer now fades out toward both ends).
+- **Riders**: a splash where they land after a hop or jump, and they lean into turns.
+- **Tips**: after the first coins a note says an upgrade can be bought; after 3 upgrade levels it says to hire a manager. Shown once each (state field `tips`).

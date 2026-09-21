@@ -38,6 +38,8 @@ export interface GameState {
   /** The second currency, earned from quests and expansions and spent on skills. */
   skillPoints: number;
   skillEarned: number;
+  /** Hints the player has already seen (or followed): they are shown once. */
+  tips: { upgrade?: boolean; manager?: boolean };
   /** Learned skills. Permanent: they stay when the beach is expanded. */
   skills: Record<string, boolean>;
   /** Real time (ms since 1970) when the game was last saved or updated. */
@@ -65,6 +67,7 @@ export function newGame(now: number): GameState {
     questsMade: 0,
     skillPoints: 0,
     skillEarned: 0,
+    tips: {},
     skills: rootSkills(),
     savedAt: now,
     startedAt: now,
@@ -103,6 +106,7 @@ export function ensureState(state: GameState): GameState {
   state.questsMade ??= 0;
   state.skillPoints ??= 0;
   state.skillEarned ??= 0;
+  state.tips ??= {};
   state.skills = { ...rootSkills(), ...(state.skills ?? {}) };
   return state;
 }
