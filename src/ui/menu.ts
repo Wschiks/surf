@@ -25,7 +25,7 @@ const HOW_TO_PLAY = [
   ['Upgrade', 'Open a zone to level it up, get a bigger class or make it faster. Hold a button to buy quickly, or pick x10, x100 or Max.'],
   ['Managers', 'Hire a manager to keep a zone running by itself, also while the game is closed (up to 8 hours).'],
   ['New levels and sports', 'Levels and sports need coins and reputation. Reputation comes from your guests.'],
-  ['Quests', 'Finish the three quests for extra coins.'],
+  ['Quests', 'Finish quests for extra coins. Every quest pays its own reward. Swipe the row of quests sideways to see them all.'],
   ['Expand the beach', 'When you own Level 4 of every sport, you can expand the beach: all income goes up for good, a new area opens and you start over.'],
   ['Moving around', 'Swipe to move, pinch or scroll to zoom.'],
 ] as const;

@@ -62,3 +62,10 @@ npm run phone:open:android  # open in Android Studio
 
 The app id in `capacitor.config.ts` is a placeholder (`com.example.surftycoon`); change it before you make a store build.
 Nothing has been published and no store accounts were created.
+
+## Design documents
+
+- [docs/DESIGN-SURF-TYCOON.md](docs/DESIGN-SURF-TYCOON.md): the complete design of this game (rules, numbers, layout, look, texts). Meant so that an AI given only this text can rebuild the same game.
+- [docs/DESIGN-IDLE-TYCOON-FRAMEWORK.md](docs/DESIGN-IDLE-TYCOON-FRAMEWORK.md): the recipe for making a different themed tycoon in the same style (with a worked example for a ski resort).
+- `npx tsx scripts/design-tables.ts` prints the data tables (sports, zones, facilities, expansions) used in the first document, straight from the code.
+- [docs/concept.md](docs/concept.md): the original concept from the author.
