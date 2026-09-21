@@ -8,7 +8,7 @@ import type { OfflineReport } from '../core/economy';
 import { canExpand, expand, expansionNeededFor, expansionStatus, unlockZone, zoneUnlockStatus } from '../core/unlocks';
 import { EXPANSION_MULT } from '../config/expansions';
 import { BALANCE } from '../config/balance';
-import { claimQuest, questReward, questView, QUEST_SLOTS } from '../core/quests';
+import { claimQuest, questView, QUEST_SLOTS } from '../core/quests';
 import { COIN, fmt, fmtSeconds, fmtTime } from './format';
 import { icon, tile } from './icons';
 import { Menu } from './menu';
@@ -68,7 +68,7 @@ export class GameUI {
       </div>
       <div class="quests" data-ref="quests">
         <button class="q-head" data-ref="qhead"><b>Quests</b><small data-ref="qsum"></small><span class="q-chev">${icon('arrow')}</span></button>
-        <div class="q-list" data-ref="qlist">${Array.from({ length: QUEST_SLOTS }, (_, i) => `<div class="q-row" data-q="${i}"><div class="q-body"><span class="q-t"></span><i class="q-bar"><b></b></i><small class="q-n"></small></div><button class="q-claim" hidden></button></div>`).join('')}</div>
+        <div class="q-list" data-ref="qlist">${Array.from({ length: QUEST_SLOTS }, (_, i) => `<div class="q-row" data-q="${i}"><div class="q-body"><span class="q-t"></span><i class="q-bar"><b></b></i><small class="q-n"></small></div><button class="q-claim"></button></div>`).join('')}</div>
       </div>
       <div class="dock">
         <button class="dock-btn" data-ref="beach">${icon('beach')}<em>Beach</em></button>
@@ -595,7 +595,6 @@ export class GameUI {
   private refreshQuests() {
     const s = this.game.state;
     this.refs.quests.classList.toggle('hidden', !!this.sheet);
-    const reward = questReward(s);
     let ready = 0;
     for (let i = 0; i < QUEST_SLOTS; i++) {
       const row = this.refs.qlist.querySelector<HTMLElement>(`[data-q="${i}"]`)!;
@@ -613,10 +612,10 @@ export class GameUI {
       if (n.textContent !== nt) n.textContent = nt;
       (row.querySelector('.q-bar b') as HTMLElement).style.width = Math.round(Math.min(1, v.current / v.target) * 100) + '%';
       const claim = row.querySelector<HTMLElement>('.q-claim')!;
-      claim.hidden = !v.done;
-      if (v.done) setHtml(claim, `${COIN} ${fmt(reward)}`);
+      setHtml(claim, `${v.done ? 'Claim ' : ''}${COIN} ${fmt(v.reward)}`);
+      claim.classList.toggle('waiting', !v.done);
     }
-    setHtml(this.refs.qsum, ready ? `${ready} to claim` : `${COIN} ${fmt(reward)} each`);
+    setHtml(this.refs.qsum, ready ? `${ready} to claim` : 'Finish them for coins');
     this.refs.quests.classList.toggle('ready', ready > 0);
   }
 

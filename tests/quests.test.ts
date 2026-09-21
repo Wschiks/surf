@@ -58,6 +58,22 @@ describe('quests', () => {
     expect(questView(s, m!).done).toBe(true);
   });
 
+  it('every quest has its own reward: harder jobs pay more, and it is fixed when the quest is made', () => {
+    const s = game();
+    const rewards = s.quests.map((q) => questView(s, q).reward);
+    expect(rewards.every((r) => r > 0)).toBe(true);
+    expect(s.quests.every((q) => q.reward === questView(s, q).reward)).toBe(true);
+    const unlock = { kind: 'unlock' as const, zone: 'wave-2', target: 1 };
+    const level = { kind: 'level' as const, zone: 'wave-1', target: 25 };
+    expect(questView(s, unlock).reward).toBeGreaterThan(questView(s, level).reward);
+    const q = s.quests[1];
+    const before = questView(s, q).reward;
+    s.coins = 1e15;
+    buyManager(s, 'wave-1');
+    buyStat(s, 'wave-1', 'price', 'max');
+    expect(questView(s, q).reward).toBe(before); // the beach earns more now, the quest still pays what it said
+  });
+
   it('the reward grows with what the beach earns and has a minimum', () => {
     const s = game();
     const first = questReward(s);

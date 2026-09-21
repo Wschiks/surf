@@ -1,0 +1,20 @@
+export default async ({ page, shot, base }) => {
+  const ev = (fn, a) => page.evaluate(fn, a);
+  await page.goto(base);
+  await page.waitForTimeout(1800);
+  await shot('01-quests');
+  await ev(() => { const s = window.__surf.game.state; s.coins = 1e6; s.zones['wave-1'].price = 25; });
+  await page.waitForTimeout(1300);
+  await shot('02-one-done');
+  const head = await page.locator('.q-head').boundingBox();
+  await page.mouse.click(head.x + head.width - 12, head.y + head.height / 2);
+  await page.waitForTimeout(400);
+  console.log('collapsed class:', await ev(() => document.querySelector('.quests').className), 'list display:', await ev(() => getComputedStyle(document.querySelector('.q-list')).display));
+  await shot('03-collapsed');
+  await page.mouse.click(head.x + head.width - 12, head.y + head.height / 2);
+  await page.waitForTimeout(400);
+  console.log('open again list display:', await ev(() => getComputedStyle(document.querySelector('.q-list')).display));
+  await page.click('.q-claim:not(.waiting)', { force: true });
+  await page.waitForTimeout(600);
+  console.log('coins', await ev(() => window.__surf.game.state.coins), 'rewards', JSON.stringify(await ev(() => window.__surf.game.state.quests.map((q) => q.reward))));
+};
