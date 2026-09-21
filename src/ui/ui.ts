@@ -1,12 +1,13 @@
 import { STATS, STAT_IDS, type StatId } from '../config/balance';
 import { FACILITIES } from '../config/facilities';
-import { SPORTS, zoneById, zoneId } from '../config/sports';
+import { SPORTS, ZONES, zoneById, zoneId } from '../config/sports';
 import { autoIncomePerSecond, buyFacility, buyManager, buyStat, collectAll, facilityCost, managerCost, statCost, tapZone, waitingZones, zoneStats } from '../core/economy';
 import type { Game } from '../core/game';
 import type { OfflineReport } from '../core/economy';
 import { resetSave } from '../core/save';
 import { nextGoal, previousSport, sportStatus, unlockZone, zoneUnlockStatus } from '../core/unlocks';
 import { COIN, fmt, fmtSeconds, fmtTime } from './format';
+import { isMuted, setMuted, sound } from './sound';
 
 export interface UICallbacks {
   /** The player selected a zone (or null when the sheet closed). */
@@ -76,7 +77,10 @@ export class GameUI {
     this.refs.gear.addEventListener('click', () => this.openMenu());
     this.refs.collect.addEventListener('click', () => {
       const got = collectAll(this.game.state);
-      if (got > 0) this.cb.onCollected(null, got);
+      if (got > 0) {
+        this.cb.onCollected(null, got);
+        sound.coin();
+      }
       this.refreshTop();
     });
     if (this.game.offlineReport) this.showOffline(this.game.offlineReport);
@@ -146,6 +150,7 @@ export class GameUI {
       this.sheetEl.querySelector('[data-unlock]')?.addEventListener('click', () => {
         const kind = unlockZone(this.game.state, id);
         if (kind) {
+          sound.unlock();
           this.game.save();
           this.cb.onUnlocked(id, kind);
           this.buildSheet();
@@ -157,15 +162,18 @@ export class GameUI {
       const s = this.game.state;
       const before = s.coins;
       tapZone(s, id);
-      if (s.coins > before) this.cb.onCollected(id, s.coins - before);
+      if (s.coins > before) {
+        this.cb.onCollected(id, s.coins - before);
+        sound.coin();
+      } else sound.tap();
       this.refreshTop();
       this.refreshSheet();
     });
     this.sheetEl.querySelectorAll<HTMLElement>('[data-buy]').forEach((b) =>
       b.addEventListener('click', () => {
         const what = b.dataset.buy!;
-        if (what === 'manager') buyManager(this.game.state, id);
-        else buyStat(this.game.state, id, what as StatId);
+        const ok = what === 'manager' ? buyManager(this.game.state, id) : buyStat(this.game.state, id, what as StatId);
+        if (ok) sound.buy();
         this.game.save();
         this.refreshTop();
         this.refreshSheet();
@@ -301,7 +309,7 @@ export class GameUI {
     this.sheetEl.querySelector('[data-close]')!.addEventListener('click', () => this.closeSheet());
     this.sheetEl.querySelectorAll<HTMLElement>('[data-buyfac]').forEach((b) =>
       b.addEventListener('click', () => {
-        buyFacility(this.game.state, b.dataset.buyfac!);
+        if (buyFacility(this.game.state, b.dataset.buyfac!)) sound.buy();
         this.game.save();
         this.refreshTop();
         this.refreshSheet();
@@ -395,7 +403,14 @@ export class GameUI {
     this.refs.rate.textContent = `+${fmt(autoIncomePerSecond(s))}/s`;
     this.refs.rep.textContent = fmt(Math.floor(s.reputation));
     const goal = nextGoal(s);
-    this.refs.goal.hidden = !goal || !!this.sheet;
+    const allOwned = ZONES.every((z) => s.zones[z.id].owned);
+    this.refs.goal.hidden = (!goal && !allOwned) || !!this.sheet;
+    this.refs.goal.classList.toggle('done', !goal && allOwned);
+    if (!goal && allOwned) {
+      const gt = this.refs.goal.querySelector('.goal-t')!;
+      if (gt.innerHTML !== 'Everything is unlocked! Max out your upgrades.') gt.innerHTML = 'Everything is unlocked! Max out your upgrades.';
+      (this.refs.goal.querySelector('.goal-bar b') as HTMLElement).style.width = '100%';
+    }
     if (goal) {
       const t = goal.missing ? `${goal.name}: ${goal.missing}` : `${goal.name}: save ${COIN} ${fmt(goal.coins)}`;
       const gt = this.refs.goal.querySelector('.goal-t')!;
@@ -481,9 +496,15 @@ export class GameUI {
       </ul>
       <p>Coins earned in total: <b>${COIN} ${fmt(s.totalCoins)}</b></p>
       <p>Playing since <b>${new Date(s.startedAt).toLocaleDateString()}</b></p>
+      <button class="danger soft" data-sound>${isMuted() ? '🔇 Sound is off' : '🔊 Sound is on'}</button>
       <button class="go big" data-ok>Back to the beach</button>
       <button class="danger" data-reset>Start over (erases your save)</button>`);
     m.querySelector('[data-ok]')!.addEventListener('click', () => this.closeModal());
+    m.querySelector('[data-sound]')!.addEventListener('click', (e) => {
+      setMuted(!isMuted());
+      (e.currentTarget as HTMLElement).textContent = isMuted() ? '🔇 Sound is off' : '🔊 Sound is on';
+      sound.tap();
+    });
     m.querySelector('[data-reset]')!.addEventListener('click', () => {
       if (confirm('Erase your progress and start over?')) {
         resetSave();

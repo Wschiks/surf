@@ -15,6 +15,7 @@ import { ZoneView } from './zoneView';
 import { SiteView } from './sites';
 import { OceanView } from './ocean';
 import { fmt } from '../ui/format';
+import { sound } from '../ui/sound';
 
 export class MapScene extends Phaser.Scene {
   view = new MapView();
@@ -64,6 +65,8 @@ export class MapScene extends Phaser.Scene {
         const before = s.coins;
         tapZone(s, id);
         this.pop(id, s.coins - before);
+        if (s.coins > before) sound.coin();
+        else sound.tap();
       },
     });
     this.beach = new BeachView(this);

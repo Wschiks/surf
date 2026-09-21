@@ -223,7 +223,11 @@ export class MapInput {
     const p = this.local(e);
     this.view.stopFling();
     this.speed = { x: 0, y: 0 };
-    this.el.setPointerCapture?.(e.pointerId);
+    try {
+      this.el.setPointerCapture?.(e.pointerId);
+    } catch {
+      // some browsers refuse capture for synthetic or already ended pointers
+    }
     this.pointers.set(e.pointerId, p);
     this.downAt.set(e.pointerId, { x: p.x, y: p.y, t: performance.now(), moved: 0 });
     this.resetPinch();

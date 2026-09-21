@@ -136,6 +136,7 @@ export class ZoneView {
         g.setPosition(x, r.y + r.h * 0.2 + Math.sin(time / 500 + i) * 1.5);
         g.setFlipX(false);
         g.setRotation(-UPRIGHT);
+        g.setAlpha(1);
         continue;
       }
       // a manager runs the zone all the time: use the clock, a cycle is one session
@@ -148,6 +149,7 @@ export class ZoneView {
         g.setPosition(gx, gy);
         g.setFlipX(Math.cos(a) < 0);
         g.setRotation(-UPRIGHT + Math.cos(a) * 0.08);
+        g.setAlpha(1);
         wake.setPosition(gx - Math.sign(Math.cos(a)) * 10, gy + 2).setVisible(true).setAlpha(0.5 + 0.2 * Math.sin(time / 200 + i));
       } else {
         const x = r.x + r.w * (0.08 + 0.84 * slot) + Math.sin(t * Math.PI * 2) * 6;
@@ -156,7 +158,9 @@ export class ZoneView {
         g.setPosition(x, gy + Math.sin(time / 260 + i * 2) * 1.2);
         g.setFlipX(false);
         g.setRotation(-UPRIGHT + Math.sin(t * Math.PI * 2) * 0.1);
-        wake.setPosition(x, gy + 5).setVisible(true).setAlpha(0.55 + 0.25 * Math.sin(time / 180 + i));
+        // guests arrive at the start of a ride and leave at the end
+        g.setAlpha(Math.min(1, t * 10, (1 - t) * 10));
+        wake.setPosition(x, gy + 5).setVisible(true).setAlpha((0.55 + 0.25 * Math.sin(time / 180 + i)) * g.alpha);
       }
     }
   }

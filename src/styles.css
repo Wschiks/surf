@@ -8,7 +8,7 @@
   --shadow: 0 2px 8px rgba(8, 40, 70, 0.35);
 }
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-html, body { margin: 0; height: 100%; background: #062033; overflow: hidden; overscroll-behavior: none; }
+html, body { touch-action: none; margin: 0; height: 100%; background: #062033; overflow: hidden; overscroll-behavior: none; }
 body { font-family: ui-rounded, 'SF Pro Rounded', 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: var(--ink); user-select: none; -webkit-user-select: none; }
 #app { position: fixed; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); width: 100vw; overflow: hidden; background: #0b5d8a; }
 @media (min-aspect-ratio: 3/5) { #app { width: 50vh; } }
@@ -50,7 +50,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.04); } }
 
 /* ---------- Sheet ---------- */
-.sheet { position: absolute; left: 0; right: 0; bottom: 0; max-height: 62%; overflow-y: auto; background: var(--paper); border-radius: 24px 24px 0 0; padding: 14px 14px max(18px, env(safe-area-inset-bottom)); transform: translateY(105%); transition: transform 0.28s cubic-bezier(.2,.8,.2,1); pointer-events: auto; box-shadow: 0 -6px 24px rgba(4, 30, 55, 0.35); overscroll-behavior: contain; }
+.sheet { touch-action: pan-y; position: absolute; left: 0; right: 0; bottom: 0; max-height: 62%; overflow-y: auto; background: var(--paper); border-radius: 24px 24px 0 0; padding: 14px 14px max(18px, env(safe-area-inset-bottom)); transform: translateY(105%); transition: transform 0.28s cubic-bezier(.2,.8,.2,1); pointer-events: auto; box-shadow: 0 -6px 24px rgba(4, 30, 55, 0.35); overscroll-behavior: contain; }
 .sheet.open { transform: translateY(0); }
 .sheet-head { display: flex; align-items: center; gap: 12px; }
 .sheet-icon { width: 46px; height: 46px; border-radius: 14px; display: grid; place-items: center; font-size: 26px; flex: none; box-shadow: inset 0 -3px 0 rgba(0,0,0,0.15); }
@@ -156,3 +156,5 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 
 .tips { margin: 6px 0 10px; padding-left: 18px; font-size: 13.5px; line-height: 1.35; color: #35576b; }
 .tips li { margin: 4px 0; }
+.goal.done .goal-t::before { content: '🏆 '; }
+.danger.soft { background: #e9f1f5; color: #23495f; margin-top: 8px; }
