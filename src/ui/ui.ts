@@ -1,7 +1,9 @@
 import { STATS, STAT_IDS, type StatId } from '../config/balance';
 import { FACILITIES } from '../config/facilities';
 import { SPORTS, sportById, zoneById, zoneId } from '../config/sports';
-import { autoIncomePerSecond, buyFacility, buyManager, buyStat, costOf, discounts, facilityCost, managerCost, planBuy, statCost, tapZone, zoneStats, type BuyMode } from '../core/economy';
+import { adsNative, showRewardedAd, type AdResult } from '../ads';
+import { BALANCE } from '../config/balance';
+import { autoIncomePerSecond, startBoost, buyFacility, buyManager, buyStat, costOf, discounts, facilityCost, managerCost, planBuy, statCost, tapZone, zoneStats, type BuyMode } from '../core/economy';
 import { milestoneMult, nextMilestone } from '../config/balance';
 import type { Game } from '../core/game';
 import type { OfflineReport } from '../core/economy';
@@ -82,7 +84,10 @@ export class GameUI {
         <button class="dock-btn" data-ref="beach">${icon('beach')}<em>Beach</em></button>
         <button class="dock-btn" data-ref="sports">${icon('sports')}<em>Sports</em></button>
         <button class="dock-btn dock-skills" data-ref="skills">${icon('tree')}<em>Skills</em></button>
-        <button class="dock-btn expand" data-ref="expand">${icon('expand')}<em>Expand</em></button>
+        <div class="dock-slot">
+          <button class="boost" data-ref="boost">${icon('video')}<span><b data-ref="boostA">Watch ad</b><small data-ref="boostB">x${BALANCE.boostMult} coins</small></span><i class="boost-bar"><u data-ref="boostBar"></u></i></button>
+          <button class="dock-btn expand" data-ref="expand">${icon('expand')}<em>Expand</em></button>
+        </div>
       </div>
       <div class="sheet" data-ref="sheet"></div>
       <div class="toasts" data-ref="toasts"></div>
@@ -100,6 +105,7 @@ export class GameUI {
     this.refs.gembtn.addEventListener('click', () => this.openSkills());
     this.refs.gear.addEventListener('click', () => this.openMenu());
     this.refs.expand.addEventListener('click', () => this.openExpand());
+    this.refs.boost.addEventListener('click', () => void this.watchAd());
     this.refs.tip.addEventListener('click', () => {
       const kind = this.refs.tip.dataset.kind;
       this.openZone('wave-1');
@@ -621,6 +627,7 @@ export class GameUI {
     this.refs.mult.hidden = s.expansions === 0;
     this.refs.mult.textContent = `x${Math.pow(EXPANSION_MULT, s.expansions)}`;
     this.refreshTip();
+    this.refreshBoost();
     this.refs.expand.classList.toggle('ready', canExpand(s));
     this.refs.expand.classList.toggle('pulse', canExpand(s));
     this.refreshQuests();
@@ -677,6 +684,78 @@ export class GameUI {
     this.refs.quests.classList.toggle('ready', ready > 0);
   }
 
+  // ------------------------------------------------------------ ad boost
+
+  private adBusy = false;
+
+  /** The "watch an ad" button: shows what it gives, then the seconds left while the boost runs. */
+  private refreshBoost() {
+    const s = this.game.state;
+    const on = s.boost > 0;
+    const btn = this.refs.boost as HTMLButtonElement;
+    btn.classList.toggle('on', on);
+    btn.classList.toggle('busy', this.adBusy);
+    btn.disabled = on || this.adBusy;
+    const a = on ? `Coins x${BALANCE.boostMult}` : this.adBusy ? 'Loading...' : 'Watch ad';
+    const b = on ? `${Math.ceil(s.boost)}s left` : `x${BALANCE.boostMult} for ${BALANCE.boostSeconds}s`;
+    if (this.refs.boostA.textContent !== a) this.refs.boostA.textContent = a;
+    if (this.refs.boostB.textContent !== b) this.refs.boostB.textContent = b;
+    this.refs.boostBar.style.width = (on ? Math.min(1, s.boost / BALANCE.boostSeconds) * 100 : 0) + '%';
+  }
+
+  private async watchAd() {
+    const s = this.game.state;
+    if (s.boost > 0 || this.adBusy) return;
+    this.adBusy = true;
+    this.refreshBoost();
+    let result: AdResult;
+    try {
+      result = adsNative ? await showRewardedAd() : await this.demoAd();
+    } finally {
+      this.adBusy = false;
+      this.game.resync(); // the time spent in the ad does not count as time away
+    }
+    if (result === 'rewarded') {
+      startBoost(s);
+      sound.coin();
+      this.game.save();
+      this.confetti();
+      this.toast(`Coins x${BALANCE.boostMult} for ${BALANCE.boostSeconds} seconds!`);
+    } else if (result === 'failed') {
+      this.toast('No ad is ready right now. Try again in a minute.');
+    }
+    this.refreshBoost();
+  }
+
+  /** In a browser there is no ad network: show a short stand-in so the reward can be tried. The phone apps show real ads. */
+  private demoAd(): Promise<AdResult> {
+    return new Promise((resolve) => {
+      let left = 5;
+      const m = this.modal(`<h2>Demo ad</h2><p>In the phone app a short video plays here. Watch it to the end to get the reward.</p><button class="go big" data-ok disabled></button><button class="go alt big" data-skip>Close</button>`);
+      const ok = m.querySelector<HTMLButtonElement>('[data-ok]')!;
+      const draw = () => (ok.textContent = left > 0 ? `Reward in ${left}...` : 'Claim reward');
+      draw();
+      const timer = setInterval(() => {
+        left -= 1;
+        draw();
+        if (left <= 0) {
+          clearInterval(timer);
+          ok.disabled = false;
+        }
+      }, 1000);
+      let result: AdResult = 'closed';
+      this.modalClosed = () => {
+        clearInterval(timer);
+        resolve(result);
+      };
+      ok.addEventListener('click', () => {
+        result = 'rewarded';
+        this.closeModal();
+      });
+      m.querySelector('[data-skip]')!.addEventListener('click', () => this.closeModal());
+    });
+  }
+
   /** Call every frame. Cheap: the heavier refresh only runs about ten times a second. */
   update(nowMs: number) {
     if (nowMs - this.lastFull < 100) return;
@@ -724,9 +803,15 @@ export class GameUI {
     return m;
   }
 
+  /** Something to do when the open dialog goes away, however it was closed. */
+  private modalClosed: (() => void) | null = null;
+
   private closeModal() {
     this.refs.modal.hidden = true;
     this.refs.modal.innerHTML = '';
+    const done = this.modalClosed;
+    this.modalClosed = null;
+    done?.();
   }
 
   showOffline(rep: OfflineReport) {

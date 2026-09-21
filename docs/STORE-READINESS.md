@@ -6,12 +6,19 @@ Nothing has been submitted and no accounts were made. This document lists what i
 * **No cheat or test options** in the game (the "Add 100B coins" button and the always-expand switch are gone). The debug hook `window.__surf` exists only in development or with `?debug` in the address.
 * **Identity**: app name "Surf Tycoon", app id `com.wschiks.surftycoon` (derived from your GitHub name; change it, see below), version **1.0.0**.
 * **Icons and splash screens** drawn in code and written for iOS (1024 icon without alpha, splash), Android (all densities, round and adaptive icons, splash) and the web (`npm run icons` makes them again).
-* **iOS project**: iPhone only, portrait only, export compliance answered, privacy manifest included (no tracking, no collected data), no landscape.
+* **iOS project**: iPhone only, portrait only, export compliance answered, privacy manifest included (declares the AdMob tracking and data types), AdMob app id in `Info.plist`, tracking permission text, no landscape.
 * **Android project**: portrait only, no cleartext traffic, package folder and application id set, adaptive icon with a sea-blue background.
 * **Legal**: Terms of Service and Privacy Policy inside the app (menu) and as web pages (`public/privacy.html`, `public/terms.html`, made by `npm run build`).
 * **Store texts** and the answers to the store questionnaires: `store/listing.md`. **Store screenshots** in `store/screenshots/` and the icon in `store/icon-1024.png`.
-* The game works offline, saves on the device, handles the phone going to sleep (offline earnings, 2 hours, more with skills), has no network calls, no ads, no purchases, no randomness.
+* The game works offline, saves on the device, handles the phone going to sleep (offline earnings, 2 hours, more with skills), has no purchases and no randomness. Its only network use is the optional rewarded ad (Google AdMob, `src/ads.ts`).
 * 80+ automated tests, a full-playthrough simulation and a browser smoke test pass.
+
+## Ads (Google AdMob)
+* One **rewarded video** ("Watch ad", above the Expand button) gives coins x2 for 40 seconds. Ids are in `src/config/ads.ts`; the plugin is `@capacitor-community/admob`.
+* iOS uses your AdMob app id `ca-app-pub-8560073239883666~9782230015` and rewarded block `.../6132040872`. **Android still uses Google's public test ids**: make an Android app in AdMob, then change `ADS.android` in `src/config/ads.ts` and `admob_app_id` in `android/app/src/main/res/values/strings.xml`.
+* **Test ads vs. live ads**: normal builds ask for *test* ads with your real ids (clicking your own live ads can get an AdMob account banned). For the build you upload to the stores use `npm run phone:sync:live`.
+* First tap on "Watch ad" runs: iOS tracking permission, EU/UK consent form (create the message in AdMob > Privacy & messaging, or no form will show), then the ad. In a normal browser a 5 second demo screen stands in.
+* Also needed on AdMob's side: add `app-ads.txt` on your developer website, and link the app to its store listing once it is published.
 
 ## Steps for you (in this order)
 1. **Fill in the publisher** in `src/config/legal.ts` (`PUBLISHER`: name, email, website). The stores and the law want a real contact; it is printed in the Terms and the Privacy Policy. Then run `npm run build`.

@@ -67,6 +67,9 @@ export const BALANCE = {
   managerCost: 60,
   /** Offline earnings stop after this many seconds away (2 hours; the beach skills add more). */
   offlineCapSeconds: 2 * 3600,
+  /** Watching a rewarded ad makes all coin income x2 for this many seconds. */
+  boostSeconds: 40,
+  boostMult: 2,
   /** Only show this many guests per zone on the map. */
   maxVisibleGuests: 10,
 };

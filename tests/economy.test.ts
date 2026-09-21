@@ -17,6 +17,7 @@ import {
   tick,
   zoneStats,
 } from './helpers';
+import { startBoost } from '../src/core/economy';
 import { BALANCE } from '../src/config/balance';
 import { newGame } from '../src/core/state';
 
@@ -191,5 +192,42 @@ describe('offline earnings', () => {
     applyOffline(a, 1000);
     for (let i = 0; i < 1000; i++) tick(b, 1);
     expect(a.coins).toBeCloseTo(b.coins, 3);
+  });
+});
+
+describe('ad boost', () => {
+  it('doubles coin income while it lasts, then stops', () => {
+    const a = fresh();
+    const b = fresh();
+    startBoost(b);
+    expect(multipliers(b).coins).toBe(multipliers(a).coins * BALANCE.boostMult);
+    b.boost = 0;
+    expect(multipliers(b).coins).toBe(multipliers(a).coins);
+  });
+
+  it('runs down with the game clock and never goes below zero', () => {
+    const s = fresh();
+    startBoost(s);
+    tick(s, 10);
+    expect(s.boost).toBeCloseTo(BALANCE.boostSeconds - 10);
+    tick(s, 1000);
+    expect(s.boost).toBe(0);
+  });
+
+  it('only doubles the seconds it lasts when a long time passes at once', () => {
+    const make = () => {
+      const s = fresh();
+      s.zones[W1].manager = true;
+      return s;
+    };
+    const plain = make();
+    const boosted = make();
+    startBoost(boosted);
+    tick(plain, 400);
+    tick(boosted, 400);
+    const perSecond = plain.coins / 400;
+    // 40 s at double speed and 360 s at normal speed: 40 seconds of extra income
+    expect(boosted.coins).toBeGreaterThan(plain.coins + perSecond * 30);
+    expect(boosted.coins).toBeLessThan(plain.coins + perSecond * 50);
   });
 });

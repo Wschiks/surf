@@ -40,6 +40,8 @@ export interface GameState {
   skillEarned: number;
   /** Hints the player has already seen (or followed): they are shown once. */
   tips: { upgrade?: boolean; manager?: boolean };
+  /** Seconds left of the ad boost (all coin income x2). It runs down in real time, also while away. */
+  boost: number;
   /** Learned skills. Permanent: they stay when the beach is expanded. */
   skills: Record<string, boolean>;
   /** Real time (ms since 1970) when the game was last saved or updated. */
@@ -68,6 +70,7 @@ export function newGame(now: number): GameState {
     skillPoints: 0,
     skillEarned: 0,
     tips: {},
+    boost: 0,
     skills: rootSkills(),
     savedAt: now,
     startedAt: now,
@@ -107,6 +110,7 @@ export function ensureState(state: GameState): GameState {
   state.skillPoints ??= 0;
   state.skillEarned ??= 0;
   state.tips ??= {};
+  state.boost ??= 0;
   state.skills = { ...rootSkills(), ...(state.skills ?? {}) };
   return state;
 }

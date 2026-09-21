@@ -53,6 +53,11 @@ export class Game {
     if (this.saving) saveGame(this.state, now);
   }
 
+  /** Skip the time since the last update (used after a full-screen ad, which pauses the page). */
+  resync(now = Date.now()) {
+    this.last = now;
+  }
+
   /** Stop saving (used when the player erases the save and the page reloads). */
   stopSaving() {
     this.saving = false;

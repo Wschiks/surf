@@ -13,6 +13,7 @@ export interface Multipliers {
 export function multipliers(state: GameState): Multipliers {
   const fx = skillEffects(state);
   const m: Multipliers = { coins: Math.pow(EXPANSION_MULT, state.expansions) * (1 + fx.allCoins), speed: 1 };
+  if (state.boost > 0) m.coins *= BALANCE.boostMult;
   for (const f of FACILITIES) {
     const lvl = state.facilities[f.id] ?? 0;
     m[f.effect] *= 1 + f.perLevel * (1 + fx.facilityPower) * lvl;
@@ -226,8 +227,22 @@ export function advanceZone(state: GameState, ref: ZoneRef, dt: number, m: Multi
 }
 
 export function tick(state: GameState, dt: number) {
+  // the ad boost only counts for the seconds it lasts, also when a long stretch is ticked at once (time away)
+  const boosted = Math.min(dt, state.boost);
+  if (boosted > 0) {
+    const m = multipliers(state);
+    for (const ref of ZONES) advanceZone(state, ref, boosted, m);
+    state.boost -= boosted;
+    dt -= boosted;
+  }
+  if (dt <= 0) return;
   const m = multipliers(state);
   for (const ref of ZONES) advanceZone(state, ref, dt, m);
+}
+
+/** Start (or restart) the ad boost. */
+export function startBoost(state: GameState) {
+  state.boost = BALANCE.boostSeconds;
 }
 
 export interface OfflineReport {

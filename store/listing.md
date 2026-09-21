@@ -9,7 +9,7 @@ Fill in the names in `[brackets]`. Nothing here has been submitted.
 | Subtitle / short description | Run your own surf beach (max 30) | Build a surf beach and grow it into a sea-sport empire. (max 80) |
 | Category | Games > Simulation (second: Casual) | Game > Simulation |
 | Price | Free | Free |
-| In-app purchases / ads | None | None (declare "no ads") |
+| In-app purchases / ads | No purchases; contains ads (one optional rewarded video) | No purchases; contains ads |
 | Languages | English | English |
 | Support URL / email | [your support page or email] | [your support email] |
 | Privacy policy URL | [the address where you host `public/privacy.html`] | same |
@@ -34,7 +34,7 @@ FEATURES
 • Quests with coin rewards
 • Expand the beach: a giant wave washes over the screen, you start over faster than before and all your income goes up for good
 • A big map you can swipe and zoom, with a reef, a rock arch and a red lighthouse on the cliff
-• No ads. No purchases. No account. Your game stays on your device.
+• No purchases and no account. Your game stays on your device. One optional video ad gives you double coins for 40 seconds.
 
 ## What's new (first release)
 First release.
@@ -46,14 +46,15 @@ First release.
 * Expected result: **App Store 4+**, **Google Play (IARC) Everyone**.
 
 ## Google Play "Data safety" form
-* Does the app collect or share any user data? **No.**
-* Is all data encrypted in transit? Not applicable (no data leaves the device).
+* Does the app collect or share any user data? **Yes, through Google AdMob (the ad SDK)**: Device or other IDs (advertising ID), and app interactions / diagnostics as the AdMob SDK reports. Purpose: Advertising or marketing, Analytics/fraud prevention. Not collected by us, shared with Google. Follow Google's "Data disclosure for AdMob" guide for the exact boxes.
+* Is all data encrypted in transit? Yes (the ad SDK uses HTTPS).
 * Can users request that their data is deleted? Data is only on the device; "Start over" in the menu deletes it.
-* Ads: **No ads.** Target audience: **13+** is not required to be chosen; choose "all ages" only if you also fill in the Families policy. The safest choice for a first release is target age **18+ not needed / 13+ general audience**; the game itself is suitable for all ages.
+* Ads: **Yes, the app contains ads** (rewarded video, AdMob). Target audience: **13+** is not required to be chosen; choose "all ages" only if you also fill in the Families policy. The safest choice for a first release is target age **18+ not needed / 13+ general audience**; the game itself is suitable for all ages.
 * Government / financial / health apps: no.
 
 ## App Store "App Privacy" label
-* **Data Not Collected.** (The game has no accounts, analytics, ads or network calls.) The app includes a privacy manifest (`ios/App/App/PrivacyInfo.xcprivacy`): no tracking, no collected data types, one required-reason API (UserDefaults, reason CA92.1, used by the web view).
+* Data used to **track you**: Device ID, Advertising Data, Product Interaction (all for Third-Party Advertising, not linked to identity). Follow Google's "Apple App Privacy" guide for AdMob to check the boxes. The app asks for tracking permission (App Tracking Transparency) the first time "Watch ad" is tapped. The privacy manifest (`ios/App/App/PrivacyInfo.xcprivacy`) says the same: tracking on, the Google ad domains, those three data types, one required-reason API (UserDefaults, reason CA92.1, used by the web view).
+* Age rating: answer the ads questions truthfully. Do not turn on "child directed" (the game is not a Families app).
 * Export compliance: the app uses no encryption of its own (`ITSAppUsesNonExemptEncryption = false`).
 
 ## Review notes (App Store Connect, "Notes for the reviewer")

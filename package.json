@@ -11,6 +11,7 @@
     "typecheck": "tsc --noEmit",
     "shots": "node scripts/screenshots.mjs",
     "phone:sync": "npm run build && cap sync",
+    "phone:sync:live": "VITE_ADS_LIVE=1 npm run build && cap sync",
     "phone:open:ios": "cap open ios",
     "phone:open:android": "cap open android",
     "smoke": "node scripts/smoke.mjs",
@@ -21,6 +22,7 @@
     "phone:id": "node scripts/set-app-id.mjs && cap sync"
   },
   "dependencies": {
+    "@capacitor-community/admob": "^8.1.0",
     "@capacitor/core": "^8.5.2",
     "phaser": "^4.2.1"
   },

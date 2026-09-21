@@ -43,3 +43,6 @@ Done: 15 x 8 map with the beach bottom left, start with surfers and skimboarders
 
 ## App store readiness
 Done: cheat button removed, version 1.0.0, icons/splash, native settings, privacy manifest, legal pages, store texts and screenshots, `npm run store:check`. To do (owner): publisher contact details, app id, accounts, hosting the privacy page, signing and builds, real-device tests. See docs/STORE-READINESS.md.
+
+## Watch an ad (coins x2 for 40 s)
+Done: Watch ad button above Expand, AdMob rewarded video (`src/ads.ts`, ids in `src/config/ads.ts`), `boost` state with tests (103 passing), demo ad in the browser, iOS/Android native setup, Terms/Privacy and store texts updated. Not tested on a real device: the AdMob SDK only runs in the phone apps. Owner to do: Android app in AdMob (ids), consent message in AdMob, `app-ads.txt`, use `npm run phone:sync:live` for store builds. See DECISIONS.md.
