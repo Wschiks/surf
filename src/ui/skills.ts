@@ -1,4 +1,4 @@
-import { SKILL_NODES, SKILL_TREES, TREE_UNIT, describeSkill, skillById, treeById, type SkillKind, type SkillNode, type TreeId } from '../config/skills';
+import { SKILL_NODES, SKILL_TREES, TREE_UNIT, describeSkill, skillById, skillPosition, treeAngle, treeById, type SkillKind, type SkillNode, type TreeId } from '../config/skills';
 import type { Game } from '../core/game';
 import { canLearn, learnSkill, skillStatus, treeProgress } from '../core/skills';
 import { icon } from './icons';
@@ -30,6 +30,7 @@ const NODE = 58;
 const ROOT = 72;
 const PAD = 120;
 
+
 /** The skill map: seven little trees on one pan-and-zoom map, and a card that tells what the chosen skill does. */
 export class SkillScreen {
   private el: HTMLElement;
@@ -60,7 +61,7 @@ export class SkillScreen {
     return !this.el.hidden;
   }
 
-  open(tree: TreeId = 'beach') {
+  open(tree: TreeId | 'hub' = 'hub') {
     this.el.hidden = false;
     this.render();
     requestAnimationFrame(() => this.focusTree(tree, false));
@@ -74,7 +75,7 @@ export class SkillScreen {
   // ------------------------------------------------------------ building the screen
 
   private build() {
-    const tabs = SKILL_TREES.map((t) => `<button class="sk-tab" data-tree="${t.id}" style="--c:${t.color}" aria-label="${t.name}">${icon(t.icon)}</button>`).join('');
+    const tabs = `<button class="sk-tab" data-tree="hub" style="--c:#a66bff" aria-label="Whole wheel">${icon('gem')}</button>` + SKILL_TREES.map((t) => `<button class="sk-tab" data-tree="${t.id}" style="--c:${t.color}" aria-label="${t.name}">${icon(t.icon)}</button>`).join('');
     this.el.innerHTML = `
       <div class="sk-head">
         <button class="x back" data-sk-close aria-label="Back">${icon('back')}</button>
@@ -87,19 +88,18 @@ export class SkillScreen {
     this.view = this.el.querySelector('[data-sk-view]')!;
     this.world = this.el.querySelector('[data-sk-world]')!;
     this.el.querySelector('[data-sk-close]')!.addEventListener('click', () => this.ctx.close());
-    this.el.querySelectorAll<HTMLElement>('.sk-tab').forEach((b) => b.addEventListener('click', () => this.focusTree(b.dataset.tree as TreeId, true)));
+    this.el.querySelectorAll<HTMLElement>('.sk-tab').forEach((b) => b.addEventListener('click', () => this.focusTree(b.dataset.tree as TreeId | 'hub', true)));
     this.bindPointer();
     this.buildWorld();
   }
 
   private pos(n: SkillNode) {
-    const t = treeById(n.tree);
-    return { x: t.at.x + n.x * TREE_UNIT, y: t.at.y + n.y * TREE_UNIT };
+    return skillPosition(n);
   }
 
   private buildWorld() {
     const pts = SKILL_NODES.map((n) => this.pos(n));
-    this.bounds = { x0: Math.min(...pts.map((p) => p.x)) - PAD, y0: Math.min(...pts.map((p) => p.y)) - PAD, x1: Math.max(...pts.map((p) => p.x)) + PAD, y1: Math.max(...pts.map((p) => p.y)) + PAD + 60 };
+    this.bounds = { x0: Math.min(...pts.map((p) => p.x)) - PAD, y0: Math.min(...pts.map((p) => p.y)) - PAD, x1: Math.max(...pts.map((p) => p.x)) + PAD, y1: Math.max(...pts.map((p) => p.y)) + PAD };
     const b = this.bounds;
     const w = b.x1 - b.x0;
     const h = b.y1 - b.y0;
@@ -109,16 +109,23 @@ export class SkillScreen {
       return { x: p.x - b.x0, y: p.y - b.y0 };
     };
     let lines = '';
+    const hub = { x: -b.x0, y: -b.y0 };
+    // spokes from the hub to the seven free roots
+    for (const t of SKILL_TREES) lines += `<line class="spoke" x1="${hub.x}" y1="${hub.y}" x2="${t.at.x - b.x0}" y2="${t.at.y - b.y0}" style="--c:${t.color}" />`;
     for (const n of SKILL_NODES) {
       if (!n.parent) continue;
       const a = at(skillById(n.parent));
       const c = at(n);
       lines += `<line data-line="${n.id}" x1="${a.x}" y1="${a.y}" x2="${c.x}" y2="${c.y}" />`;
     }
+    // the names sit between the hub and the roots, on the inside of the ring
     const labels = SKILL_TREES.map((t) => {
-      const p = { x: t.at.x - b.x0, y: t.at.y - b.y0 };
-      return `<div class="sk-label" style="left:${p.x}px;top:${p.y + ROOT / 2 + 12}px;--c:${t.color}"><b>${t.name}</b><small data-prog="${t.id}"></small></div>`;
+      const a = treeAngle(t.id);
+      const d = ROOT / 2 + 34;
+      const p = { x: t.at.x - Math.cos(a) * d - b.x0, y: t.at.y - Math.sin(a) * d - b.y0 };
+      return `<div class="sk-label" style="left:${p.x}px;top:${p.y}px;--c:${t.color}"><b>${t.name}</b><small data-prog="${t.id}"></small></div>`;
     }).join('');
+    const hubEl = `<div class="sk-hub" style="left:${hub.x}px;top:${hub.y}px">${icon('gem')}</div>`;
     const nodes = SKILL_NODES.map((n) => {
       const p = at(n);
       const t = treeById(n.tree);
@@ -128,7 +135,7 @@ export class SkillScreen {
     }).join('');
     this.world.style.width = w + 'px';
     this.world.style.height = h + 'px';
-    this.world.innerHTML = `<svg class="sk-lines" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${lines}</svg>${labels}${nodes}`;
+    this.world.innerHTML = `<svg class="sk-lines" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}">${lines}</svg>${hubEl}${labels}${nodes}`;
     this.world.querySelectorAll<HTMLElement>('[data-skill]').forEach((b) =>
       b.addEventListener('click', () => {
         if (this.moved > 8) return; // it was a drag, not a tap
@@ -216,12 +223,16 @@ export class SkillScreen {
   }
 
   /** Slide the map so a tree is in the middle of the view. */
-  private focusTree(id: TreeId, animate: boolean) {
-    const t = treeById(id);
+  private focusTree(id: TreeId | 'hub', animate: boolean) {
     const r = this.view.getBoundingClientRect();
-    const scale = Math.min(1.05, Math.max(0.55, r.width / 470));
-    const cx = t.at.x - this.bounds.x0;
-    const cy = t.at.y - 2 * TREE_UNIT - this.bounds.y0; // the middle of the tree (it grows upward from the root)
+    const wide = this.bounds.x1 - this.bounds.x0;
+    const tall = this.bounds.y1 - this.bounds.y0;
+    const scale = id === 'hub' ? Math.min(r.width / wide, r.height / tall) * 0.98 : Math.min(1.05, Math.max(0.55, r.width / 470));
+    const t = id === 'hub' ? { at: { x: 0, y: 0 } } : treeById(id);
+    const a = id === 'hub' ? 0 : treeAngle(id);
+    // the middle of the tree: 2 units out from its root (trees grow away from the hub)
+    const cx = t.at.x + Math.cos(a) * (id === 'hub' ? 0 : 2) * TREE_UNIT - this.bounds.x0;
+    const cy = t.at.y + Math.sin(a) * (id === 'hub' ? 0 : 2) * TREE_UNIT - this.bounds.y0;
     const targetX = r.width / 2 - cx * scale;
     const targetY = r.height / 2 - cy * scale;
     this.el.querySelectorAll('.sk-tab').forEach((b) => b.classList.toggle('on', (b as HTMLElement).dataset.tree === id));

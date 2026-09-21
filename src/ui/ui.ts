@@ -136,7 +136,7 @@ export class GameUI {
     this.cb.onFocusBeach();
   }
 
-  openSkills(tree: TreeId = 'beach') {
+  openSkills(tree: TreeId | 'hub' = 'hub') {
     this.closeSheet();
     this.skillScreen.open(tree);
   }

@@ -45,7 +45,7 @@ export interface SkillTree {
   name: string;
   color: string;
   icon: string;
-  /** Where the root of this tree stands on the skill map, in px. */
+  /** Where the root of this tree stands on the skill map (on the ring around the hub), in px. */
   at: { x: number; y: number };
   nodes: SkillNode[];
 }
@@ -117,16 +117,26 @@ function build(id: TreeId, shape: Shape[], names: Record<string, string>, rootNa
   });
 }
 
-// Where the roots stand on the skill map (px): a cross with the beach in the middle.
-const POSITIONS: Record<TreeId, { x: number; y: number }> = {
-  wave: { x: -390, y: 0 },
-  skimboarding: { x: 0, y: 0 },
-  windsurfing: { x: 390, y: 0 },
-  kitesurfing: { x: -390, y: 560 },
-  beach: { x: 0, y: 560 },
-  foil: { x: 390, y: 560 },
-  sailing: { x: 0, y: 1120 },
-};
+// The skill map is a wheel: one hub in the middle, the seven free root skills on a ring around it, and every tree grows
+// outward from its root, like a petal. The Beach is at the top, then the six sports clockwise.
+export const RING_RADIUS = 230;
+const ORDER: TreeId[] = ['beach', 'wave', 'skimboarding', 'windsurfing', 'kitesurfing', 'foil', 'sailing'];
+/** Direction (radians, screen angles: 0 = right, positive = clockwise) in which a tree grows away from the hub. */
+export function treeAngle(id: TreeId): number {
+  return -Math.PI / 2 + (ORDER.indexOf(id) * 2 * Math.PI) / ORDER.length;
+}
+const POSITIONS = Object.fromEntries(ORDER.map((id) => [id, { x: Math.round(Math.cos(treeAngle(id)) * RING_RADIUS), y: Math.round(Math.sin(treeAngle(id)) * RING_RADIUS) }])) as Record<TreeId, { x: number; y: number }>;
+
+/** Where a skill stands on the skill map (px, the hub is at 0, 0). A tree grows outward: local "up" points away from the hub. */
+export function skillPosition(n: SkillNode): { x: number; y: number } {
+  const t = SKILL_TREES.find((x) => x.id === n.tree)!;
+  const a = treeAngle(n.tree);
+  const out = { x: Math.cos(a), y: Math.sin(a) };
+  const side = { x: -Math.sin(a), y: Math.cos(a) };
+  const along = -n.y * TREE_UNIT; // outward
+  const across = n.x * TREE_UNIT;
+  return { x: t.at.x + out.x * along + side.x * across, y: t.at.y + out.y * along + side.y * across };
+}
 
 export const SKILL_TREES: SkillTree[] = [
   ...SPORTS.map((s): SkillTree => ({

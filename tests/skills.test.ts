@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BALANCE } from '../src/config/balance';
-import { EXPANSION_POINTS, QUEST_POINTS, SKILL_NODES, SKILL_TREES, describeSkill, skillById } from '../src/config/skills';
+import { RING_RADIUS, TREE_UNIT, skillPosition, EXPANSION_POINTS, QUEST_POINTS, SKILL_NODES, SKILL_TREES, describeSkill, skillById } from '../src/config/skills';
 import { SPORTS, zoneById } from '../src/config/sports';
 import { buyFacility, buyManager, buyStat, discounts, facilityCost, managerCost, offlineCap, statCost, zoneStats } from '../src/core/economy';
 import { claimQuest, questView, refreshQuests } from '../src/core/quests';
@@ -54,6 +54,27 @@ describe('skill trees', () => {
     const s = newGame(0);
     expect(SKILL_TREES.every((t) => s.skills[t.nodes[0].id])).toBe(true);
     expect(Object.keys(s.skills)).toHaveLength(7);
+  });
+});
+
+describe('the skill wheel', () => {
+  it('the seven free roots sit on a ring around one hub in the middle', () => {
+    for (const t of SKILL_TREES) expect(Math.hypot(t.at.x, t.at.y)).toBeCloseTo(RING_RADIUS, -1);
+    const ats = SKILL_TREES.map((t) => t.at);
+    for (let i = 0; i < ats.length; i++) for (let j = i + 1; j < ats.length; j++) expect(Math.hypot(ats[i].x - ats[j].x, ats[i].y - ats[j].y)).toBeGreaterThan(120);
+  });
+
+  it('every tree grows outward from its root, away from the hub', () => {
+    for (const t of SKILL_TREES) {
+      const root = t.nodes[0];
+      const r0 = Math.hypot(skillPosition(root).x, skillPosition(root).y);
+      for (const n of t.nodes.slice(1)) expect(Math.hypot(skillPosition(n).x, skillPosition(n).y)).toBeGreaterThan(r0 - 1);
+    }
+  });
+
+  it('no two skills lie on top of each other', () => {
+    const pts = SKILL_NODES.map((n) => skillPosition(n));
+    for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) expect(Math.hypot(pts[i].x - pts[j].x, pts[i].y - pts[j].y), `${SKILL_NODES[i].id} / ${SKILL_NODES[j].id}`).toBeGreaterThan(TREE_UNIT * 0.6);
   });
 });
 
