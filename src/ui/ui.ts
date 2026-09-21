@@ -458,7 +458,13 @@ export class GameUI {
       <div class="ts-body">
         <svg class="ts-top" viewBox="0 0 400 80" preserveAspectRatio="none"><path d="M0 80V40c30-30 60-30 100-10s70 30 100 0 70-30 100-5 70 25 100-5v60z" fill="#e9fbff"/><path d="M0 80V52c30-20 60-20 100-4s70 22 100 2 70-22 100-3 70 18 100-3v36z" fill="#3fc3df"/></svg>
         <div class="ts-fill"></div>
-        <svg class="ts-crest" viewBox="0 0 400 120" preserveAspectRatio="none"><path d="M0 0v50c25 30 50 55 80 45 20-8 10-30 30-30s25 40 55 45 50-45 80-45 40 40 70 40 60-30 85-55V0z" fill="#3fc3df"/><path d="M0 0v34c25 24 50 44 80 34 20-7 10-24 30-24s25 32 55 36 50-36 80-36 40 32 70 32 60-24 85-44V0z" fill="#e9fbff"/></svg>
+<svg class="ts-crest" viewBox="0 0 400 170" preserveAspectRatio="none">
+          <path d="M0 0V112c30 20 60 32 100 16s70-30 100-10 70 34 100 14 70-22 100-6V0z" fill="#4fb6dc"/>
+          <path d="M0 78c30 25 55 38 95 22s65-34 105-14 68 32 105 12 65-22 95-8V0H0z" fill="#1a7fb8"/>
+          <path d="M0 78c30 25 55 38 95 22s65-34 105-14 68 32 105 12 65-22 95-8" fill="none" stroke="#fff" stroke-width="9" stroke-linecap="round"/>
+          <path d="M0 92c30 25 55 38 95 22s65-34 105-14 68 32 105 12 65-22 95-8" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="4" stroke-linecap="round"/>
+          <circle cx="60" cy="112" r="4" fill="#fff"/><circle cx="150" cy="96" r="3" fill="#fff"/><circle cx="250" cy="106" r="4.5" fill="#fff"/><circle cx="340" cy="88" r="3" fill="#fff"/><circle cx="205" cy="118" r="2.5" fill="#fff"/>
+        </svg>
       </div>
       <div class="ts-title">${icon('beach')}<b>${expansionStatus(this.game.state)!.def.name} ${expansionStatus(this.game.state)!.def.n}</b></div>`;
     this.root.appendChild(box);

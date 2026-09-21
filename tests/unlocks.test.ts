@@ -157,13 +157,12 @@ describe('beach expansions', () => {
     expect(s.zones['wave-1'].capacity).toBe(0);
     expect(s.zones['wave-2'].owned).toBe(false);
     expect(s.reputation).toBe(5000); // reputation stays
-    // the Sea sports are open now, at Level 1
-    for (const id of ['windsurfing', 'kitesurfing', 'foil'] as const) {
-      expect(s.sports[id]).toBe(true);
-      expect(s.zones[`${id}-1`].owned).toBe(true);
-    }
-    expect(s.sports.sailing).toBe(false);
-    expect(s.sports.skimboarding).toBe(true); // learned in the first part, open from the start now
+    // the beach starts over like a new game: only wave surfing is owned, nothing is given for free
+    expect(ZONES.filter((z) => s.zones[z.id].owned).map((z) => z.id)).toEqual(['wave-1']);
+    for (const id of ['skimboarding', 'windsurfing', 'kitesurfing', 'foil', 'sailing'] as const) expect(s.sports[id]).toBe(false);
+    // ...but the Sea is open now: its sports can be earned
+    expect(expansionNeededFor(s, 'windsurfing')).toBeNull();
+    expect(expansionNeededFor(s, 'sailing')).toBe(2);
     expect(multipliers(s).coins).toBe(3);
     expect(zoneStats(s, zoneById('wave-1')).income).toBeCloseTo(before * 3);
   });
@@ -176,8 +175,8 @@ describe('beach expansions', () => {
     s.reputation = 1e9;
     s.coins = 1e30;
     expect(expand(s)).toBe(true);
-    expect(s.sports.sailing).toBe(true);
-    expect(s.zones['sailing-1'].owned).toBe(true);
+    expect(expansionNeededFor(s, 'sailing')).toBeNull(); // the Ocean is open, sailing still has to be earned
+    expect(s.sports.sailing).toBe(false);
     expect(multipliers(s).coins).toBe(9);
     expect(expansionStatus(s)).toBeNull();
     expect(expand(s)).toBe(false);

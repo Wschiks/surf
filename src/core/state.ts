@@ -66,7 +66,7 @@ export function newGame(now: number): GameState {
 export function openAreas(state: GameState) {
   for (const sport of SPORTS) {
     if (areaById(sport.area).expansion > state.expansions) continue;
-    if (sport.unlock && state.expansions === 0) continue; // a sport with an unlock rule is earned in the first part of the game
+    if (sport.unlock) continue; // sports with an unlock rule are earned again in every part of the game
     state.sports[sport.id] = true;
     const z = state.zones[zoneId(sport.id, 1)];
     if (!z.owned) {

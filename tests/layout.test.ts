@@ -34,10 +34,13 @@ describe('map layout data', () => {
       for (let j = i + 1; j < ZONES.length; j++) expect(overlap(ZONES[i].def.rect, ZONES[j].def.rect), `${ZONES[i].id} and ${ZONES[j].id}`).toBe(false);
   });
 
-  it('the levels of a sport move away from the beach', () => {
+  it('the four levels of a sport sit next to each other, left to right, not underneath each other', () => {
     for (const sport of SPORTS) {
-      const depth = sport.levels.map((l) => l.rect.y);
-      for (let i = 1; i < depth.length; i++) expect(depth[i]).toBeGreaterThanOrEqual(depth[i - 1]);
+      const r = sport.levels.map((l) => l.rect);
+      for (let i = 1; i < r.length; i++) {
+        expect(r[i].y).toBe(r[0].y);
+        expect(r[i].x).toBeGreaterThanOrEqual(r[i - 1].x + r[i - 1].w - 0.001);
+      }
     }
   });
 
