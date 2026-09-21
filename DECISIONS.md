@@ -45,3 +45,10 @@ Every choice made while building, and why. The concept document (`docs/concept.m
 - Level 1 of a locked sport is the "start this sport" card; levels 2-4 of a locked sport say "Unlock the sport first".
 - Skimboarding's four zones are a 2 x 2 block in the left of the Wave area next to the rocks: Shallows and Flatland near the sand, Shore break and Big shore break further out. The cove has clear shallow water and a wet sand bank for Flatland. Level 1 rule: reputation and coins; Level 2 needs 10 upgrades on Level 1, like wave surfing.
 - A "Next goal" bar under the top bar always shows what to aim for (first locked zone in sport order, first missing requirement, progress bar). Tapping it opens that zone. This keeps the player from getting lost in a big map.
+
+## The Sea area (stage 5)
+- Open question "how are windsurfing, kitesurfing and foil and wing laid out inside the Sea area: side by side, or one behind the other?" Default chosen: **side by side**, three columns across the Sea area (windsurfing on the left, kitesurfing in the middle, foil and wing on the right), each with its four levels as a 2 x 2 block (Level 1 and 2 nearest the beach, Level 3 and 4 further out).
+- The Sea area's haze fades away when windsurfing unlocks (the first sport of the area), as asked.
+- Kitesurfing has its own wide launch area on the beach (in front of the beach buildings, in the middle). Until kitesurfing is unlocked it is an empty dashed plot with a label; when the sport unlocks the launch area appears with kites laid out and a windsock.
+- Balance: income of a zone grows 5x per tier, costs grow 7.5x per tier (`costScale`). Because costs grow faster than income, every new tier takes a bit longer than the one before, which is what stretches the game to hours instead of minutes. Tuned with the balance bot.
+- Zone conditions map to water looks (flat, ripple, chop, swell, rolling, shore break, big) drawn as rolling foam patterns; nothing is random.

@@ -12,7 +12,12 @@ export function fmt(n: number): string {
     v /= 1000;
     i++;
   }
-  return (v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2)) + SUFFIXES[i];
+  let text = v >= 100 ? v.toFixed(0) : v >= 10 ? v.toFixed(1) : v.toFixed(2);
+  if (parseFloat(text) >= 1000 && i < SUFFIXES.length - 1) {
+    i++;
+    text = (parseFloat(text) / 1000).toFixed(2);
+  }
+  return text + SUFFIXES[i];
 }
 
 export function fmtTime(seconds: number): string {

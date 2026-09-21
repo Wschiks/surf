@@ -1,4 +1,4 @@
-import { BALANCE, STATS, STAT_IDS, tierFactor, type StatId } from '../config/balance';
+import { BALANCE, costFactor, STATS, STAT_IDS, tierFactor, type StatId } from '../config/balance';
 import { FACILITIES, facilityById } from '../config/facilities';
 import { ZONES, zoneById, type ZoneRef } from '../config/sports';
 import type { GameState, ZoneState } from './state';
@@ -48,11 +48,11 @@ export function zoneStats(state: GameState, ref: ZoneRef, z: ZoneState = state.z
 export function statCost(ref: ZoneRef, stat: StatId, level: number): number {
   const s = STATS[stat];
   if (level >= s.max) return Infinity;
-  return Math.ceil(s.baseCost * tierFactor(ref.def.tier) * Math.pow(s.growth, level));
+  return Math.ceil(s.baseCost * costFactor(ref.def.tier) * Math.pow(s.growth, level));
 }
 
 export function managerCost(ref: ZoneRef): number {
-  return Math.ceil(BALANCE.managerCost * tierFactor(ref.def.tier));
+  return Math.ceil(BALANCE.managerCost * costFactor(ref.def.tier));
 }
 
 export function facilityCost(id: string, level: number): number {

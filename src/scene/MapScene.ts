@@ -12,6 +12,7 @@ import { buildBackground, Haze } from './background';
 import { BeachView } from './beach';
 import { MapInput, MapView } from './MapView';
 import { ZoneView } from './zoneView';
+import { SiteView } from './sites';
 import { fmt } from '../ui/format';
 
 export class MapScene extends Phaser.Scene {
@@ -24,6 +25,7 @@ export class MapScene extends Phaser.Scene {
   private ui!: GameUI;
   private chips!: ZoneChips;
   private beach!: BeachView;
+  private sites!: SiteView;
   private zones: ZoneView[] = [];
   private clearedAreas = new Set<AreaId>(['beach', 'wave']);
   private popCount = 0;
@@ -59,6 +61,8 @@ export class MapScene extends Phaser.Scene {
     });
     this.beach = new BeachView(this);
     this.beach.update(this.game_.state, false);
+    this.sites = new SiteView(this, this.labels);
+    this.sites.update(this.game_.state, false);
     for (const ref of ZONES) this.zones.push(new ZoneView(this, ref));
 
     for (const a of AREAS) {
@@ -170,6 +174,7 @@ export class MapScene extends Phaser.Scene {
     for (const h of this.hazes.values()) h.update(time);
     for (const z of this.zones) z.update(time, this.game_.state, this.view);
     this.beach.update(this.game_.state);
+    this.sites.update(this.game_.state);
     this.chips.update(this.game_.state, this.view.ppu, this.ui.selectedZone);
     this.labels.update(this.view);
     this.minimap.draw();

@@ -562,6 +562,7 @@ export const WAVE_STYLES: Record<WaterLook, WaveStyle> = {
   shorebreak: { speed: 12, alpha: 0.9, scale: 1 },
   bigbreak: { speed: 20, alpha: 0.95, scale: 1.5 },
   chop: { speed: 10, alpha: 0.8, scale: 1 },
+  ripple: { speed: 6, alpha: 0.65, scale: 1 },
   swell: { speed: 7, alpha: 0.7, scale: 1.8 },
 };
 
@@ -651,8 +652,9 @@ export function bakeWaveTile(scene: Phaser.Scene, look: WaterLook) {
           }
         }
         break;
+      case 'ripple':
       case 'chop':
-        for (let i = 0; i < 70; i++) {
+        for (let i = 0; i < (look === 'ripple' ? 26 : 70); i++) {
           const x = r() * w,
             y = r() * h,
             len = 5 + r() * 9;
@@ -1085,5 +1087,94 @@ export function bakeCove(scene: Phaser.Scene) {
       ctx.stroke();
     }
     void h;
+  });
+}
+
+// ---------------------------------------------------------------- beach sites
+
+/** Wide kite launch area on the sand: marked field with laid-out kites and cones. 300 x 95 world px. */
+export const KITE_LAUNCH_SIZE = { w: 300, h: 95 };
+export function bakeKiteLaunch(scene: Phaser.Scene) {
+  bake(scene, 'site-kite-launch', KITE_LAUNCH_SIZE.w, KITE_LAUNCH_SIZE.h, 2.5, (ctx, w, h) => {
+    // smoothed sand field
+    ctx.fillStyle = 'rgba(255,244,205,0.75)';
+    ctx.beginPath();
+    ctx.roundRect(2, 2, w - 4, h - 4, 12);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(190,150,85,0.5)';
+    ctx.lineWidth = 1;
+    for (let i = 0; i < 9; i++) {
+      ctx.beginPath();
+      ctx.moveTo(10, 12 + i * 8.5);
+      ctx.lineTo(w - 10, 12 + i * 8.5);
+      ctx.stroke();
+    }
+    // boundary rope and cones
+    ctx.strokeStyle = '#e8483d';
+    ctx.setLineDash([6, 4]);
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.roundRect(4, 4, w - 8, h - 8, 12);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    for (const [x, y] of [[8, 8], [w - 8, 8], [8, h - 8], [w - 8, h - 8], [w / 2, 6], [w / 2, h - 6]]) {
+      ctx.fillStyle = '#ff7a2f';
+      ctx.beginPath();
+      ctx.arc(x, y, 4.2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(x, y, 1.8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // kites laid out flat, waiting to be launched
+    const cols = ['#ff5c8a', '#ffd23f', '#29b6f6', '#66bb6a', '#ff7043', '#ab47bc', '#26c6da'];
+    cols.forEach((c, i) => {
+      const cx = 30 + i * 40;
+      const cy = 30 + (i % 2) * 28;
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(-0.15 + (i % 3) * 0.12);
+      ctx.fillStyle = 'rgba(0,0,0,0.15)';
+      ctx.beginPath();
+      ctx.ellipse(1.5, 2, 17, 6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = c;
+      ctx.beginPath();
+      ctx.moveTo(-17, 4);
+      ctx.quadraticCurveTo(0, -12, 17, 4);
+      ctx.quadraticCurveTo(0, -2, -17, 4);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.fillRect(-2, -5, 4, 3);
+      ctx.strokeStyle = 'rgba(40,40,40,0.5)';
+      ctx.lineWidth = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(-8, 1);
+      ctx.lineTo(-2, 14);
+      ctx.moveTo(8, 1);
+      ctx.lineTo(2, 14);
+      ctx.stroke();
+      ctx.restore();
+    });
+  });
+  bake(scene, 'site-windsock', 26, 60, 4, (ctx) => {
+    ctx.strokeStyle = '#777';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(6, 58);
+    ctx.lineTo(6, 6);
+    ctx.stroke();
+    const seg = ['#ff7a2f', '#ffffff', '#ff7a2f', '#ffffff'];
+    seg.forEach((c, i) => {
+      ctx.fillStyle = c;
+      ctx.beginPath();
+      ctx.moveTo(6 + i * 4.6, 5 + i * 0.6);
+      ctx.lineTo(6 + (i + 1) * 4.6, 6 + (i + 1) * 0.9);
+      ctx.lineTo(6 + (i + 1) * 4.6, 12 - (i + 1) * 0.9);
+      ctx.lineTo(6 + i * 4.6, 14 - i * 0.6);
+      ctx.closePath();
+      ctx.fill();
+    });
   });
 }
