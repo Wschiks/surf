@@ -7,7 +7,7 @@ export type SportId = 'wave' | 'skimboarding' | 'windsurfing' | 'kitesurfing' | 
 /** What the water looks like in a zone. Used only for drawing. */
 export type WaterLook = 'flat' | 'ripple' | 'rolling' | 'reef' | 'big' | 'shallows' | 'shorebreak' | 'bigbreak' | 'chop' | 'swell';
 
-export type GuestKind = 'surfer' | 'skimmer' | 'windsurfer' | 'kiter' | 'foiler' | 'sailor';
+export type GuestKind = 'surfer' | 'skimmer' | 'windsurfer' | 'kiter' | 'foiler' | 'sailor' | 'walker';
 
 export interface UnlockRule {
   /** Coins to pay. */

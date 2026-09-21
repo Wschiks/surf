@@ -3,6 +3,14 @@
 A mobile idle tycoon about running a water-sports spot on a beach and in the sea.
 Built with Phaser 4, TypeScript and Vite. The game idea lives in [docs/concept.md](docs/concept.md).
 
+## How the game works
+
+- Guests come to a zone, ride, and pay coins. Every zone is one level of one sport. Tap a zone to start a session, tap again to collect.
+- Upgrade each zone: capacity (more guests), income per guest, speed, and a manager who runs it by themselves (also while the game is closed, up to 8 hours).
+- Beach facilities (rental shop, café, showers, lifeguard tower) boost every sport.
+- Reputation comes from happy guests. New levels and sports need coins and reputation. Wave surfing unlocks skimboarding, then windsurfing, kitesurfing, foil and wing, and sailing. The Sea area clears its haze with windsurfing, the Ocean area with sailing.
+- Nothing is random. There is no clock, calendar, weather or events.
+
 ## Install
 
 ```bash

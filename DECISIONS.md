@@ -13,7 +13,7 @@ Every choice made while building, and why. The concept document (`docs/concept.m
 - Rows follow the "Layout sketch": beach depth 0-2, Wave 2-5, Sea 5-8, Ocean 8-10.
 - Screen: portrait, fills a phone; on a wide desktop window the game is shown as a centred 1:2 column.
 - Start zoom shows about 1.1 units across (so roughly 1 by 2.2 units). The closest zoom is 0.7 units across, the furthest shows the whole rotated map. (Answer to the open question "can they zoom out": yes.)
-- "Keep the view inside the map": the centre of the view is kept inside the map square. At the widest zoom the whole map is visible.
+- "Keep the view inside the map": the view is kept inside the map square, but it may hang over an edge by a quarter of its own size (so the beach, the rocks and the ocean edge can sit in the middle of the screen; the world continues there). At the widest zoom the whole map is visible and centred. Tested in `tests/mapview.test.ts`.
 - Past the map edges: the sea continues left, right and beyond the ocean edge (darker), the beach sand continues left and right, and behind the beach there are dunes and grass. Nothing empty is ever shown.
 - Haze over the Sea and Ocean areas is a white veil plus drifting clouds, and fades out when the area opens. The Wave area and the beach are clear from the start.
 - Pan and pinch use plain DOM pointer events (one finger drag, two finger pinch, mouse wheel zoom). A tap (little movement) selects a zone.
@@ -65,3 +65,24 @@ Every choice made while building, and why. The concept document (`docs/concept.m
 - With the final numbers the bot (which taps every zone at once and never sleeps) gets the first unlock after about 6 minutes, a new level or sport every 5 to 15 minutes in the first two hours, then slower steps. Everything is unlocked and managed after about 8 hours, and every upgrade is maxed after about 24 hours. A real player who sleeps and works will take days, which is the point of an idle game; the 8 hour offline cap fits that.
 - Costs grow 7.1x per tier while income grows 5x per tier, unlock prices are 3x the base formula (`unlockMult`). Reputation thresholds grow about 1.9x per tier, following how fast reputation is earned.
 - No prestige system (open question): not built, as asked. The late game is simply "max everything".
+
+## Polish and phone build (stage 7)
+- The canvas is drawn at the device pixel ratio (at most 2), the view maths works in page pixels, so the art is sharp on phones.
+- Swiping keeps gliding a little after the finger lifts. A tap (little movement) on a zone opens it; a tap on empty water closes the panel.
+- Extra polish, all drawn in code: palms, umbrellas and towels on the beach, trees and bushes behind the beach, slow swells over the whole sea, wake foam behind riders, guests fade in and out at the start and end of a ride, people strolling along the shore (more of them when reputation grows), coin numbers that float up when a managed zone finishes a session, confetti and a toast on every unlock.
+- A "Sports" panel lists the six sports with a button per level to jump to any zone.
+- Small sound effects (Web Audio, no files) for coins, purchases and unlocks. There is a mute switch in the menu and the choice is remembered. Not asked for, but the concept lists "sound" as a later step; it can be removed by deleting `src/ui/sound.ts`.
+- Capacitor: `@capacitor/core`, the CLI, and the iOS and Android projects are added (`ios/`, `android/`, `capacitor.config.ts`). `npm run phone:sync` builds the web game and copies it in. The app id is a placeholder (`com.example.surftycoon`). Nothing was built natively (no Xcode or Android Studio runs here), no store account was created and nothing was published.
+- Screenshots are saved in `screenshots/` (the prefix says which stage or check: `s1-` to `s6-` are the stage screenshots taken while building, `final-` are the last ones).
+
+## Answers to the open questions (defaults chosen, all changeable in config)
+1. Do the four wave surfing levels sit at increasing distance from the beach? Yes (see stage 3).
+2. How much of the map does the player see at once, can they zoom out? About 1 by 2 units at the start, closer up to 0.7 units across, and out until the whole map is visible.
+3. Which landmarks belong to the first two wave levels, the Sea area and the Ocean area? None (the concept says they do not have one yet). The Sea area only has the kite launch area on the beach; the Ocean area gets the jetty and the boats.
+4. Sea layout: side by side.
+5. What else in the Ocean besides sailing? Simple boats (see stage 6).
+6. Do areas and sports unlock one by one as suggested? Yes, exactly as suggested: a sport needs Level 2 of the previous sport and reputation; the Sea area opens with windsurfing and the Ocean area with sailing. Coins are needed on top.
+7. Do the suggested zones, guests and conditions for the five other sports fit? They were used as written in the concept document.
+8. Prestige system? Not built, as instructed.
+9. Build route? Web (Phaser 4 + TypeScript + Vite), phone-first but it also plays in a desktop browser (shown as a 1:2 column), with a Capacitor wrapper for phones.
+10. Where does the art come from? Simple vector art drawn in code, no downloads.

@@ -3,6 +3,8 @@ import { MAP_ROTATION_DEG, MAP_UNITS, MIN_UNITS_ACROSS, START_UNITS_ACROSS, UNIT
 const ROT = (MAP_ROTATION_DEG * Math.PI) / 180;
 const COS = Math.cos(ROT);
 const SIN = Math.sin(ROT);
+/** How far the view may hang over the map edge, as a fraction of its half size. */
+const OVERHANG = 0.5;
 
 export interface Pt {
   x: number;
@@ -111,7 +113,10 @@ export class MapView {
     };
   }
 
-  /** Keep the whole view inside the map. When the view is bigger than the map (zoomed out) the map is centred. */
+  /**
+   * Keep the view inside the map. The view may hang over an edge by at most a quarter of its own size (the world
+   * continues there: sea, sand and land, so nothing empty shows). When the view is bigger than the map the map is centred.
+   */
   clamp() {
     const c = this.clampPoint(this.cx, this.cy, this.ppu);
     this.cx = c.x;
@@ -121,9 +126,11 @@ export class MapView {
   private clampPoint(x: number, y: number, ppu: number): Pt {
     const max = MAP_UNITS * UNIT;
     const h = this.halfExtents(ppu);
+    const lx = h.x * (1 - OVERHANG);
+    const ly = h.y * (1 - OVERHANG);
     return {
-      x: h.x * 2 >= max ? max / 2 : Math.min(Math.max(x, h.x), max - h.x),
-      y: h.y * 2 >= max ? max / 2 : Math.min(Math.max(y, h.y), max - h.y),
+      x: h.x * 2 >= max ? max / 2 : Math.min(Math.max(x, lx), max - lx),
+      y: h.y * 2 >= max ? max / 2 : Math.min(Math.max(y, ly), max - ly),
     };
   }
 

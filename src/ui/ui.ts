@@ -494,6 +494,7 @@ export class GameUI {
         <li>Swipe to move around, pinch to zoom. The small map in the corner jumps to an area.</li>
         <li>New levels and sports need coins and reputation ⭐. The goal bar shows what is next.</li>
       </ul>
+      <p>Zones unlocked: <b>${ZONES.filter((z) => s.zones[z.id].owned).length} / ${ZONES.length}</b> · Managers hired: <b>${ZONES.filter((z) => s.zones[z.id].manager).length}</b></p>
       <p>Coins earned in total: <b>${COIN} ${fmt(s.totalCoins)}</b></p>
       <p>Playing since <b>${new Date(s.startedAt).toLocaleDateString()}</b></p>
       <button class="danger soft" data-sound>${isMuted() ? '🔇 Sound is off' : '🔊 Sound is on'}</button>

@@ -51,15 +51,18 @@ describe('MapView', () => {
     expect(v.ppu).toBeCloseTo(v.maxPpu());
   });
 
-  it('keeps the whole view inside the map when panning', () => {
+  it('keeps the view inside the map when panning (it may hang over an edge by a quarter of its size)', () => {
     const v = makeView();
+    const size = (v.width / v.ppu) * UNIT + (v.height / v.ppu) * UNIT;
     for (const [dx, dy] of [[-100000, -100000], [100000, 100000], [-100000, 100000], [100000, -100000]]) {
       v.panBy(dx, dy);
+      expect(v.cx).toBeGreaterThan(0);
+      expect(v.cx).toBeLessThan(10 * UNIT);
       for (const p of v.viewCorners()) {
-        expect(p.x).toBeGreaterThanOrEqual(-0.001);
-        expect(p.x).toBeLessThanOrEqual(10 * UNIT + 0.001);
-        expect(p.y).toBeGreaterThanOrEqual(-0.001);
-        expect(p.y).toBeLessThanOrEqual(10 * UNIT + 0.001);
+        expect(p.x).toBeGreaterThanOrEqual(-size / 4);
+        expect(p.x).toBeLessThanOrEqual(10 * UNIT + size / 4);
+        expect(p.y).toBeGreaterThanOrEqual(-size / 4);
+        expect(p.y).toBeLessThanOrEqual(10 * UNIT + size / 4);
       }
     }
   });
@@ -82,8 +85,8 @@ describe('MapView', () => {
       const w = Math.max(...xs) - Math.min(...xs);
       const h = Math.max(...ys) - Math.min(...ys);
       if (w <= 10 * UNIT && h <= 10 * UNIT) {
-        expect(Math.min(...xs)).toBeGreaterThanOrEqual(-0.001);
-        expect(Math.min(...ys)).toBeGreaterThanOrEqual(-0.001);
+        expect(Math.min(...xs)).toBeGreaterThanOrEqual(-w / 4 - 0.001);
+        expect(Math.min(...ys)).toBeGreaterThanOrEqual(-h / 4 - 0.001);
       }
     }
   });

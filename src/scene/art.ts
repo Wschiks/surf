@@ -13,6 +13,19 @@ export function rng(seed: number): () => number {
 }
 
 type Ctx = CanvasRenderingContext2D;
+
+// Older phone browsers (before Safari 16) have no roundRect: add a small version so the art still draws.
+if (typeof CanvasRenderingContext2D !== 'undefined' && !CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function (this: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, radius: number | number[] = 0) {
+    const r = Math.min(Array.isArray(radius) ? radius[0] : radius, w / 2, h / 2);
+    this.moveTo(x + r, y);
+    this.arcTo(x + w, y, x + w, y + h, r);
+    this.arcTo(x + w, y + h, x, y + h, r);
+    this.arcTo(x, y + h, x, y, r);
+    this.arcTo(x, y, x + w, y, r);
+    this.closePath();
+  };
+}
 const UPRIGHT_ROT = (MAP_ROTATION_DEG * Math.PI) / 180;
 
 /** World size and resolution factor of every baked texture, so images and tiles can be shown at the right size. */
@@ -730,6 +743,10 @@ export function guestTexture(scene: Phaser.Scene, kind: GuestKind, color: string
     };
 
     switch (kind) {
+      case 'walker': {
+        person(cx, foot - 1, 1, color, '#3a4a5a');
+        break;
+      }
       case 'surfer': {
         ctx.fillStyle = '#fdfdfd';
         ctx.beginPath();

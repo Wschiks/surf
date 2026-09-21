@@ -163,7 +163,9 @@ export class MapScene extends Phaser.Scene {
 
   jumpToArea(a: AreaDef) {
     const c = { x: 5 * UNIT, y: rectCenter(areaRect(a)).y * UNIT };
-    this.view.animateTo(c.x, c.y, this.view.width / 4.5);
+    // the view must stay inside the map, so the beach and the ocean are shown a bit closer than the middle areas
+    const across = { beach: 2.4, wave: 3.2, sea: 3.4, ocean: 3.0 }[a.id];
+    this.view.animateTo(c.x, c.y, this.view.width / across);
   }
 
   /** Clear the haze on every area whose sport is unlocked in the saved game. */
@@ -200,6 +202,7 @@ export class MapScene extends Phaser.Scene {
     for (const h of this.hazes.values()) h.update(time);
     for (const z of this.zones) z.update(time, this.game_.state, this.view);
     this.beach.update(this.game_.state);
+    this.beach.animateWalkers(this.game_.state, time);
     this.sites.update(this.game_.state);
     this.ocean.update(this.game_.state, time);
     this.chips.update(this.game_.state, this.view.ppu, this.ui.selectedZone);
