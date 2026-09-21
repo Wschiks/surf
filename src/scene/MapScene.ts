@@ -108,6 +108,9 @@ export class MapScene extends Phaser.Scene {
       if (document.hidden) this.game_.save();
     });
     window.addEventListener('pagehide', () => this.game_.save());
+    const splash = document.getElementById('splash');
+    splash?.classList.add('gone');
+    setTimeout(() => splash?.remove(), 700);
     (window as unknown as { __surf: unknown }).__surf = { scene: this, view: this.view, game: this.game_, ui: this.ui };
   }
 
