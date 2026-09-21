@@ -51,3 +51,5 @@ Done: Watch ad button above Expand, AdMob rewarded video (`src/ads.ts`, ids in `
 Done: bag button and Shop dialog, 5-ad daily streak (1 gem, x2 30 s, 2 gems, x2 1 min, 5 gems; locked 24 h), Remove ads and Coins x5 as one-time purchases (`@capgo/native-purchases`), perks kept apart from the save, Restore purchases, Terms/Privacy/store texts, 109 tests. Not tested against the real stores: create the two products first (see `store/listing.md`).
 
 Shop expanded with gem packs (20/100/300 gems), 112 tests.
+
+Surf Club subscription (3.99 a month: x2 coins, ads free, 3 gems a day, +2 h away) added to the shop, 116 tests.

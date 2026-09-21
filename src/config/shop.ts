@@ -57,3 +57,21 @@ export const GEM_PACKS: readonly GemPack[] = [
   { id: 'gems100', storeId: 'com.wschiks.surftycoon.gems100', gems: 100, price: '€3.99', tag: 'Popular' },
   { id: 'gems300', storeId: 'com.wschiks.surftycoon.gems300', gems: 300, price: '€9.99', tag: 'Best value' },
 ];
+
+/** The monthly subscription. */
+export const CLUB = {
+  /** Subscription product id in App Store Connect / Google Play Console. */
+  storeId: 'com.wschiks.surftycoon.club',
+  /** The base plan id of the monthly plan in Google Play Console (Android needs it). */
+  planId: 'monthly',
+  name: 'Surf Club',
+  price: '€3.99',
+  /** All coin income x this, for as long as you are a member. */
+  coinMult: 2,
+  /** Gems you can claim once every 24 hours. */
+  gemsPerDay: 3,
+  /** Extra hours of away time. */
+  awayHours: 2,
+  /** Real seconds between two gem claims. */
+  claimSeconds: 24 * 3600,
+} as const;

@@ -17,6 +17,8 @@ import { icon, tile } from './icons';
 import { Menu } from './menu';
 import { Shop } from './shop';
 import { adStreak } from '../core/shop';
+import { adFree } from '../core/perks';
+import { CLUB } from '../config/shop';
 import { SkillScreen } from './skills';
 import type { TreeId } from '../config/skills';
 import { sound } from './sound';
@@ -628,7 +630,7 @@ export class GameUI {
     this.refs.rate.textContent = `+${fmt(autoIncomePerSecond(s))}/s`;
     this.refs.gems.textContent = String(s.skillPoints);
     this.refs.skills.classList.toggle('pulse', hasAffordableSkill(s));
-    const perm = Math.pow(EXPANSION_MULT, s.expansions) * (s.perks.x5 ? BALANCE.x5Mult : 1);
+    const perm = Math.pow(EXPANSION_MULT, s.expansions) * (s.perks.x5 ? BALANCE.x5Mult : 1) * (s.perks.club ? CLUB.coinMult : 1);
     this.refs.mult.hidden = perm === 1;
     this.refs.mult.textContent = `x${perm}`;
     this.refreshTip();
@@ -712,7 +714,7 @@ export class GameUI {
   /** Show one ad and say how it went. Players who bought "Remove ads" skip the video and still get the reward. */
   private async playAd(): Promise<AdResult> {
     if (this.adBusy) return 'closed';
-    if (this.game.state.perks.noAds) return 'rewarded';
+    if (adFree(this.game.state.perks)) return 'rewarded';
     this.adBusy = true;
     this.refreshBoost();
     try {
@@ -863,6 +865,7 @@ export class GameUI {
       toast: (t) => this.toast(t),
       confetti: () => this.confetti(),
       refreshTop: () => this.refreshTop(),
+      openLegal: (page) => this.openMenu(page),
       playAd: () => this.playAd(),
       busy: () => this.adBusy,
     });
@@ -870,7 +873,7 @@ export class GameUI {
     this.shop.show();
   }
 
-  private openMenu() {
+  private openMenu(page: 'main' | 'terms' | 'privacy' = 'main') {
     const m = this.modal('');
     new Menu(m.querySelector('.modal') as HTMLElement, {
       game: this.game,
@@ -879,6 +882,6 @@ export class GameUI {
       askReset: () => this.confirmReset(),
       restored: () => this.cb.onRestored(),
       refreshTop: () => this.refreshTop(),
-    }).show('main');
+    }).show(page);
   }
 }

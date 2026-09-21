@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { AD_COOLDOWN_SECONDS, AD_STEPS, GEM_PACKS } from '../src/config/shop';
+import { AD_COOLDOWN_SECONDS, AD_STEPS, CLUB, GEM_PACKS } from '../src/config/shop';
 import { BALANCE } from '../src/config/balance';
-import { loadPerks, PERKS_KEY, savePerks } from '../src/core/perks';
+import { adFree, loadPerks, PERKS_KEY, refreshClub, savePerks } from '../src/core/perks';
 import { exportSave, loadGame, parseSave, saveGame } from '../src/core/save';
-import { adStreak, claimAdStep, grantGemPack } from '../src/core/shop';
-import { multipliers } from '../src/core/economy';
+import { adStreak, claimAdStep, claimClubGems, clubStatus, grantGemPack } from '../src/core/shop';
+import { multipliers, offlineCap } from '../src/core/economy';
 import { newGame } from '../src/core/state';
 
 const fresh = () => {
@@ -80,10 +80,10 @@ describe('purchases', () => {
 
   it('are stored on the device and read back', () => {
     const store = memory();
-    expect(loadPerks(store)).toEqual({ noAds: false, x5: false });
+    expect(loadPerks(store)).toMatchObject({ noAds: false, x5: false, club: false });
     savePerks({ x5: true }, store);
     expect(store.data.has(PERKS_KEY)).toBe(true);
-    expect(loadPerks(store)).toEqual({ noAds: false, x5: true });
+    expect(loadPerks(store)).toMatchObject({ noAds: false, x5: true });
   });
 });
 
@@ -110,5 +110,50 @@ describe('gem packs', () => {
     const per = GEM_PACKS.map((p) => parseFloat(p.price.replace(/[^0-9.]/g, '')) / p.gems);
     expect(per[1]).toBeLessThan(per[0]);
     expect(per[2]).toBeLessThan(per[1]);
+  });
+});
+
+describe('Surf Club', () => {
+  const member = () => {
+    const s = fresh();
+    s.perks = { clubUntil: 10_000_000 };
+    refreshClub(s.perks, 5_000_000);
+    return s;
+  };
+
+  it('is active until the paid date, and then it stops by itself', () => {
+    const s = member();
+    expect(s.perks.club).toBe(true);
+    refreshClub(s.perks, 10_000_001);
+    expect(s.perks.club).toBe(false);
+  });
+
+  it('doubles coins, adds 2 hours of away time and makes ad rewards free', () => {
+    const a = fresh();
+    const b = member();
+    expect(multipliers(b).coins).toBe(multipliers(a).coins * CLUB.coinMult);
+    expect(offlineCap(b)).toBe(offlineCap(a) + CLUB.awayHours * 3600);
+    expect(adFree(a.perks)).toBe(false);
+    expect(adFree(b.perks)).toBe(true);
+    expect(adFree({ noAds: true })).toBe(true);
+  });
+
+  it('gives 3 gems once every 24 hours, and nothing to non-members', () => {
+    const s = member();
+    const t = 5_000_000;
+    expect(claimClubGems(s, t)).toBe(CLUB.gemsPerDay);
+    expect(claimClubGems(s, t + 1000)).toBe(0);
+    expect(clubStatus(s, t).nextIn).toBe(CLUB.claimSeconds);
+    expect(claimClubGems(s, t + CLUB.claimSeconds * 1000)).toBe(CLUB.gemsPerDay);
+    expect(s.skillPoints).toBe(CLUB.gemsPerDay * 2);
+    expect(claimClubGems(fresh(), t)).toBe(0);
+  });
+
+  it('is stored with the perks, not in the save', () => {
+    const store = memory();
+    savePerks({ clubUntil: 123 }, store);
+    expect(loadPerks(store).clubUntil).toBe(123);
+    const s = member();
+    expect(exportSave(s)).not.toContain('clubUntil');
   });
 });

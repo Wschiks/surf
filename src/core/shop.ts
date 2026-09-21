@@ -1,4 +1,4 @@
-import { AD_COOLDOWN_SECONDS, AD_STEPS, GEM_PACKS, type AdStep, type GemPackId } from '../config/shop';
+import { AD_COOLDOWN_SECONDS, AD_STEPS, CLUB, GEM_PACKS, type AdStep, type GemPackId } from '../config/shop';
 import { loadGranted, saveGranted } from './perks';
 import { addSkillPoints } from './skills';
 import type { GameState } from './state';
@@ -41,4 +41,23 @@ export function grantGemPack(state: GameState, id: GemPackId, transactionId: str
   addSkillPoints(state, pack.gems);
   remember([...seen, transactionId]);
   return pack.gems;
+}
+
+export interface ClubStatus {
+  active: boolean;
+  /** Seconds until the daily gems can be claimed (0 = ready). */
+  nextIn: number;
+}
+
+export function clubStatus(state: GameState, now: number): ClubStatus {
+  return { active: !!state.perks.club, nextIn: Math.max(0, Math.ceil((state.clubNext - now) / 1000)) };
+}
+
+/** Members can claim their daily gems once every 24 hours (missed days do not add up). Returns the gems given. */
+export function claimClubGems(state: GameState, now: number): number {
+  const c = clubStatus(state, now);
+  if (!c.active || c.nextIn > 0) return 0;
+  addSkillPoints(state, CLUB.gemsPerDay);
+  state.clubNext = now + CLUB.claimSeconds * 1000;
+  return CLUB.gemsPerDay;
 }

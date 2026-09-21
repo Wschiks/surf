@@ -1,4 +1,5 @@
 import { BALANCE, costFactor, milestoneMult, STATS, STAT_IDS, tierFactor, type StatId } from '../config/balance';
+import { CLUB } from '../config/shop';
 import { EXPANSION_MULT } from '../config/expansions';
 import { FACILITIES, facilityById } from '../config/facilities';
 import { ZONES, zoneById, type ZoneRef } from '../config/sports';
@@ -15,6 +16,7 @@ export function multipliers(state: GameState): Multipliers {
   const m: Multipliers = { coins: Math.pow(EXPANSION_MULT, state.expansions) * (1 + fx.allCoins), speed: 1 };
   if (state.boost > 0) m.coins *= BALANCE.boostMult;
   if (state.perks.x5) m.coins *= BALANCE.x5Mult;
+  if (state.perks.club) m.coins *= CLUB.coinMult;
   for (const f of FACILITIES) {
     const lvl = state.facilities[f.id] ?? 0;
     m[f.effect] *= 1 + f.perLevel * (1 + fx.facilityPower) * lvl;
@@ -75,7 +77,7 @@ export function discounts(state: GameState, sport: string): { stat: (s: StatId) 
 
 /** Seconds away that still earn coins: 2 hours, plus what the beach skills add. */
 export function offlineCap(state: GameState): number {
-  return BALANCE.offlineCapSeconds + skillEffects(state).offlineHours * 3600;
+  return BALANCE.offlineCapSeconds + (skillEffects(state).offlineHours + (state.perks.club ? CLUB.awayHours : 0)) * 3600;
 }
 
 /** Total upgrade levels bought in a zone (used by the Level 2 unlock rule). */

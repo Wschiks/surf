@@ -1,5 +1,5 @@
 import { applyOffline, tick, type OfflineReport } from './economy';
-import { loadPerks } from './perks';
+import { loadPerks, refreshClub } from './perks';
 import { refreshQuests } from './quests';
 import { loadGame, saveGame } from './save';
 import type { GameState } from './state';
@@ -28,6 +28,7 @@ export class Game {
   }
 
   update(now = Date.now()) {
+    refreshClub(this.state.perks, now); // a subscription can run out while the game is open
     let dt = (now - this.last) / 1000;
     this.last = now;
     if (dt <= 0) return;

@@ -1,9 +1,10 @@
 import type { AdResult } from '../ads';
 import { BALANCE } from '../config/balance';
-import { AD_STEPS, GEM_PACKS, PRODUCTS, type AdStep, type GemPackId, type ProductId } from '../config/shop';
+import { AD_STEPS, CLUB, GEM_PACKS, PRODUCTS, type AdStep, type GemPackId, type ProductId } from '../config/shop';
 import type { Game } from '../core/game';
-import { adStreak, claimAdStep, grantGemPack } from '../core/shop';
-import { buy, buyPack, canBuy, restore, storePrices } from '../purchases';
+import { adFree } from '../core/perks';
+import { adStreak, claimAdStep, claimClubGems, clubStatus, grantGemPack } from '../core/shop';
+import { buy, buyClub, buyPack, canBuy, manageClub, restore, storePrices, type PriceKey } from '../purchases';
 import { icon, tile } from './icons';
 import { sound } from './sound';
 
@@ -15,6 +16,8 @@ export interface ShopContext {
   refreshTop: () => void;
   /** Show one ad (or skip it when the player bought "Remove ads"). */
   playAd: () => Promise<AdResult>;
+  /** Open the Terms or the Privacy Policy. */
+  openLegal: (page: 'terms' | 'privacy') => void;
   /** True while an ad is on screen. */
   busy: () => boolean;
 }
@@ -31,7 +34,7 @@ function clock(seconds: number): string {
 
 /** The shop dialog: a free ad streak (5 ads a day) and two one-time purchases. It draws itself into `root`. */
 export class Shop {
-  private prices: Partial<Record<ProductId | GemPackId, string>> = {};
+  private prices: Partial<Record<PriceKey, string>> = {};
   private signature = '';
   private buying = false;
 
@@ -50,6 +53,7 @@ export class Shop {
         <div class="menu-title"><h2>Shop</h2></div>
         <button class="x" data-close aria-label="Close">${icon('close')}</button>
       </div>
+      <div class="shop-card club" data-club></div>
       <h4>Free rewards</h4>
       <div class="shop-card" data-streak></div>
       <h4>Gems</h4>
@@ -75,9 +79,27 @@ export class Shop {
     const now = Date.now();
     const streak = adStreak(g, now);
     const busy = this.ctx.busy() || this.buying;
-    const sig = [streak.step, streak.lockedFor, busy, g.perks.noAds, g.perks.x5, g.skillPoints, Object.values(this.prices).join(',')].join('|');
+    const sig = [streak.step, streak.lockedFor, busy, g.perks.noAds, g.perks.x5, g.perks.club, g.perks.clubUntil, clubStatus(g, now).nextIn, g.skillPoints, Object.values(this.prices).join(',')].join('|');
     if (sig === this.signature) return;
     this.signature = sig;
+
+    const club = clubStatus(g, now);
+    const until = g.perks.clubUntil ? new Date(g.perks.clubUntil).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '';
+    const perks = [`Coins x${CLUB.coinMult}, all the time`, 'Every ad reward without an ad', `${CLUB.gemsPerDay} gems every day`, `+${CLUB.awayHours} hours away time`];
+    this.root.querySelector('[data-club]')!.innerHTML = `
+      <div class="shop-title"><b>${icon('star')} ${CLUB.name}</b><small>${club.active ? `Active${until ? ' until ' + until : ''}` : `${this.prices.club ?? CLUB.price} / month`}</small></div>
+      <ul class="club-perks">${perks.map((t) => `<li>${icon('check')}${t}</li>`).join('')}</ul>
+      ${
+        club.active
+          ? `<button class="go big ready" data-club-claim ${club.nextIn > 0 || busy ? 'disabled' : ''}>${icon('gem')} ${club.nextIn > 0 ? `Next gems in ${clock(club.nextIn)}` : `Claim ${CLUB.gemsPerDay} gems`}</button>
+             <button class="go alt big" data-club-manage>Manage subscription</button>`
+          : `<button class="go big club-join" data-club-join ${busy ? 'disabled' : ''}>Join for ${this.prices.club ?? CLUB.price} / month</button>`
+      }
+      <p class="shop-note">${this.prices.club ?? CLUB.price} per month. Renews by itself every month until you cancel it in your App Store or Google Play account settings. Cancel any time. <button class="link" data-legal="terms">Terms</button> · <button class="link" data-legal="privacy">Privacy</button></p>`;
+    this.root.querySelector('[data-club-join]')?.addEventListener('click', () => void this.joinClub());
+    this.root.querySelector('[data-club-claim]')?.addEventListener('click', () => this.claimClub());
+    this.root.querySelector('[data-club-manage]')?.addEventListener('click', () => void manageClub());
+    this.root.querySelectorAll<HTMLElement>('[data-legal]').forEach((b) => b.addEventListener('click', () => this.ctx.openLegal(b.dataset.legal as 'terms' | 'privacy')));
 
     const locked = streak.lockedFor > 0;
     const steps = AD_STEPS.map((s, i) => {
@@ -88,7 +110,7 @@ export class Shop {
       ? `Next ads in ${clock(streak.lockedFor)}`
       : busy
         ? 'Loading...'
-        : `${g.perks.noAds ? 'Claim' : 'Watch ad'} ${streak.step + 1} of ${AD_STEPS.length}`;
+        : `${adFree(g.perks) ? 'Claim' : 'Watch ad'} ${streak.step + 1} of ${AD_STEPS.length}`;
     this.root.querySelector('[data-streak]')!.innerHTML = `
       <div class="shop-title"><b>Watch 5 ads</b><small>${locked ? 'Done for today' : 'Once a day'}</small></div>
       <div class="steps">${steps}</div>
@@ -152,6 +174,37 @@ export class Shop {
     }
     this.ctx.refreshTop();
     this.signature = '';
+    this.update();
+  }
+
+  private async joinClub() {
+    if (this.buying) return;
+    this.buying = true;
+    this.update();
+    const result = await buyClub(this.ctx.game.state.perks);
+    this.buying = false;
+    if (result === 'bought') {
+      sound.coin();
+      this.ctx.confetti();
+      this.ctx.toast(`Welcome to the ${CLUB.name}!`);
+    } else if (result === 'unavailable') {
+      this.ctx.toast('Buying works in the Surf Tycoon phone app.');
+    } else if (result === 'failed') {
+      this.ctx.toast('The purchase did not go through. You were not charged.');
+    }
+    this.ctx.refreshTop();
+    this.signature = '';
+    this.update();
+  }
+
+  private claimClub() {
+    const got = claimClubGems(this.ctx.game.state, Date.now());
+    if (got > 0) {
+      sound.coin();
+      this.ctx.toast(`+${got} gems!`);
+      this.ctx.game.save();
+    }
+    this.ctx.refreshTop();
     this.update();
   }
 
