@@ -9,12 +9,19 @@
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc --noEmit",
-    "shots": "node scripts/screenshots.mjs"
+    "shots": "node scripts/screenshots.mjs",
+    "phone:sync": "npm run build && cap sync",
+    "phone:open:ios": "cap open ios",
+    "phone:open:android": "cap open android"
   },
   "dependencies": {
+    "@capacitor/core": "^8.5.2",
     "phaser": "^4.2.1"
   },
   "devDependencies": {
+    "@capacitor/android": "^8.5.2",
+    "@capacitor/cli": "^8.5.2",
+    "@capacitor/ios": "^8.5.2",
     "playwright": "^1.63.0",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2",

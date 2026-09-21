@@ -36,3 +36,16 @@ takes screenshots in a 400 x 800 headless browser and saves them in `screenshots
 - `src/ui/` the DOM user interface on top of the map
 - `tests/` automated tests
 - `PROGRESS.md` what is done and what is next, `DECISIONS.md` every choice made and why
+
+## Phone app (Capacitor)
+
+The web game is wrapped for phones with [Capacitor](https://capacitorjs.com). The native projects are in `ios/` and `android/`.
+
+```bash
+npm run phone:sync          # build the web game and copy it into both native projects
+npm run phone:open:ios      # open in Xcode (needs a Mac with Xcode)
+npm run phone:open:android  # open in Android Studio
+```
+
+The app id in `capacitor.config.ts` is a placeholder (`com.example.surftycoon`); change it before you make a store build.
+Nothing has been published and no store accounts were created.
