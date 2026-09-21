@@ -24,6 +24,8 @@ export interface Quest {
   base?: number;
   /** The coins this quest pays, fixed when the quest is made: harder jobs pay more. */
   reward?: number;
+  /** The skill points this quest pays (a gem quest). Fixed when the quest is made; most quests pay none. */
+  points?: number;
 }
 
 export interface QuestView {
@@ -72,7 +74,7 @@ export function questView(state: GameState, q: Quest): QuestView {
   const v = view(state, q);
   v.reward = Math.ceil((q.reward ?? rewardFor(state, q.kind)) * (1 + skillEffects(state).quest));
   // harder quests pay skill points; so does every 5th quest you finish (nothing random: it depends on how many you finished)
-  v.points = Math.max(QUEST_POINTS[q.kind] ?? 0, (state.questsDone + 1) % LUCKY_QUEST_EVERY === 0 ? LUCKY_QUEST_POINTS : 0);
+  v.points = q.points ?? QUEST_POINTS[q.kind] ?? 0;
   return v;
 }
 
@@ -134,7 +136,11 @@ function nice(x: number): number {
 
 function make(state: GameState, slot: number, taken: Quest[]): Quest | null {
   const q = build(state, slot, taken);
-  return q ? { ...q, reward: rewardFor(state, q.kind) } : null;
+  if (!q) return null;
+  // Only this one quest becomes a gem quest: a hard kind, or every 5th quest that is made. Decided now, never changes.
+  state.questsMade += 1;
+  const lucky = state.questsMade % LUCKY_QUEST_EVERY === 0 ? LUCKY_QUEST_POINTS : 0;
+  return { ...q, reward: rewardFor(state, q.kind), points: Math.max(QUEST_POINTS[q.kind] ?? 0, lucky) };
 }
 
 function build(state: GameState, slot: number, taken: Quest[]): Quest | null {

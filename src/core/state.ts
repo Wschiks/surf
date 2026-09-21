@@ -35,6 +35,8 @@ export interface GameState {
   /** The quests on offer (three at a time) and how many were completed. */
   quests: import('./quests').Quest[];
   questsDone: number;
+  /** How many quests were ever made (every 5th one is a gem quest). */
+  questsMade: number;
   /** The second currency, earned from quests and expansions and spent on skills. */
   skillPoints: number;
   skillEarned: number;
@@ -63,6 +65,7 @@ export function newGame(now: number): GameState {
     expansions: 0,
     quests: [],
     questsDone: 0,
+    questsMade: 0,
     skillPoints: 0,
     skillEarned: 0,
     skills: rootSkills(),
@@ -100,6 +103,7 @@ export function ensureState(state: GameState): GameState {
   state.expansions ??= 0;
   state.quests ??= [];
   state.questsDone ??= 0;
+  state.questsMade ??= 0;
   state.skillPoints ??= 0;
   state.skillEarned ??= 0;
   state.skills = { ...rootSkills(), ...(state.skills ?? {}) };

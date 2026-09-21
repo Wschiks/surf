@@ -90,12 +90,20 @@ describe('learning skills', () => {
     expect(QUEST_POINTS.unlock).toBeGreaterThan(QUEST_POINTS.manager);
     expect(QUEST_POINTS.expand).toBeGreaterThan(QUEST_POINTS.unlock);
     expect(EXPANSION_POINTS[1]).toBeGreaterThan(0);
-    // the 5th finished quest pays a gem even when it is easy
-    s.questsDone = 4;
-    s.quests = [];
-    refreshQuests(s);
-    const q = s.quests.find((x) => QUEST_POINTS[x.kind] === 0)!;
-    expect(questView(s, q).points).toBe(1);
+    // only some quests that are made are gem quests, and a quest keeps its gems (they are fixed when it is made)
+    const t = game();
+    refreshQuests(t);
+    for (let i = 0; i < 40; i++) {
+      const idx = t.quests.findIndex((x) => x.kind === 'earn');
+      if (idx < 0) break;
+      const others = t.quests.filter((_, j) => j !== idx).map((x) => ({ x, points: x.points }));
+      t.totalCoins += 1e15;
+      claimQuest(t, idx);
+      for (const o of others) expect(o.x.points).toBe(o.points);
+    }
+    expect(t.questsMade).toBeGreaterThan(5);
+    expect(t.quests.filter((x) => (x.points ?? 0) > 0).length).toBeLessThan(t.quests.length); // never all of them
+    expect(t.quests.filter((x) => x.kind === 'earn' && (x.points ?? 0) > 0).length).toBeLessThanOrEqual(1);
     // and a hard quest pays its own gems
     expect(questView(s, { kind: 'unlock', zone: 'wave-2', target: 1 }).points).toBe(2);
   });

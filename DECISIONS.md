@@ -184,3 +184,6 @@ Every choice made while building, and why. The concept document (`docs/concept.m
 
 ## Skill points are rare
 - Easy quests (level up, finish sessions, serve guests, earn coins, more guests, faster) pay **no** skill points. Harder ones do: hire a manager 1, build/upgrade a beach building 1, unlock a level or sport 2, expand the beach 5. On top of that **every 5th quest you finish pays at least 1**, whatever it asks (it depends on how many you finished, so it stays deterministic). A quest card only shows the gem when it pays one. Expansions still pay 15 and 25.
+
+## Gem quests are fixed per quest
+- Fix: the gem was decided when a quest was claimed, so when the 5th quest came around every easy quest suddenly showed a gem. Now it is decided **when a quest is made** and stored on that quest (`points`): a hard kind (manager 1, building 1, unlock 2, expand 5) or every 5th quest that is made (`questsMade`). Only that one quest is a gem quest and it keeps its gem until you finish it; the other quests never change.
