@@ -31,6 +31,7 @@ export class MapScene extends Phaser.Scene {
   private zones: ZoneView[] = [];
   private clearedAreas = new Set<AreaId>(['beach', 'wave']);
   private popCount = 0;
+  private popsAlive = 0;
 
   constructor() {
     super('map');
@@ -48,7 +49,11 @@ export class MapScene extends Phaser.Scene {
     });
     this.ui = new GameUI(ui, this.game_, {
       onSelect: (id) => this.onSelect(id),
-      onReset: () => location.reload(),
+      onFocusBeach: () => this.view.animateTo(5 * UNIT, 0.8 * UNIT, this.view.width / 3.6, this.view.height * 0.2),
+      onReset: () => {
+        this.game_.stopSaving();
+        location.reload();
+      },
       onCollected: (id, coins) => this.pop(id, coins),
       onUnlocked: (id, kind) => this.onUnlocked(id, kind),
     });
@@ -67,7 +72,7 @@ export class MapScene extends Phaser.Scene {
     this.sites.update(this.game_.state, false);
     this.ocean = new OceanView(this);
     this.ocean.update(this.game_.state, 0, false);
-    for (const ref of ZONES) this.zones.push(new ZoneView(this, ref));
+    for (const ref of ZONES) this.zones.push(new ZoneView(this, ref, (id, coins) => this.pop(id, coins)));
 
     for (const a of AREAS) {
       if (a.clearedBySport) this.hazes.set(a.id, new Haze(this, a.id));
@@ -130,8 +135,6 @@ export class MapScene extends Phaser.Scene {
       const c = rectCenter(toWorld(ref.def.rect));
       const units = Math.max(1.5, Math.min(3.2, ref.def.rect.w * 0.6 + 0.5));
       this.view.animateTo(c.x, c.y, this.view.width / units, lift);
-    } else if (this.ui.selectedZone === null && document.querySelector('.sheet.open')) {
-      this.view.animateTo(5 * UNIT, 0.8 * UNIT, this.view.width / 3.6, lift);
     }
   }
 
@@ -143,12 +146,16 @@ export class MapScene extends Phaser.Scene {
   }
 
   private pop(zoneId: string | null, coins: number) {
-    if (coins <= 0) return;
+    if (coins <= 0 || this.popsAlive >= 8) return;
     const ref = zoneId ? ZONES.find((z) => z.id === zoneId) : null;
     const c = ref ? rectCenter(toWorld(ref.def.rect)) : { x: this.view.cx, y: this.view.cy };
     const id = 'pop-' + this.popCount++;
     this.labels.set({ id, x: c.x, y: c.y, className: 'pop', html: `+${fmt(coins)}` });
-    setTimeout(() => this.labels.remove(id), 1100);
+    this.popsAlive++;
+    setTimeout(() => {
+      this.labels.remove(id);
+      this.popsAlive--;
+    }, 1100);
   }
 
   jumpToArea(a: AreaDef) {

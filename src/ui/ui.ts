@@ -11,11 +11,21 @@ import { COIN, fmt, fmtSeconds, fmtTime } from './format';
 export interface UICallbacks {
   /** The player selected a zone (or null when the sheet closed). */
   onSelect: (zoneId: string | null) => void;
+  /** The beach sheet opened: show the beach. */
+  onFocusBeach: () => void;
   onReset: () => void;
   /** Coins were collected from a zone, for a floating number on the map. */
   onCollected: (zoneId: string | null, coins: number) => void;
   /** A level or a whole sport was unlocked. */
   onUnlocked: (zoneId: string, kind: 'sport' | 'level') => void;
+}
+
+/** Set the HTML of an element only when it changed, so a button is not rebuilt while it is being pressed. */
+function setHtml(el: HTMLElement, html: string) {
+  if (el.dataset.h !== html) {
+    el.innerHTML = html;
+    el.dataset.h = html;
+  }
 }
 
 type Sheet = { kind: 'zone'; id: string } | { kind: 'beach' } | { kind: 'sports' } | null;
@@ -88,6 +98,7 @@ export class GameUI {
     this.sheet = { kind: 'beach' };
     this.buildSheet();
     this.cb.onSelect(null);
+    this.cb.onFocusBeach();
   }
 
   openSports() {
@@ -225,7 +236,7 @@ export class GameUI {
     const enoughCoins = this.game.state.coins >= st.coins;
     btn.disabled = !st.canBuy;
     btn.className = 'go' + (st.canBuy ? ' ready' : '');
-    btn.innerHTML = `${need.kind === 'sport' ? 'Start it' : 'Unlock'} · ${COIN} ${fmt(st.coins)}${st.ready && !enoughCoins ? ' (need more coins)' : ''}`;
+    setHtml(btn, `${need.kind === 'sport' ? 'Start it' : 'Unlock'} · ${COIN} ${fmt(st.coins)}${st.ready && !enoughCoins ? ' (need more coins)' : ''}`);
   }
 
   private buildSportsSheet() {
@@ -304,7 +315,7 @@ export class GameUI {
     btn.classList.toggle('maxed', maxed);
     btn.toggleAttribute('data-afford', !maxed && s.coins >= cost);
     (btn as HTMLButtonElement).disabled = maxed;
-    btn.innerHTML = maxed ? 'MAX' : `${label}<span class="cost">${COIN} ${fmt(cost)}</span>`;
+    setHtml(btn, maxed ? 'MAX' : `${label}<span class="cost">${COIN} ${fmt(cost)}</span>`);
   }
 
   private refreshSheet() {
@@ -338,19 +349,19 @@ export class GameUI {
     if (z.phase === 'running') bar.style.width = Math.min(100, (z.elapsed / st.duration) * 100) + '%';
     else bar.style.width = z.phase === 'ready' ? '100%' : '0%';
     if (z.manager) {
-      go.innerHTML = 'Running by itself ✓';
+      setHtml(go, 'Running by itself ✓');
       go.disabled = true;
       go.className = 'go auto';
     } else if (z.phase === 'ready') {
-      go.innerHTML = `Collect ${COIN} ${fmt(z.pending)} and go again`;
+      setHtml(go, `Collect ${COIN} ${fmt(z.pending)} and go again`);
       go.disabled = false;
       go.className = 'go ready';
     } else if (z.phase === 'idle') {
-      go.innerHTML = '▶ Start a session';
+      setHtml(go, '▶ Start a session');
       go.disabled = false;
       go.className = 'go';
     } else {
-      go.innerHTML = 'Session running…';
+      setHtml(go, 'Session running…');
       go.disabled = true;
       go.className = 'go';
     }
@@ -363,14 +374,14 @@ export class GameUI {
       if (stat === 'capacity') eff = maxed ? `${st.guests} guests (max)` : `${st.guests} → ${next.guests} guests`;
       if (stat === 'price') eff = maxed ? `${COIN} ${fmt(st.pricePerGuest)} each (max)` : `${COIN} ${fmt(st.pricePerGuest)} → ${fmt(next.pricePerGuest)} each`;
       if (stat === 'speed') eff = maxed ? `${fmtSeconds(st.duration)} (max)` : `${fmtSeconds(st.duration)} → ${fmtSeconds(next.duration)} per session`;
-      row.querySelector('[data-eff]')!.innerHTML = `Lv ${lvl} · ${eff}`;
+      setHtml(row.querySelector('[data-eff]')!, `Lv ${lvl} · ${eff}`);
       this.setBuy(row.querySelector('[data-buy]')!, statCost(ref, stat, lvl));
     }
     const mgrBtn = q('[data-buy="manager"]');
     if (z.manager) {
       mgrBtn.classList.add('maxed');
       (mgrBtn as HTMLButtonElement).disabled = true;
-      mgrBtn.textContent = 'Hired ✓';
+      setHtml(mgrBtn, 'Hired ✓');
     } else {
       this.setBuy(mgrBtn, managerCost(ref), 'Hire ');
     }
@@ -462,6 +473,12 @@ export class GameUI {
     const s = this.game.state;
     const m = this.modal(`
       <h2>Surf Tycoon</h2>
+      <ul class="tips">
+        <li>Tap a zone to start a session. When it is done, tap it again to collect the coins.</li>
+        <li>Hire a manager to keep a zone running by itself, even while the game is closed.</li>
+        <li>Swipe to move around, pinch to zoom. The small map in the corner jumps to an area.</li>
+        <li>New levels and sports need coins and reputation ⭐. The goal bar shows what is next.</li>
+      </ul>
       <p>Coins earned in total: <b>${COIN} ${fmt(s.totalCoins)}</b></p>
       <p>Playing since <b>${new Date(s.startedAt).toLocaleDateString()}</b></p>
       <button class="go big" data-ok>Back to the beach</button>

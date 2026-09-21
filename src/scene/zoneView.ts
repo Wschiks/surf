@@ -21,11 +21,13 @@ export class ZoneView {
   private guests: Phaser.GameObjects.Image[] = [];
   private wakes: Phaser.GameObjects.Image[] = [];
   private lockedShown = true;
+  private lastElapsed = 0;
   private selected = false;
 
   constructor(
     private scene: Phaser.Scene,
     readonly ref: ZoneRef,
+    private onCycle: (zoneId: string, coins: number) => void = () => {},
   ) {
     this.rect = toWorld(ref.def.rect);
     const r = this.rect;
@@ -111,6 +113,9 @@ export class ZoneView {
       return;
     }
     const st = zoneStats(state, this.ref, z);
+    // a managed zone finished a session: show the coins (only for zones the player can see)
+    if (z.manager && z.elapsed < this.lastElapsed - 0.001 && near && view.ppu > 60) this.onCycle(this.ref.id, st.income);
+    this.lastElapsed = z.elapsed;
     const n = Math.min(st.guests, BALANCE.maxVisibleGuests);
     this.ensureGuests(n);
     const r = this.rect;

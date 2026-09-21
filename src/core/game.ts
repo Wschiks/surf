@@ -9,6 +9,7 @@ export class Game {
   offlineReport: OfflineReport | null = null;
   private last: number;
   private saveTimer = 0;
+  private saving = true;
 
   constructor(now = Date.now()) {
     this.state = loadGame(now);
@@ -41,6 +42,11 @@ export class Game {
   }
 
   save(now = Date.now()) {
-    saveGame(this.state, now);
+    if (this.saving) saveGame(this.state, now);
+  }
+
+  /** Stop saving (used when the player erases the save and the page reloads). */
+  stopSaving() {
+    this.saving = false;
   }
 }

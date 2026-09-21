@@ -51,13 +51,41 @@ describe('MapView', () => {
     expect(v.ppu).toBeCloseTo(v.maxPpu());
   });
 
-  it('keeps the centre inside the map when panning', () => {
+  it('keeps the whole view inside the map when panning', () => {
     const v = makeView();
-    v.panBy(-100000, -100000);
-    expect(v.cx).toBeGreaterThanOrEqual(0);
-    expect(v.cx).toBeLessThanOrEqual(10 * UNIT);
-    expect(v.cy).toBeGreaterThanOrEqual(0);
-    expect(v.cy).toBeLessThanOrEqual(10 * UNIT);
+    for (const [dx, dy] of [[-100000, -100000], [100000, 100000], [-100000, 100000], [100000, -100000]]) {
+      v.panBy(dx, dy);
+      for (const p of v.viewCorners()) {
+        expect(p.x).toBeGreaterThanOrEqual(-0.001);
+        expect(p.x).toBeLessThanOrEqual(10 * UNIT + 0.001);
+        expect(p.y).toBeGreaterThanOrEqual(-0.001);
+        expect(p.y).toBeLessThanOrEqual(10 * UNIT + 0.001);
+      }
+    }
+  });
+
+  it('can reach every corner of the map when zoomed in', () => {
+    const v = makeView();
+    v.jumpTo(0, 0);
+    expect(v.cx).toBeLessThan(200);
+    v.jumpTo(10 * UNIT, 10 * UNIT);
+    expect(v.cx).toBeGreaterThan(800);
+  });
+
+  it('keeps the view inside the map at every zoom level', () => {
+    const v = makeView();
+    for (let f = 0; f <= 1; f += 0.1) {
+      v.jumpTo(0, 0, v.minPpu() + (v.maxPpu() - v.minPpu()) * f);
+      const c = v.viewCorners();
+      const xs = c.map((p) => p.x);
+      const ys = c.map((p) => p.y);
+      const w = Math.max(...xs) - Math.min(...xs);
+      const h = Math.max(...ys) - Math.min(...ys);
+      if (w <= 10 * UNIT && h <= 10 * UNIT) {
+        expect(Math.min(...xs)).toBeGreaterThanOrEqual(-0.001);
+        expect(Math.min(...ys)).toBeGreaterThanOrEqual(-0.001);
+      }
+    }
   });
 
   it('shows the whole map when zoomed out', () => {
@@ -74,9 +102,10 @@ describe('MapView', () => {
 
   it('lifts the target above the screen centre', () => {
     const v = makeView();
-    v.animateTo(500, 300, 300, 150);
+    v.jumpTo(500, 500, 250);
+    v.animateTo(500, 500, 300, 150);
     for (let i = 0; i < 200; i++) v.update(0.05);
-    const s = v.worldToScreen(500, 300);
+    const s = v.worldToScreen(500, 500);
     expect(s.x).toBeCloseTo(200, 0);
     expect(s.y).toBeCloseTo(250, 0);
   });

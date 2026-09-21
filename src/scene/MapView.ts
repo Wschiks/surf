@@ -24,11 +24,15 @@ export class MapView {
   /** Speed of a swipe that keeps gliding after the finger lifts (screen px per second). */
   private vel: Pt | null = null;
 
+  private sized = false;
+
   resize(w: number, h: number) {
-    const first = this.width === 400 && this.height === 800 && this.ppu === 400;
     this.width = w;
     this.height = h;
-    if (first) this.ppu = this.defaultPpu();
+    if (!this.sized) {
+      this.sized = true;
+      this.ppu = this.defaultPpu();
+    }
     this.ppu = Math.min(Math.max(this.ppu, this.minPpu()), this.maxPpu());
     this.clamp();
   }
@@ -98,11 +102,29 @@ export class MapView {
     this.clamp();
   }
 
-  /** Keep the centre of the view inside the map. */
+  /** Half size of the view in world px, measured along the world axes (the view is a rotated rectangle). */
+  private halfExtents(ppu = this.ppu): Pt {
+    const z = ppu / UNIT;
+    return {
+      x: (this.width / 2 * COS + this.height / 2 * SIN) / z,
+      y: (this.width / 2 * SIN + this.height / 2 * COS) / z,
+    };
+  }
+
+  /** Keep the whole view inside the map. When the view is bigger than the map (zoomed out) the map is centred. */
   clamp() {
+    const c = this.clampPoint(this.cx, this.cy, this.ppu);
+    this.cx = c.x;
+    this.cy = c.y;
+  }
+
+  private clampPoint(x: number, y: number, ppu: number): Pt {
     const max = MAP_UNITS * UNIT;
-    this.cx = Math.min(Math.max(this.cx, 0), max);
-    this.cy = Math.min(Math.max(this.cy, 0), max);
+    const h = this.halfExtents(ppu);
+    return {
+      x: h.x * 2 >= max ? max / 2 : Math.min(Math.max(x, h.x), max - h.x),
+      y: h.y * 2 >= max ? max / 2 : Math.min(Math.max(y, h.y), max - h.y),
+    };
   }
 
   jumpTo(cx: number, cy: number, ppu?: number) {
@@ -120,7 +142,8 @@ export class MapView {
     const z = p / UNIT;
     const ox = (lift * SIN) / z;
     const oy = (lift * COS) / z;
-    this.target = { cx: cx + ox, cy: cy + oy, ppu: p };
+    const c = this.clampPoint(cx + ox, cy + oy, p);
+    this.target = { cx: c.x, cy: c.y, ppu: p };
   }
 
   get animating(): boolean {

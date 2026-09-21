@@ -74,3 +74,19 @@ describe('game clock', () => {
     delete (globalThis as unknown as { localStorage?: unknown }).localStorage;
   });
 });
+
+describe('starting over', () => {
+  it('does not write the old game back after the save was erased', () => {
+    const store = memoryStorage();
+    (globalThis as unknown as { localStorage: unknown }).localStorage = store;
+    const g = new Game(0);
+    g.save(1);
+    expect(store.data[SAVE_KEY]).toBeDefined();
+    store.removeItem(SAVE_KEY);
+    g.stopSaving();
+    g.save(2);
+    g.update(10_000);
+    expect(store.data[SAVE_KEY]).toBeUndefined();
+    delete (globalThis as unknown as { localStorage?: unknown }).localStorage;
+  });
+});

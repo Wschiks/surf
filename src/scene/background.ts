@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { AREAS, areaById, rgbToHex, seaColorAt, type AreaId } from '../config/areas';
 import { MAP_UNITS, UNIT, WORLD_MARGIN } from '../config/layout';
-import { placeImage, placeTile, bakeCloudTile, bakeFort, bakeDecor, bakeCove, COVE_SIZE, bakeLighthouse, placeUpright, bakeReef, bakeRocks, bakeSandTile, bakeShoreFoam, bakeSparkleTile, FORT_SIZE, REEF_SIZE, ROCKS_SIZE } from './art';
+import { BEACH_DECOR, LAND_DECOR, LANDMARKS, type DecorDef } from '../config/landmarks';
+import { bakeCloudTile, bakeCove, bakeDecor, bakeFort, bakeLighthouse, bakeReef, bakeRocks, bakeSandTile, bakeShoreFoam, bakeSparkleTile, placeImage, placeTile, placeUpright } from './art';
 
 const M = WORLD_MARGIN * UNIT;
 const MAP = MAP_UNITS * UNIT;
@@ -75,14 +76,14 @@ export function buildBackground(scene: Phaser.Scene) {
   grid.strokeRect(0, 0, MAP, MAP);
 
   // landmarks
-  placeImage(scene, 'lm-cove', 0, 2.0 * UNIT).setDepth(DEPTH.landmark - 1);
-  placeImage(scene, 'lm-rocks', 0, 0.75 * UNIT).setDepth(DEPTH.landmark);
-  placeImage(scene, 'lm-reef', 3.45 * UNIT, 3.9 * UNIT).setDisplaySize(310, 110).setDepth(DEPTH.landmark);
-  placeImage(scene, 'lm-fort', MAP - FORT_SIZE.w + 20, 3.8 * UNIT).setDepth(DEPTH.landmark);
-  placeUpright(scene, 'lm-lighthouse', MAP - 42 + 22 - 22, 3.8 * UNIT + 44).setDepth(DEPTH.landmark + 1).setOrigin(0.5, 0.87);
-  void ROCKS_SIZE;
-  void COVE_SIZE;
-  void REEF_SIZE;
+  for (const lm of LANDMARKS) {
+    const x = lm.at.x * UNIT;
+    const y = lm.at.y * UNIT;
+    const img = lm.upright ? placeUpright(scene, lm.texture, x, y) : placeImage(scene, lm.texture, x, y);
+    if (lm.origin) img.setOrigin(lm.origin.x, lm.origin.y);
+    if (lm.size) img.setDisplaySize(lm.size.w, lm.size.h);
+    img.setDepth(DEPTH.landmark + (lm.layer ?? 0));
+  }
 
   // big slow swells over the whole sea
   const swell = placeTile(scene, 'tile-swell', left, 2 * UNIT, width, 12 * UNIT + M, 1.5).setDepth(DEPTH.sparkle - 0.5);
@@ -92,26 +93,13 @@ export function buildBackground(scene: Phaser.Scene) {
   return { sparkle, foam, swell };
 }
 
-/** Palms, umbrellas, towels and trees. Fixed positions: nothing is random. */
 function addDecor(scene: Phaser.Scene) {
-  const up = (key: string, x: number, y: number, w: number, h: number, depth = DEPTH.things - 0.5) =>
-    placeUpright(scene, key, x * UNIT, y * UNIT).setDisplaySize(w, h).setDepth(depth);
-  // palms along the back of the beach
-  [0.35, 2.1, 4.0, 6.1, 8.05, 9.7, -1.4, 11.4].forEach((x, i) => up('deco-palm', x, 0.16 + (i % 2) * 0.04, 52 + (i % 3) * 6, 84 + (i % 3) * 8));
-  // umbrellas and towels on the front beach
-  [[7.1, 1.55, 'a'], [8.0, 1.75, 'b'], [8.7, 1.4, 'c']].forEach(([x, y, k]) => {
-    up('deco-umbrella-' + k, x as number, y as number, 44, 51);
-    placeImage(scene, 'deco-towel-' + k, (x as number) * UNIT - 28, (y as number) * UNIT + 4).setDepth(DEPTH.things - 1.5);
-  });
-  [[2.6, 0.95], [6.9, 1.05], [9.1, 0.95], [0.9, 1.05]].forEach(([x, y]) => placeImage(scene, 'deco-star', x * UNIT, y * UNIT).setDepth(DEPTH.things - 1.5));
-  // grass, trees and bushes behind the beach (visible when the view reaches past the back of the map)
-  for (let i = 0; i < 46; i++) {
-    const x = -5 + i * 0.32 + ((i * 7) % 5) * 0.06;
-    const row = i % 3;
-    const y = -1.55 - row * 0.55 - ((i * 13) % 4) * 0.12;
-    if (i % 4 === 0) up('deco-bush', x, y, 40, 32);
-    else up('deco-tree', x, y - 0.1, 54 + (i % 3) * 8, 70 + (i % 3) * 8);
-  }
+  const put = (d: DecorDef) => {
+    const img = d.upright ? placeUpright(scene, d.texture, d.x * UNIT, d.y * UNIT) : placeImage(scene, d.texture, d.x * UNIT, d.y * UNIT);
+    img.setDisplaySize(d.w, d.h).setDepth(d.upright ? DEPTH.things - 0.5 : DEPTH.things - 1.5);
+  };
+  BEACH_DECOR.forEach(put);
+  LAND_DECOR.forEach(put);
 }
 
 /** Light haze over an area the player has not unlocked. Clears with a fade when the area opens. */

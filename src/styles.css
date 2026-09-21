@@ -153,3 +153,6 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 .confetti { position: absolute; left: 50%; top: 42%; width: 0; height: 0; pointer-events: none; z-index: 20; }
 .confetti i { position: absolute; width: 9px; height: 14px; border-radius: 2px; animation: confetti 1.3s cubic-bezier(.2,.7,.3,1) forwards; }
 @keyframes confetti { from { transform: translate(0, 0) rotate(0); opacity: 1; } to { transform: translate(var(--dx), calc(var(--dy) + 140px)) rotate(var(--rot)); opacity: 0; } }
+
+.tips { margin: 6px 0 10px; padding-left: 18px; font-size: 13.5px; line-height: 1.35; color: #35576b; }
+.tips li { margin: 4px 0; }
