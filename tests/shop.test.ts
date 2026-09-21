@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { AD_COOLDOWN_SECONDS, AD_STEPS } from '../src/config/shop';
+import { AD_COOLDOWN_SECONDS, AD_STEPS, GEM_PACKS } from '../src/config/shop';
 import { BALANCE } from '../src/config/balance';
 import { loadPerks, PERKS_KEY, savePerks } from '../src/core/perks';
 import { exportSave, loadGame, parseSave, saveGame } from '../src/core/save';
-import { adStreak, claimAdStep } from '../src/core/shop';
+import { adStreak, claimAdStep, grantGemPack } from '../src/core/shop';
 import { multipliers } from '../src/core/economy';
 import { newGame } from '../src/core/state';
 
@@ -84,5 +84,31 @@ describe('purchases', () => {
     savePerks({ x5: true }, store);
     expect(store.data.has(PERKS_KEY)).toBe(true);
     expect(loadPerks(store)).toEqual({ noAds: false, x5: true });
+  });
+});
+
+describe('gem packs', () => {
+  it('pay out the pack, and never the same purchase twice', () => {
+    const s = fresh();
+    let seen: string[] = [];
+    const remember = (ids: string[]) => (seen = ids);
+    expect(grantGemPack(s, 'gems20', 'tx-1', seen, remember)).toBe(20);
+    expect(grantGemPack(s, 'gems20', 'tx-1', seen, remember)).toBe(0);
+    expect(grantGemPack(s, 'gems100', 'tx-2', seen, remember)).toBe(100);
+    expect(grantGemPack(s, 'gems300', 'tx-3', seen, remember)).toBe(300);
+    expect(s.skillPoints).toBe(420);
+    expect(s.skillEarned).toBe(420);
+  });
+
+  it('pay nothing without a purchase id', () => {
+    const s = fresh();
+    expect(grantGemPack(s, 'gems20', '', [], () => {})).toBe(0);
+    expect(s.skillPoints).toBe(0);
+  });
+
+  it('get cheaper per gem in the bigger packs', () => {
+    const per = GEM_PACKS.map((p) => parseFloat(p.price.replace(/[^0-9.]/g, '')) / p.gems);
+    expect(per[1]).toBeLessThan(per[0]);
+    expect(per[2]).toBeLessThan(per[1]);
   });
 });

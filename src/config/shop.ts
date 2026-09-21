@@ -1,4 +1,4 @@
-// The shop: a free ad streak (watch 5 ads, once a day) and two one-time purchases.
+// The shop: a free ad streak (watch 5 ads, once a day), gem packs (bought as often as you like) and two one-time purchases.
 
 /** One reward of the ad streak. */
 export type AdStep = { gems: number } | { boost: number };
@@ -37,4 +37,23 @@ export const PRODUCTS: readonly Product[] = [
     text: 'All coin income x5, for good. It stacks with everything else. One time.',
     price: '€4.99',
   },
+];
+
+export type GemPackId = 'gems20' | 'gems100' | 'gems300';
+
+export interface GemPack {
+  id: GemPackId;
+  /** The product id in App Store Connect and Google Play Console (consumable: can be bought again and again). */
+  storeId: string;
+  gems: number;
+  price: string;
+  /** A small tag on the card. */
+  tag?: string;
+}
+
+/** Skill points (gems) for real money. The bigger the pack, the cheaper a gem. */
+export const GEM_PACKS: readonly GemPack[] = [
+  { id: 'gems20', storeId: 'com.wschiks.surftycoon.gems20', gems: 20, price: '€0.99' },
+  { id: 'gems100', storeId: 'com.wschiks.surftycoon.gems100', gems: 100, price: '€3.99', tag: 'Popular' },
+  { id: 'gems300', storeId: 'com.wschiks.surftycoon.gems300', gems: 300, price: '€9.99', tag: 'Best value' },
 ];

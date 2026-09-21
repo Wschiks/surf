@@ -1,8 +1,9 @@
 import { Capacitor } from '@capacitor/core';
-import { PRODUCTS, type ProductId } from './config/shop';
+import { GEM_PACKS, PRODUCTS, type GemPackId, type ProductId } from './config/shop';
 import { savePerks, type Perks } from './core/perks';
 
 export type BuyResult = 'bought' | 'cancelled' | 'failed' | 'unavailable';
+export type PackResult = { result: Exclude<BuyResult, 'bought'> } | { result: 'bought'; transactionId: string };
 
 /** Buying only works inside the phone apps (App Store / Google Play). In a browser the shop shows the prices only. */
 export const canBuy = Capacitor.isNativePlatform();
@@ -14,13 +15,13 @@ const plugin = () => (loaded ??= import('@capgo/native-purchases'));
 const productOf = (id: ProductId) => PRODUCTS.find((p) => p.id === id)!;
 
 /** The price texts from the store, in the player's own currency (empty in a browser). */
-export async function storePrices(): Promise<Partial<Record<ProductId, string>>> {
+export async function storePrices(): Promise<Partial<Record<ProductId | GemPackId, string>>> {
   if (!canBuy) return {};
   try {
     const { NativePurchases, PURCHASE_TYPE } = await plugin();
-    const { products } = await NativePurchases.getProducts({ productIdentifiers: PRODUCTS.map((p) => p.storeId), productType: PURCHASE_TYPE.INAPP });
-    const out: Partial<Record<ProductId, string>> = {};
-    for (const p of PRODUCTS) {
+    const { products } = await NativePurchases.getProducts({ productIdentifiers: [...PRODUCTS, ...GEM_PACKS].map((p) => p.storeId), productType: PURCHASE_TYPE.INAPP });
+    const out: Partial<Record<ProductId | GemPackId, string>> = {};
+    for (const p of [...PRODUCTS, ...GEM_PACKS]) {
       const found = products.find((x) => x.identifier === p.storeId);
       if (found) out[p.id] = found.priceString;
     }
@@ -42,6 +43,36 @@ export async function buy(id: ProductId, perks: Perks): Promise<BuyResult> {
   } catch (e) {
     const text = String((e as { message?: string })?.message ?? e).toLowerCase();
     return text.includes('cancel') ? 'cancelled' : 'failed';
+  }
+}
+
+/** Buy one gem pack (a consumable: it can be bought again and again). The caller pays out the gems. */
+export async function buyPack(id: GemPackId): Promise<PackResult> {
+  if (!canBuy) return { result: 'unavailable' };
+  try {
+    const { NativePurchases, PURCHASE_TYPE } = await plugin();
+    const t = await NativePurchases.purchaseProduct({ productIdentifier: GEM_PACKS.find((p) => p.id === id)!.storeId, productType: PURCHASE_TYPE.INAPP, quantity: 1, isConsumable: true });
+    return { result: 'bought', transactionId: t.transactionId ?? t.orderId ?? '' };
+  } catch (e) {
+    const text = String((e as { message?: string })?.message ?? e).toLowerCase();
+    return { result: text.includes('cancel') ? 'cancelled' : 'failed' };
+  }
+}
+
+/**
+ * Gem packs the store reports outside the normal buy flow (paid, but the app was closed before the gems arrived):
+ * `pay` is called for each; it must not pay a purchase twice (grantGemPack remembers the ids).
+ */
+export async function watchPacks(pay: (id: GemPackId, transactionId: string) => void) {
+  if (!canBuy) return;
+  try {
+    const { NativePurchases } = await plugin();
+    await NativePurchases.addListener('transactionUpdated', (t) => {
+      const pack = GEM_PACKS.find((p) => p.storeId === t.productIdentifier);
+      if (pack) pay(pack.id, t.transactionId ?? t.orderId ?? '');
+    });
+  } catch {
+    // no store: nothing to watch
   }
 }
 

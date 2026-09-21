@@ -9,7 +9,7 @@ Fill in the names in `[brackets]`. Nothing here has been submitted.
 | Subtitle / short description | Run your own surf beach (max 30) | Build a surf beach and grow it into a sea-sport empire. (max 80) |
 | Category | Games > Simulation (second: Casual) | Game > Simulation |
 | Price | Free | Free |
-| In-app purchases / ads | 2 one-time in-app purchases (Remove ads, Coins x5); contains ads (optional rewarded video) | same: 2 managed one-time products; contains ads |
+| In-app purchases / ads | 5 in-app purchases: 3 gem packs (consumable), Remove ads and Coins x5 (one-time); contains ads (optional rewarded video) | same: 3 consumable + 2 one-time products; contains ads |
 | Languages | English | English |
 | Support URL / email | [your support page or email] | [your support email] |
 | Privacy policy URL | [the address where you host `public/privacy.html`] | same |
@@ -34,17 +34,20 @@ FEATURES
 • Quests with coin rewards
 • Expand the beach: a giant wave washes over the screen, you start over faster than before and all your income goes up for good
 • A big map you can swipe and zoom, with a reef, a rock arch and a red lighthouse on the cliff
-• No account needed, your game stays on your device. Optional video ads give you double coins or gems, and two optional one-time purchases (Remove ads, Coins x5) are in the shop.
+• No account needed, your game stays on your device. Optional video ads give you double coins or gems, and the shop has gem packs plus two optional one-time purchases (Remove ads, Coins x5).
 
 ## What's new (first release)
 First release.
 
 ## In-app purchases (create these in both stores before testing)
-Both are **non-consumable / one-time** products. The ids must match `PRODUCTS[].storeId` in `src/config/shop.ts`.
+Five products. The ids must match `PRODUCTS[].storeId` and `GEM_PACKS[].storeId` in `src/config/shop.ts`. The gem packs are **consumable** (App Store: Consumable; Google Play: a normal in-app product, which the app consumes after payout); Remove ads and Coins x5 are **non-consumable**.
 | Product | Id | Price | Reference name / description |
 |---|---|---|---|
 | Remove ads | `com.wschiks.surftycoon.removeads` | 2.99 EUR (tier of your choice) | "Remove ads": every ad reward without watching an ad |
 | Coins x5 | `com.wschiks.surftycoon.coins5x` | 4.99 EUR | "Coins x5": all coin income x5 for good |
+| 20 gems | `com.wschiks.surftycoon.gems20` | 0.99 EUR | "20 gems": skill points for the skill trees (consumable) |
+| 100 gems | `com.wschiks.surftycoon.gems100` | 3.99 EUR | "100 gems" (consumable) |
+| 300 gems | `com.wschiks.surftycoon.gems300` | 9.99 EUR | "300 gems" (consumable) |
 * App Store: App Store Connect > the app > Monetization > In-App Purchases, add a screenshot of the shop for review, and attach them to the app version. Google Play: Monetize > Products > In-app products, activate them (the app must be uploaded to a testing track first).
 * Both stores require a working **Restore purchases** button: it is in the shop.
 * Review notes: the shop opens with the bag button in the top bar.

@@ -1,9 +1,9 @@
 import type { AdResult } from '../ads';
 import { BALANCE } from '../config/balance';
-import { AD_STEPS, PRODUCTS, type AdStep, type ProductId } from '../config/shop';
+import { AD_STEPS, GEM_PACKS, PRODUCTS, type AdStep, type GemPackId, type ProductId } from '../config/shop';
 import type { Game } from '../core/game';
-import { adStreak, claimAdStep } from '../core/shop';
-import { buy, canBuy, restore, storePrices } from '../purchases';
+import { adStreak, claimAdStep, grantGemPack } from '../core/shop';
+import { buy, buyPack, canBuy, restore, storePrices } from '../purchases';
 import { icon, tile } from './icons';
 import { sound } from './sound';
 
@@ -31,7 +31,7 @@ function clock(seconds: number): string {
 
 /** The shop dialog: a free ad streak (5 ads a day) and two one-time purchases. It draws itself into `root`. */
 export class Shop {
-  private prices: Partial<Record<ProductId, string>> = {};
+  private prices: Partial<Record<ProductId | GemPackId, string>> = {};
   private signature = '';
   private buying = false;
 
@@ -52,6 +52,8 @@ export class Shop {
       </div>
       <h4>Free rewards</h4>
       <div class="shop-card" data-streak></div>
+      <h4>Gems</h4>
+      <div data-packs></div>
       <h4>Buy once, keep forever</h4>
       <div data-products></div>
       ${canBuy ? `<button class="go alt big" data-restore>Restore purchases</button>` : `<p class="menu-line">Buying works in the Surf Tycoon phone app.</p>`}
@@ -73,7 +75,7 @@ export class Shop {
     const now = Date.now();
     const streak = adStreak(g, now);
     const busy = this.ctx.busy() || this.buying;
-    const sig = [streak.step, streak.lockedFor, busy, g.perks.noAds, g.perks.x5, this.prices.noAds, this.prices.x5].join('|');
+    const sig = [streak.step, streak.lockedFor, busy, g.perks.noAds, g.perks.x5, g.skillPoints, Object.values(this.prices).join(',')].join('|');
     if (sig === this.signature) return;
     this.signature = sig;
 
@@ -93,6 +95,15 @@ export class Shop {
       <p class="shop-note">${locked ? 'All five rewards are yours. Come back tomorrow.' : `Next: ${'gems' in streak.reward ? `${streak.reward.gems} gem${streak.reward.gems > 1 ? 's' : ''}` : `coins x${BALANCE.boostMult} for ${streak.reward.boost >= 60 ? `${streak.reward.boost / 60} minute` : `${streak.reward.boost} seconds`}`}`}</p>
       <button class="go big ready" data-ad ${locked || busy ? 'disabled' : ''}>${icon('video')} ${label}</button>`;
     this.root.querySelector('[data-ad]')!.addEventListener('click', () => void this.watch());
+
+    this.root.querySelector('[data-packs]')!.innerHTML = `<p class="shop-note have">${icon('gem')}<span>You have <b>${g.skillPoints}</b> gems. Spend them in the skill trees.</span></p>` + GEM_PACKS.map(
+      (p) => `<div class="shop-card product">
+        ${tile('gem', '#8a4dff', 44)}
+        <div class="shop-txt"><b>${p.gems} gems${p.tag ? `<em class="tag">${p.tag}</em>` : ''}</b><small>Skill points for the skill trees</small></div>
+        <button class="go" data-pack="${p.id}" ${busy ? 'disabled' : ''}>${this.prices[p.id] ?? p.price}</button>
+      </div>`,
+    ).join('');
+    this.root.querySelectorAll<HTMLElement>('[data-pack]').forEach((b) => b.addEventListener('click', () => void this.buyPack(b.dataset.pack as GemPackId)));
 
     this.root.querySelector('[data-products]')!.innerHTML = PRODUCTS.map((p) => {
       const owned = !!g.perks[p.id];
@@ -137,6 +148,28 @@ export class Shop {
     } else if (result === 'unavailable') {
       this.ctx.toast('Buying works in the Surf Tycoon phone app.');
     } else if (result === 'failed') {
+      this.ctx.toast('The purchase did not go through. You were not charged.');
+    }
+    this.ctx.refreshTop();
+    this.signature = '';
+    this.update();
+  }
+
+  private async buyPack(id: GemPackId) {
+    if (this.buying) return;
+    this.buying = true;
+    this.update();
+    const r = await buyPack(id);
+    this.buying = false;
+    if (r.result === 'bought') {
+      const gems = grantGemPack(this.ctx.game.state, id, r.transactionId);
+      this.ctx.game.save(); // save at once: the gems are paid for
+      sound.coin();
+      this.ctx.confetti();
+      this.ctx.toast(`+${gems} gems!`);
+    } else if (r.result === 'unavailable') {
+      this.ctx.toast('Buying works in the Surf Tycoon phone app.');
+    } else if (r.result === 'failed') {
       this.ctx.toast('The purchase did not go through. You were not charged.');
     }
     this.ctx.refreshTop();

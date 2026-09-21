@@ -1,4 +1,5 @@
-import { AD_COOLDOWN_SECONDS, AD_STEPS, type AdStep } from '../config/shop';
+import { AD_COOLDOWN_SECONDS, AD_STEPS, GEM_PACKS, type AdStep, type GemPackId } from '../config/shop';
+import { loadGranted, saveGranted } from './perks';
 import { addSkillPoints } from './skills';
 import type { GameState } from './state';
 
@@ -28,4 +29,16 @@ export function claimAdStep(state: GameState, now: number): AdStep | null {
     state.adShop.step = s.step + 1;
   }
   return s.reward;
+}
+
+/**
+ * Pay out a bought gem pack. `transactionId` is the store's id of the purchase: it is remembered, so the same purchase
+ * (for example one reported again after the app was closed) is never paid out twice. Returns the gems given (0 if it was already paid).
+ */
+export function grantGemPack(state: GameState, id: GemPackId, transactionId: string, seen: string[] = loadGranted(), remember: (ids: string[]) => void = saveGranted): number {
+  const pack = GEM_PACKS.find((p) => p.id === id);
+  if (!pack || !transactionId || seen.includes(transactionId)) return 0;
+  addSkillPoints(state, pack.gems);
+  remember([...seen, transactionId]);
+  return pack.gems;
 }

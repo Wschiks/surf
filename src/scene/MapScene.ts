@@ -15,7 +15,8 @@ import { ZoneView } from './zoneView';
 import { SiteView } from './sites';
 import { OceanView } from './ocean';
 import { Scenery } from './scenery';
-import { syncPurchases } from '../purchases';
+import { syncPurchases, watchPacks } from '../purchases';
+import { grantGemPack } from '../core/shop';
 import { fmt } from '../ui/format';
 import { sound } from '../ui/sound';
 
@@ -43,6 +44,9 @@ export class MapScene extends Phaser.Scene {
   create() {
     this.game_ = new Game();
     syncPurchases(this.game_.state.perks);
+    void watchPacks((id, tx) => {
+      if (grantGemPack(this.game_.state, id, tx) > 0) this.game_.save();
+    });
     this.bg = buildBackground(this);
     const ui = document.getElementById('ui')!;
     ui.innerHTML = '';

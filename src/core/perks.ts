@@ -32,3 +32,24 @@ function safeStorage(): Storage | null {
     return null;
   }
 }
+
+/** Ids of the gem-pack purchases already paid out, so a purchase can never be paid out twice (kept apart from the save too). */
+export const GRANTED_KEY = 'surf-tycoon-granted-v1';
+const KEEP = 100;
+
+export function loadGranted(storage: Pick<Storage, 'getItem'> | null = safeStorage()): string[] {
+  try {
+    const v = JSON.parse(storage?.getItem(GRANTED_KEY) ?? '[]');
+    return Array.isArray(v) ? v.filter((x) => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveGranted(ids: string[], storage: Pick<Storage, 'setItem'> | null = safeStorage()) {
+  try {
+    storage?.setItem(GRANTED_KEY, JSON.stringify(ids.slice(-KEEP)));
+  } catch {
+    // ignore
+  }
+}
