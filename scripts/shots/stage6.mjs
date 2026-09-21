@@ -1,0 +1,26 @@
+export default async ({ page, shot, base }) => {
+  await page.goto(base);
+  await page.waitForTimeout(1500);
+  const ev = (fn, a) => page.evaluate(fn, a);
+  await ev(() => { const s = window.__surf.game.state; s.coins = 1e18; s.reputation = 1e9; for (const sp of ['skimboarding','windsurfing','kitesurfing','foil']) { s.sports[sp] = true; for (let l = 1; l <= 4; l++) { s.zones[sp + '-' + l].owned = true; } } for (const id of ['wave-2','wave-3','wave-4']) s.zones[id].owned = true; });
+  await ev(() => window.__surf.ui.openZone('sailing-1'));
+  await page.waitForTimeout(1500);
+  await shot('sailing-card');
+  await page.click('[data-unlock]', { force: true });
+  await page.waitForTimeout(500);
+  await ev(() => window.__surf.ui.closeSheet());
+  await ev(() => { const v = window.__surf.view; v.jumpTo(500, 800, v.width / 5); });
+  await page.waitForTimeout(3000);
+  await shot('ocean-cleared');
+  await ev(() => { const s = window.__surf.game.state; for (let l = 1; l <= 4; l++) { const z = s.zones['sailing-' + l]; z.owned = true; z.manager = l % 2 === 0; z.capacity = 3; } });
+  await page.waitForTimeout(1000);
+  await ev(() => { const v = window.__surf.view; v.jumpTo(500, 900, v.width / 6.5); });
+  await page.waitForTimeout(1500);
+  await shot('ocean-all');
+  await ev(() => { const v = window.__surf.view; v.jumpTo(940, 200, v.width / 3.5); });
+  await page.waitForTimeout(1500);
+  await shot('jetty');
+  await ev(() => { const v = window.__surf.view; v.jumpTo(500, 500, v.minPpu()); });
+  await page.waitForTimeout(1000);
+  await shot('whole');
+};

@@ -3,7 +3,7 @@ import { UNIT, toWorld } from '../config/layout';
 import { SPORTS, type SportDef } from '../config/sports';
 import type { GameState } from '../core/state';
 import type { LabelLayer } from '../ui/labels';
-import { bakeKiteLaunch, KITE_LAUNCH_SIZE, placeImage, placeUpright } from './art';
+import { bakeJetty, bakeKiteLaunch, JETTY_SIZE, KITE_LAUNCH_SIZE, placeImage, placeUpright } from './art';
 import { DEPTH } from './background';
 
 interface Site {
@@ -22,6 +22,7 @@ export class SiteView {
     private labels: LabelLayer,
   ) {
     bakeKiteLaunch(scene);
+    bakeJetty(scene);
     for (const sport of SPORTS) {
       if (!sport.beachSite) continue;
       const r = toWorld(sport.beachSite.rect);
@@ -82,7 +83,17 @@ export class SiteView {
         this.scene.tweens.add({ targets: [img, sock], alpha: 1, duration: 900 });
       }
     }
+    if (spec.id === 'jetty') {
+      const img = placeImage(this.scene, 'site-jetty', r.x, r.y).setDepth(DEPTH.things - 2);
+      img.setDisplaySize(r.w, r.h);
+      site.objects.push(img);
+      if (animate) {
+        img.setAlpha(0);
+        this.scene.tweens.add({ targets: img, alpha: 1, duration: 900 });
+      }
+    }
     void UNIT;
     void KITE_LAUNCH_SIZE;
+    void JETTY_SIZE;
   }
 }

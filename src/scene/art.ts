@@ -1178,3 +1178,160 @@ export function bakeKiteLaunch(scene: Phaser.Scene) {
     });
   });
 }
+
+/** Wooden jetty reaching out from the beach. 65 x 250 world px, drawn flat. */
+export const JETTY_SIZE = { w: 65, h: 250 };
+export function bakeJetty(scene: Phaser.Scene) {
+  bake(scene, 'site-jetty', JETTY_SIZE.w, JETTY_SIZE.h, 3, (ctx, w, h) => {
+    // shadow on the water
+    ctx.fillStyle = 'rgba(0,40,70,0.25)';
+    ctx.fillRect(6, 8, w - 8, h - 4);
+    // deck
+    const g = ctx.createLinearGradient(0, 0, w, 0);
+    g.addColorStop(0, '#b98a52');
+    g.addColorStop(0.5, '#d2a566');
+    g.addColorStop(1, '#a87b44');
+    ctx.fillStyle = g;
+    ctx.fillRect(14, 0, 34, h - 20);
+    // T platform at the end
+    ctx.fillRect(2, h - 44, w - 6, 26);
+    ctx.strokeStyle = 'rgba(70,40,10,0.5)';
+    ctx.lineWidth = 1;
+    for (let y = 4; y < h - 20; y += 7) {
+      ctx.beginPath();
+      ctx.moveTo(14, y);
+      ctx.lineTo(48, y);
+      ctx.stroke();
+    }
+    for (let x = 4; x < w - 4; x += 8) {
+      ctx.beginPath();
+      ctx.moveTo(x, h - 44);
+      ctx.lineTo(x, h - 18);
+      ctx.stroke();
+    }
+    // posts
+    ctx.fillStyle = '#5a3a1c';
+    for (let y = 10; y < h - 20; y += 44) {
+      ctx.beginPath();
+      ctx.arc(14, y, 3.2, 0, Math.PI * 2);
+      ctx.arc(48, y, 3.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    for (const x of [4, w - 8]) {
+      ctx.beginPath();
+      ctx.arc(x, h - 44, 3.4, 0, Math.PI * 2);
+      ctx.arc(x, h - 18, 3.4, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    // rope between posts
+    ctx.strokeStyle = '#efe3c6';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath();
+    ctx.moveTo(14, 10);
+    ctx.lineTo(14, h - 50);
+    ctx.moveTo(48, 10);
+    ctx.lineTo(48, h - 50);
+    ctx.stroke();
+  });
+}
+
+/** Small boats and marks for the Ocean area (upright billboards). */
+export function bakeBoats(scene: Phaser.Scene) {
+  bake(scene, 'boat-dinghy', 46, 56, 3, (ctx) => {
+    ctx.fillStyle = 'rgba(0,40,70,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(24, 51, 19, 3.5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#fdfdfd';
+    ctx.beginPath();
+    ctx.moveTo(4, 44);
+    ctx.quadraticCurveTo(23, 56, 42, 44);
+    ctx.lineTo(38, 49);
+    ctx.quadraticCurveTo(23, 54, 8, 49);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#e8483d';
+    ctx.fillRect(6, 44, 34, 2.4);
+    ctx.strokeStyle = '#555';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(22, 46);
+    ctx.lineTo(22, 4);
+    ctx.stroke();
+    ctx.fillStyle = '#f7f7f7';
+    ctx.beginPath();
+    ctx.moveTo(23.5, 6);
+    ctx.quadraticCurveTo(38, 24, 38, 43);
+    ctx.lineTo(23.5, 43);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#e8483d';
+    ctx.beginPath();
+    ctx.moveTo(20.5, 12);
+    ctx.lineTo(20.5, 42);
+    ctx.lineTo(8, 42);
+    ctx.closePath();
+    ctx.fill();
+  });
+  bake(scene, 'boat-yacht', 90, 84, 3, (ctx) => {
+    ctx.fillStyle = 'rgba(0,40,70,0.3)';
+    ctx.beginPath();
+    ctx.ellipse(46, 78, 38, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // hull
+    ctx.fillStyle = '#16204a';
+    ctx.beginPath();
+    ctx.moveTo(6, 62);
+    ctx.lineTo(84, 62);
+    ctx.quadraticCurveTo(78, 76, 60, 78);
+    ctx.lineTo(24, 78);
+    ctx.quadraticCurveTo(10, 74, 6, 62);
+    ctx.fill();
+    ctx.fillStyle = '#ffd23f';
+    ctx.fillRect(7, 62, 76, 3);
+    // mast and sails
+    ctx.strokeStyle = '#444';
+    ctx.lineWidth = 1.8;
+    ctx.beginPath();
+    ctx.moveTo(44, 63);
+    ctx.lineTo(44, 2);
+    ctx.stroke();
+    ctx.fillStyle = '#ffffff';
+    ctx.beginPath();
+    ctx.moveTo(46, 4);
+    ctx.quadraticCurveTo(70, 34, 74, 60);
+    ctx.lineTo(46, 60);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#d32f2f';
+    ctx.beginPath();
+    ctx.moveTo(42, 14);
+    ctx.lineTo(42, 60);
+    ctx.lineTo(12, 60);
+    ctx.quadraticCurveTo(18, 34, 42, 14);
+    ctx.fill();
+    ctx.fillStyle = '#ffd23f';
+    ctx.font = 'bold 8px sans-serif';
+    ctx.fillText('OCEAN', 52, 44);
+  });
+  bake(scene, 'buoy', 16, 22, 4, (ctx) => {
+    ctx.fillStyle = 'rgba(0,40,70,0.3)';
+    ctx.beginPath();
+    ctx.ellipse(8, 19, 6.5, 2, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#ff6a2a';
+    ctx.beginPath();
+    ctx.moveTo(3, 18);
+    ctx.lineTo(13, 18);
+    ctx.lineTo(10.5, 6);
+    ctx.lineTo(5.5, 6);
+    ctx.closePath();
+    ctx.fill();
+    ctx.fillStyle = '#fff';
+    ctx.fillRect(4.4, 11, 7.2, 2.4);
+    ctx.fillStyle = '#ffd23f';
+    ctx.beginPath();
+    ctx.arc(8, 5, 2.6, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}

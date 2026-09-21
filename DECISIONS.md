@@ -52,3 +52,10 @@ Every choice made while building, and why. The concept document (`docs/concept.m
 - Kitesurfing has its own wide launch area on the beach (in front of the beach buildings, in the middle). Until kitesurfing is unlocked it is an empty dashed plot with a label; when the sport unlocks the launch area appears with kites laid out and a windsock.
 - Balance: income of a zone grows 5x per tier, costs grow 7.5x per tier (`costScale`). Because costs grow faster than income, every new tier takes a bit longer than the one before, which is what stretches the game to hours instead of minutes. Tuned with the balance bot.
 - Zone conditions map to water looks (flat, ripple, chop, swell, rolling, shore break, big) drawn as rolling foam patterns; nothing is random.
+
+## The Ocean area (stage 6)
+- Sailing has four zones side by side across the Ocean area (rows 9-10). Level 1 (Sailing school) is on the right, next to the jetty side of the map, and the levels run to the left, so Level 4 (Offshore regatta) is the furthest offshore.
+- The Ocean area's haze fades away when sailing unlocks, as asked.
+- The jetty is on the beach side, at the right edge of the beach, reaching into the water. It is an empty dashed plot until sailing unlocks, then the wooden jetty appears.
+- Open question "what else belongs in the Ocean area besides sailing (sailing and boats and all)": simple boat features, purely visual, tied to progress: dinghies moored at the jetty (one for every sailing level owned), race course buoys once Club racing is open, and an ocean racer yacht once the Offshore regatta is open. They bob gently. No extra mechanics were added, to keep the first version simple; boats as a real upgrade type is listed under next steps.
+- Sailing is the biggest investment: it has the highest reputation and coin requirements of all sports.
