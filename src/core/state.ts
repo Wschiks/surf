@@ -1,3 +1,4 @@
+import type { Perks } from './perks';
 import { FACILITIES } from '../config/facilities';
 import { areaById } from '../config/areas';
 import { rootSkills } from './skills';
@@ -42,6 +43,10 @@ export interface GameState {
   tips: { upgrade?: boolean; manager?: boolean };
   /** Seconds left of the ad boost (all coin income x2). It runs down in real time, also while away. */
   boost: number;
+  /** Progress in the shop's ad streak: the next reward and when the streak can be used again (ms since 1970). */
+  adShop: { step: number; lockedUntil: number };
+  /** What the player bought. Not saved with the game (see perks.ts): the game fills it in after loading. */
+  perks: Perks;
   /** Learned skills. Permanent: they stay when the beach is expanded. */
   skills: Record<string, boolean>;
   /** Real time (ms since 1970) when the game was last saved or updated. */
@@ -71,6 +76,8 @@ export function newGame(now: number): GameState {
     skillEarned: 0,
     tips: {},
     boost: 0,
+    adShop: { step: 0, lockedUntil: 0 },
+    perks: {},
     skills: rootSkills(),
     savedAt: now,
     startedAt: now,
@@ -111,6 +118,9 @@ export function ensureState(state: GameState): GameState {
   state.skillEarned ??= 0;
   state.tips ??= {};
   state.boost ??= 0;
+  state.adShop ??= { step: 0, lockedUntil: 0 };
+  state.perks = {}; // never taken from a save or a save code
+
   state.skills = { ...rootSkills(), ...(state.skills ?? {}) };
   return state;
 }

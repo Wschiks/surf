@@ -46,3 +46,6 @@ Done: cheat button removed, version 1.0.0, icons/splash, native settings, privac
 
 ## Watch an ad (coins x2 for 40 s)
 Done: Watch ad button above Expand, AdMob rewarded video (`src/ads.ts`, ids in `src/config/ads.ts`), `boost` state with tests (103 passing), demo ad in the browser, iOS/Android native setup, Terms/Privacy and store texts updated. Not tested on a real device: the AdMob SDK only runs in the phone apps. Owner to do: Android app in AdMob (ids), consent message in AdMob, `app-ads.txt`, use `npm run phone:sync:live` for store builds. See DECISIONS.md.
+
+## Shop
+Done: bag button and Shop dialog, 5-ad daily streak (1 gem, x2 30 s, 2 gems, x2 1 min, 5 gems; locked 24 h), Remove ads and Coins x5 as one-time purchases (`@capgo/native-purchases`), perks kept apart from the save, Restore purchases, Terms/Privacy/store texts, 109 tests. Not tested against the real stores: create the two products first (see `store/listing.md`).

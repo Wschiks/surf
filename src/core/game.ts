@@ -1,4 +1,5 @@
 import { applyOffline, tick, type OfflineReport } from './economy';
+import { loadPerks } from './perks';
 import { refreshQuests } from './quests';
 import { loadGame, saveGame } from './save';
 import type { GameState } from './state';
@@ -15,6 +16,7 @@ export class Game {
 
   constructor(now = Date.now()) {
     this.state = loadGame(now);
+    this.state.perks = loadPerks();
     refreshQuests(this.state);
     this.last = now;
     const away = (now - this.state.savedAt) / 1000;

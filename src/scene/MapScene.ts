@@ -15,6 +15,7 @@ import { ZoneView } from './zoneView';
 import { SiteView } from './sites';
 import { OceanView } from './ocean';
 import { Scenery } from './scenery';
+import { syncPurchases } from '../purchases';
 import { fmt } from '../ui/format';
 import { sound } from '../ui/sound';
 
@@ -41,6 +42,7 @@ export class MapScene extends Phaser.Scene {
 
   create() {
     this.game_ = new Game();
+    syncPurchases(this.game_.state.perks);
     this.bg = buildBackground(this);
     const ui = document.getElementById('ui')!;
     ui.innerHTML = '';

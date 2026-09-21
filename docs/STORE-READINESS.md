@@ -10,7 +10,7 @@ Nothing has been submitted and no accounts were made. This document lists what i
 * **Android project**: portrait only, no cleartext traffic, package folder and application id set, adaptive icon with a sea-blue background.
 * **Legal**: Terms of Service and Privacy Policy inside the app (menu) and as web pages (`public/privacy.html`, `public/terms.html`, made by `npm run build`).
 * **Store texts** and the answers to the store questionnaires: `store/listing.md`. **Store screenshots** in `store/screenshots/` and the icon in `store/icon-1024.png`.
-* The game works offline, saves on the device, handles the phone going to sleep (offline earnings, 2 hours, more with skills), has no purchases and no randomness. Its only network use is the optional rewarded ad (Google AdMob, `src/ads.ts`).
+* The game works offline, saves on the device, handles the phone going to sleep (offline earnings, 2 hours, more with skills), has no randomness. Its only network use is the optional rewarded ads (Google AdMob, `src/ads.ts`) and the two optional one-time purchases (`src/purchases.ts`).
 * 80+ automated tests, a full-playthrough simulation and a browser smoke test pass.
 
 ## Ads (Google AdMob)
@@ -19,6 +19,13 @@ Nothing has been submitted and no accounts were made. This document lists what i
 * **Test ads vs. live ads**: normal builds ask for *test* ads with your real ids (clicking your own live ads can get an AdMob account banned). For the build you upload to the stores use `npm run phone:sync:live`.
 * First tap on "Watch ad" runs: iOS tracking permission, EU/UK consent form (create the message in AdMob > Privacy & messaging, or no form will show), then the ad. In a normal browser a 5 second demo screen stands in.
 * Also needed on AdMob's side: add `app-ads.txt` on your developer website, and link the app to its store listing once it is published.
+
+## Shop and purchases
+* The bag button in the top bar opens the **Shop** (`src/ui/shop.ts`): a free **ad streak** (watch 5 ads: 1 gem, coins x2 for 30 s, 2 gems, coins x2 for 1 minute, 5 gems; then locked for 24 hours; all in `src/config/shop.ts`) and two **one-time purchases**: **Remove ads** (every ad reward without watching an ad, also the Watch ad button) and **Coins x5** (all coin income x5 for good). Prices shown are read from the store in the player's currency (the 2.99 / 4.99 EUR texts are only the fallback).
+* Bought items are stored on the device apart from the game save (`src/core/perks.ts`), so save codes cannot hand them out and "Start over" does not lose them; the app also checks the store on every start, and the shop has **Restore purchases**.
+* Plugin: `@capgo/native-purchases`. **You must create two one-time products in App Store Connect and Google Play Console with the ids in `src/config/shop.ts`** (table in `store/listing.md`). Until they exist and the app is on a testing track / TestFlight, buying fails with "did not go through". In a browser the shop shows the prices only.
+* iOS: in Xcode, target App > Signing & Capabilities > add **In-App Purchase**. Test with a sandbox account or a StoreKit configuration file.
+* Terms and Privacy Policy already describe the purchases.
 
 ## Steps for you (in this order)
 1. **Fill in the publisher** in `src/config/legal.ts` (`PUBLISHER`: name, email, website). The stores and the law want a real contact; it is printed in the Terms and the Privacy Policy. Then run `npm run build`.

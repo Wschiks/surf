@@ -14,6 +14,7 @@ export function multipliers(state: GameState): Multipliers {
   const fx = skillEffects(state);
   const m: Multipliers = { coins: Math.pow(EXPANSION_MULT, state.expansions) * (1 + fx.allCoins), speed: 1 };
   if (state.boost > 0) m.coins *= BALANCE.boostMult;
+  if (state.perks.x5) m.coins *= BALANCE.x5Mult;
   for (const f of FACILITIES) {
     const lvl = state.facilities[f.id] ?? 0;
     m[f.effect] *= 1 + f.perLevel * (1 + fx.facilityPower) * lvl;

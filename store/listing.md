@@ -9,7 +9,7 @@ Fill in the names in `[brackets]`. Nothing here has been submitted.
 | Subtitle / short description | Run your own surf beach (max 30) | Build a surf beach and grow it into a sea-sport empire. (max 80) |
 | Category | Games > Simulation (second: Casual) | Game > Simulation |
 | Price | Free | Free |
-| In-app purchases / ads | No purchases; contains ads (one optional rewarded video) | No purchases; contains ads |
+| In-app purchases / ads | 2 one-time in-app purchases (Remove ads, Coins x5); contains ads (optional rewarded video) | same: 2 managed one-time products; contains ads |
 | Languages | English | English |
 | Support URL / email | [your support page or email] | [your support email] |
 | Privacy policy URL | [the address where you host `public/privacy.html`] | same |
@@ -34,19 +34,29 @@ FEATURES
 • Quests with coin rewards
 • Expand the beach: a giant wave washes over the screen, you start over faster than before and all your income goes up for good
 • A big map you can swipe and zoom, with a reef, a rock arch and a red lighthouse on the cliff
-• No purchases and no account. Your game stays on your device. One optional video ad gives you double coins for 40 seconds.
+• No account needed, your game stays on your device. Optional video ads give you double coins or gems, and two optional one-time purchases (Remove ads, Coins x5) are in the shop.
 
 ## What's new (first release)
 First release.
 
+## In-app purchases (create these in both stores before testing)
+Both are **non-consumable / one-time** products. The ids must match `PRODUCTS[].storeId` in `src/config/shop.ts`.
+| Product | Id | Price | Reference name / description |
+|---|---|---|---|
+| Remove ads | `com.wschiks.surftycoon.removeads` | 2.99 EUR (tier of your choice) | "Remove ads": every ad reward without watching an ad |
+| Coins x5 | `com.wschiks.surftycoon.coins5x` | 4.99 EUR | "Coins x5": all coin income x5 for good |
+* App Store: App Store Connect > the app > Monetization > In-App Purchases, add a screenshot of the shop for review, and attach them to the app version. Google Play: Monetize > Products > In-app products, activate them (the app must be uploaded to a testing track first).
+* Both stores require a working **Restore purchases** button: it is in the shop.
+* Review notes: the shop opens with the bag button in the top bar.
+
 ## Age rating answers
 * Violence, sexual content, nudity, profanity, drugs, alcohol, gambling (including simulated), horror, medical content: **none**.
 * Unrestricted web access: no. User-generated content / chat: none.
-* Loot boxes or random rewards: **none** (the game has no randomness at all).
+* Loot boxes or random rewards: **none** (the game has no randomness at all). In-app purchases: yes (two fixed one-time items, no random content).
 * Expected result: **App Store 4+**, **Google Play (IARC) Everyone**.
 
 ## Google Play "Data safety" form
-* Does the app collect or share any user data? **Yes, through Google AdMob (the ad SDK)**: Device or other IDs (advertising ID), and app interactions / diagnostics as the AdMob SDK reports. Purpose: Advertising or marketing, Analytics/fraud prevention. Not collected by us, shared with Google. Follow Google's "Data disclosure for AdMob" guide for the exact boxes.
+* Does the app collect or share any user data? **Yes, through Google AdMob (the ad SDK)**: Device or other IDs (advertising ID), and app interactions / diagnostics as the AdMob SDK reports. Purpose: Advertising or marketing, Analytics/fraud prevention. Not collected by us, shared with Google. Purchases: handled by Google Play, no purchase data reaches us. Follow Google's "Data disclosure for AdMob" guide for the exact boxes.
 * Is all data encrypted in transit? Yes (the ad SDK uses HTTPS).
 * Can users request that their data is deleted? Data is only on the device; "Start over" in the menu deletes it.
 * Ads: **Yes, the app contains ads** (rewarded video, AdMob). Target audience: **13+** is not required to be chosen; choose "all ages" only if you also fill in the Families policy. The safest choice for a first release is target age **18+ not needed / 13+ general audience**; the game itself is suitable for all ages.

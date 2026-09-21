@@ -70,6 +70,8 @@ export const BALANCE = {
   /** Watching a rewarded ad makes all coin income x2 for this many seconds. */
   boostSeconds: 40,
   boostMult: 2,
+  /** The one-time purchase "Coins x5": all coin income x5. */
+  x5Mult: 5,
   /** Only show this many guests per zone on the map. */
   maxVisibleGuests: 10,
 };

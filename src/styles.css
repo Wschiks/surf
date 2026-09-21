@@ -64,7 +64,10 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 .pill small { font-size: 11px; font-weight: 800; color: #9fc4da; margin-left: 2px; }
 .pill .mult { font-style: normal; font-size: 12px; font-weight: 900; background: var(--sun); color: var(--ink); border-radius: calc(8px * var(--u)); padding: 1px 6px; margin-left: 2px; }
 .pill .mult[hidden] { display: none; }
-.pill.gear { margin-left: auto; padding: 0; width: calc(44px * var(--u)); justify-content: center; font-size: 24px; color: #fff; background: var(--gloss), var(--coral); box-shadow: 0 3px 0 var(--coral-d); }
+.pill.shopbtn { margin-left: auto; position: relative; padding: 0; width: calc(44px * var(--u)); justify-content: center; font-size: 24px; color: var(--ink); background: var(--gloss), var(--sun); box-shadow: 0 3px 0 var(--sun-d); }
+.pill.shopbtn .dot { position: absolute; right: -3px; top: -3px; width: 14px; height: 14px; border-radius: 50%; background: #ff3b5c; border: 2px solid #0a2439; }
+.pill.shopbtn .dot[hidden] { display: none; }
+.pill.gear { margin-left: 0; padding: 0; width: calc(44px * var(--u)); justify-content: center; font-size: 24px; color: #fff; background: var(--gloss), var(--coral); box-shadow: 0 3px 0 var(--coral-d); }
 
 /* ---------- bottom bar ---------- */
 .dock { position: absolute; left: 12px; right: 12px; bottom: max(14px, env(safe-area-inset-bottom)); display: flex; gap: 10px; transition: transform 0.25s, opacity 0.25s; }
@@ -394,3 +397,20 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 .tip { position: absolute; left: 12px; right: 12px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 66px * var(--u) + 12px + 58px * var(--u)); pointer-events: auto; background: var(--sun); color: var(--ink); font-weight: 800; font-size: 14px; line-height: 1.25; text-align: center; padding: 10px 14px; border-radius: calc(16px * var(--u)); box-shadow: 0 4px 0 var(--sun-d), 0 8px 12px rgba(8, 36, 60, 0.25); animation: tipBob 1.4s ease-in-out infinite; }
 .tip[hidden] { display: none; }
 @keyframes tipBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+
+/* ---------- shop ---------- */
+.shop-card { background: var(--card); border-radius: calc(18px * var(--u)); padding: 12px; margin-bottom: 8px; }
+.shop-card.product { display: flex; align-items: center; gap: 10px; }
+.shop-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.shop-txt b, .shop-title b { font-size: 15px; }
+.shop-txt small, .shop-title small { font-size: 12px; color: var(--soft); font-weight: 700; line-height: 1.25; }
+.shop-title { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.shop-card.product .go { min-height: calc(46px * var(--u)); padding: 0 12px; font-size: 15px; flex: none; }
+.shop-card .go.big { margin-top: 8px; }
+.steps { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin: 10px 0 6px; }
+.step { height: calc(54px * var(--u)); border-radius: calc(14px * var(--u)); background: rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; font-weight: 900; font-size: 14px; color: #fff; line-height: 1.05; }
+.step .ic { width: 20px; height: 20px; }
+.step small { font-size: 10px; font-weight: 800; color: var(--soft); }
+.step.next { background: rgba(255, 194, 51, 0.22); box-shadow: inset 0 0 0 2px var(--sun); }
+.step.done { background: rgba(47, 191, 138, 0.25); color: #7dffc8; }
+.shop-note { margin: 4px 0 0; font-size: 12px; color: var(--soft); font-weight: 700; }

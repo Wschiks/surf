@@ -15,6 +15,8 @@ import { claimQuest, questView, QUEST_SLOTS } from '../core/quests';
 import { COIN, fmt, fmtSeconds, fmtTime } from './format';
 import { icon, tile } from './icons';
 import { Menu } from './menu';
+import { Shop } from './shop';
+import { adStreak } from '../core/shop';
 import { SkillScreen } from './skills';
 import type { TreeId } from '../config/skills';
 import { sound } from './sound';
@@ -73,6 +75,7 @@ export class GameUI {
       <div class="hud">
         <div class="pill coins"><span class="ico">${COIN}</span><b data-ref="coins">0</b><small data-ref="rate">+0/s</small><em class="mult" data-ref="mult" hidden></em></div>
         <button class="pill gems" data-ref="gembtn" aria-label="Skill points"><span class="ico">${icon('gem')}</span><b data-ref="gems">0</b></button>
+        <button class="pill shopbtn" data-ref="shop" aria-label="Shop">${icon('bag')}<i class="dot" data-ref="shopdot" hidden></i></button>
         <button class="pill gear" data-ref="gear" aria-label="Menu">${icon('gear')}</button>
       </div>
       <div class="quests" data-ref="quests">
@@ -104,6 +107,7 @@ export class GameUI {
     this.refs.skills.addEventListener('click', () => this.openSkills());
     this.refs.gembtn.addEventListener('click', () => this.openSkills());
     this.refs.gear.addEventListener('click', () => this.openMenu());
+    this.refs.shop.addEventListener('click', () => this.openShop());
     this.refs.expand.addEventListener('click', () => this.openExpand());
     this.refs.boost.addEventListener('click', () => void this.watchAd());
     this.refs.tip.addEventListener('click', () => {
@@ -624,10 +628,12 @@ export class GameUI {
     this.refs.rate.textContent = `+${fmt(autoIncomePerSecond(s))}/s`;
     this.refs.gems.textContent = String(s.skillPoints);
     this.refs.skills.classList.toggle('pulse', hasAffordableSkill(s));
-    this.refs.mult.hidden = s.expansions === 0;
-    this.refs.mult.textContent = `x${Math.pow(EXPANSION_MULT, s.expansions)}`;
+    const perm = Math.pow(EXPANSION_MULT, s.expansions) * (s.perks.x5 ? BALANCE.x5Mult : 1);
+    this.refs.mult.hidden = perm === 1;
+    this.refs.mult.textContent = `x${perm}`;
     this.refreshTip();
     this.refreshBoost();
+    this.refs.shopdot.hidden = adStreak(s, Date.now()).lockedFor > 0;
     this.refs.expand.classList.toggle('ready', canExpand(s));
     this.refs.expand.classList.toggle('pulse', canExpand(s));
     this.refreshQuests();
@@ -703,18 +709,24 @@ export class GameUI {
     this.refs.boostBar.style.width = (on ? Math.min(1, s.boost / BALANCE.boostSeconds) * 100 : 0) + '%';
   }
 
-  private async watchAd() {
-    const s = this.game.state;
-    if (s.boost > 0 || this.adBusy) return;
+  /** Show one ad and say how it went. Players who bought "Remove ads" skip the video and still get the reward. */
+  private async playAd(): Promise<AdResult> {
+    if (this.adBusy) return 'closed';
+    if (this.game.state.perks.noAds) return 'rewarded';
     this.adBusy = true;
     this.refreshBoost();
-    let result: AdResult;
     try {
-      result = adsNative ? await showRewardedAd() : await this.demoAd();
+      return adsNative ? await showRewardedAd() : await this.demoAd();
     } finally {
       this.adBusy = false;
       this.game.resync(); // the time spent in the ad does not count as time away
     }
+  }
+
+  private async watchAd() {
+    const s = this.game.state;
+    if (s.boost > 0 || this.adBusy) return;
+    const result = await this.playAd();
     if (result === 'rewarded') {
       startBoost(s);
       sound.coin();
@@ -731,8 +743,11 @@ export class GameUI {
   private demoAd(): Promise<AdResult> {
     return new Promise((resolve) => {
       let left = 5;
-      const m = this.modal(`<h2>Demo ad</h2><p>In the phone app a short video plays here. Watch it to the end to get the reward.</p><button class="go big" data-ok disabled></button><button class="go alt big" data-skip>Close</button>`);
-      const ok = m.querySelector<HTMLButtonElement>('[data-ok]')!;
+      const back = document.createElement('div');
+      back.className = 'modal-back';
+      back.innerHTML = `<div class="modal"><h2>Demo ad</h2><p>In the phone app a short video plays here. Watch it to the end to get the reward.</p><button class="go big" data-ok disabled></button><button class="go alt big" data-skip>Close</button></div>`;
+      this.host.appendChild(back);
+      const ok = back.querySelector<HTMLButtonElement>('[data-ok]')!;
       const draw = () => (ok.textContent = left > 0 ? `Reward in ${left}...` : 'Claim reward');
       draw();
       const timer = setInterval(() => {
@@ -743,16 +758,16 @@ export class GameUI {
           ok.disabled = false;
         }
       }, 1000);
-      let result: AdResult = 'closed';
-      this.modalClosed = () => {
+      const finish = (r: AdResult) => {
         clearInterval(timer);
-        resolve(result);
+        back.remove();
+        resolve(r);
       };
-      ok.addEventListener('click', () => {
-        result = 'rewarded';
-        this.closeModal();
+      ok.addEventListener('click', () => finish('rewarded'));
+      back.querySelector('[data-skip]')!.addEventListener('click', () => finish('closed'));
+      back.addEventListener('click', (e) => {
+        if (e.target === back) finish('closed');
       });
-      m.querySelector('[data-skip]')!.addEventListener('click', () => this.closeModal());
     });
   }
 
@@ -763,6 +778,7 @@ export class GameUI {
     this.refreshTop();
     this.refreshSheet();
     this.skillScreen.update();
+    this.shop?.update();
     if (this.game.offlineReport) this.showOffline(this.game.offlineReport);
   }
 
@@ -835,6 +851,23 @@ export class GameUI {
     m.querySelector('[data-really]')!.addEventListener('click', () => {
       this.cb.onReset();
     });
+  }
+
+  private shop: Shop | null = null;
+
+  openShop() {
+    const m = this.modal('');
+    this.shop = new Shop(m.querySelector('.modal') as HTMLElement, {
+      game: this.game,
+      close: () => this.closeModal(),
+      toast: (t) => this.toast(t),
+      confetti: () => this.confetti(),
+      refreshTop: () => this.refreshTop(),
+      playAd: () => this.playAd(),
+      busy: () => this.adBusy,
+    });
+    this.modalClosed = () => (this.shop = null);
+    this.shop.show();
   }
 
   private openMenu() {

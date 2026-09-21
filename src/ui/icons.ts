@@ -25,6 +25,7 @@ const SHAPES: Record<string, string> = {
   manager:
     '<circle cx="12" cy="7.5" r="3.7" fill="currentColor"/><path d="M4.5 21c0-4.6 3-7.2 7.5-7.2s7.5 2.6 7.5 7.2z" fill="currentColor"/><path d="M12 15.4l.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3z" fill="#ffc233"/>',
   video: '<rect x="3" y="5" width="18" height="14" rx="3.5" fill="currentColor"/><path d="M10 9.2v5.6l4.8-2.8z" fill="#0b5d8a"/>',
+  bag: '<path d="M5.2 8.2h13.6l1.1 11.3a1.4 1.4 0 01-1.4 1.5H5.5a1.4 1.4 0 01-1.4-1.5z" fill="currentColor"/><path d="M8.6 10.5V7.4a3.4 3.4 0 016.8 0v3.1" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
   expand: '<path d="M14 3.5h6.5V10M10 20.5H3.5V14" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 4l-6.5 6.5M4 20l6.5-6.5" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>',
   info: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M12 11v6" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/><circle cx="12" cy="7.6" r="1.6" fill="currentColor"/>',
   help: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M9.3 9.6a2.8 2.8 0 015.4 1c0 1.8-2.7 2.2-2.7 4" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="17.6" r="1.5" fill="currentColor"/>',

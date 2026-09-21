@@ -2,6 +2,11 @@ import { ensureState, newGame, SAVE_VERSION, type GameState } from './state';
 
 export const SAVE_KEY = 'surf-tycoon-save-v1';
 
+/** The save as text. Purchases (`perks`) are left out: they live apart from the save (see perks.ts). */
+function toJson(state: GameState): string {
+  return JSON.stringify(state, (key, value) => (key === 'perks' ? undefined : value));
+}
+
 export function loadGame(now: number, storage: Pick<Storage, 'getItem'> | null = safeStorage()): GameState {
   try {
     const raw = storage?.getItem(SAVE_KEY);
@@ -18,7 +23,7 @@ export function loadGame(now: number, storage: Pick<Storage, 'getItem'> | null =
 export function saveGame(state: GameState, now: number, storage: Pick<Storage, 'setItem'> | null = safeStorage()) {
   state.savedAt = now;
   try {
-    storage?.setItem(SAVE_KEY, JSON.stringify(state));
+    storage?.setItem(SAVE_KEY, toJson(state));
   } catch {
     // storage full or blocked: keep playing
   }
@@ -44,7 +49,7 @@ const CODE_PREFIX = 'SURF1:';
 
 /** The whole save as a piece of text the player can copy (to back it up or move it to another device). */
 export function exportSave(state: GameState): string {
-  const json = JSON.stringify(state);
+  const json = toJson(state);
   return CODE_PREFIX + btoa(unescape(encodeURIComponent(json)));
 }
 
@@ -64,7 +69,7 @@ export function parseSave(text: string): GameState | null {
 /** Store a game as the current save (used when the player restores a save code; the page reloads afterwards). */
 export function writeSave(state: GameState, storage: Pick<Storage, 'setItem'> | null = safeStorage()) {
   try {
-    storage?.setItem(SAVE_KEY, JSON.stringify(state));
+    storage?.setItem(SAVE_KEY, toJson(state));
   } catch {
     // ignore
   }
