@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { LEVEL_MILESTONES, milestoneMult, nextMilestone, STATS } from '../src/config/balance';
+import { LEVEL_MILESTONES, milestoneMult, nextMilestone, STAT_IDS, STATS } from '../src/config/balance';
 import { FACILITIES } from '../src/config/facilities';
 import { zoneById } from '../src/config/sports';
-import { buyStat, planBuy, statCost, zoneStats } from '../src/core/economy';
+import { buyStat, costOf, planBuy, statCost, zoneStats } from '../src/core/economy';
 import { newGame } from '../src/core/state';
 
 const W1 = zoneById('wave-1');
@@ -49,14 +49,32 @@ describe('level up milestones', () => {
 });
 
 describe('buying many levels at once', () => {
-  it('buys as many as the coins allow, up to the chosen amount', () => {
+  it('x10 and x100 are all or nothing: exactly that many levels, or none', () => {
     const s = newGame(0);
     s.coins = statCost(W1, 'price', 0) * 3;
+    expect(buyStat(s, 'wave-1', 'price', 10)).toBe(false);
+    expect(s.zones['wave-1'].price).toBe(0);
+    s.coins = planBuy(W1, 'price', 0, 1e30, 10).cost;
     expect(buyStat(s, 'wave-1', 'price', 10)).toBe(true);
-    const n = s.zones['wave-1'].price;
-    expect(n).toBeGreaterThanOrEqual(2);
-    expect(n).toBeLessThan(10);
+    expect(s.zones['wave-1'].price).toBe(10);
+    expect(s.coins).toBe(0);
+  });
+
+  it('Max buys as many as the coins allow', () => {
+    const s = newGame(0);
+    s.coins = statCost(W1, 'price', 0) * 3;
+    expect(buyStat(s, 'wave-1', 'price', 'max')).toBe(true);
+    expect(s.zones['wave-1'].price).toBeGreaterThanOrEqual(2);
     expect(s.coins).toBeGreaterThanOrEqual(0);
+  });
+
+  it('the price of x100 can be shown before the coins are there', () => {
+    expect(costOf(W1, 'price', 0, 100)).toBe(planBuy(W1, 'price', 0, 1e30, 100).cost);
+    expect(costOf(W1, 'price', 0, 100)).toBeGreaterThan(costOf(W1, 'price', 0, 10));
+  });
+
+  it('the rows are level up, bigger class, faster', () => {
+    expect(STAT_IDS).toEqual(['price', 'capacity', 'speed']);
   });
 
   it('the plan adds up the costs of every level', () => {

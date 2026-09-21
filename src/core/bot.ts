@@ -1,7 +1,7 @@
-import { STAT_IDS } from '../config/balance';
+import { STAT_IDS, type StatId } from '../config/balance';
 import { FACILITIES } from '../config/facilities';
-import { SPORTS, ZONES } from '../config/sports';
-import { buyFacility, buyManager, buyStat, collectAll, facilityCost, managerCost, multipliers, statCost, tick, zoneStats } from './economy';
+import { SPORTS, ZONES, type ZoneRef } from '../config/sports';
+import { buyFacility, buyManager, buyStat, collectAll, facilityCost, managerCost, multipliers, planBuy, statCost, tick, zoneStats } from './economy';
 import { newGame, type GameState } from './state';
 import { EXPANSIONS } from '../config/expansions';
 import { expand, expansionNeededFor, expansionStatus, levelStatus, sportStatus, unlockLevel, unlockSport } from './unlocks';
@@ -44,8 +44,9 @@ interface Candidate {
 }
 
 /** How many levels to buy at once: as many as fit in a quarter of the money, so a thousand levels do not take a thousand steps. */
-function bulk(state: GameState, firstCost: number): number {
-  return Math.max(1, Math.min(200, Math.floor((state.coins * 0.25) / Math.max(firstCost, 1e-9))));
+function bulk(state: GameState, r: ZoneRef, stat: StatId, level: number, firstCost: number): number {
+  if (firstCost > state.coins * 0.25) return 1;
+  return Math.max(1, Math.min(200, planBuy(r, stat, level, state.coins * 0.25, 'max').count));
 }
 
 function candidates(state: GameState): Candidate[] {
@@ -59,7 +60,7 @@ function candidates(state: GameState): Candidate[] {
       const cost = statCost(r, stat, z[stat]);
       if (!isFinite(cost)) continue;
       const next = zoneStats(state, r, { ...z, [stat]: z[stat] + 1 }, m).perSecond;
-      out.push({ name: `${r.id} ${stat} ${z[stat] + 1}`, cost, gain: next - cur, buy: () => buyStat(state, r.id, stat, bulk(state, cost)) });
+      out.push({ name: `${r.id} ${stat} ${z[stat] + 1}`, cost, gain: next - cur, buy: () => buyStat(state, r.id, stat, bulk(state, r, stat, z[stat], cost)) });
     }
     if (!z.manager) out.push({ name: `${r.id} manager`, cost: managerCost(r), gain: cur * 0.15, buy: () => buyManager(state, r.id) });
   }

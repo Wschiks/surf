@@ -1,7 +1,7 @@
 import { STATS, STAT_IDS, type StatId } from '../config/balance';
 import { FACILITIES } from '../config/facilities';
 import { SPORTS, ZONES, sportById, zoneById, zoneId } from '../config/sports';
-import { autoIncomePerSecond, buyFacility, buyManager, buyStat, facilityCost, managerCost, planBuy, statCost, tapZone, zoneStats, type BuyMode } from '../core/economy';
+import { autoIncomePerSecond, buyFacility, buyManager, buyStat, costOf, facilityCost, managerCost, planBuy, tapZone, zoneStats, type BuyMode } from '../core/economy';
 import { milestoneMult, nextMilestone } from '../config/balance';
 import type { Game } from '../core/game';
 import type { OfflineReport } from '../core/economy';
@@ -189,16 +189,67 @@ export class GameUI {
         this.refreshSheet();
       }),
     );
-    this.sheetEl.querySelectorAll<HTMLElement>('[data-buy]').forEach((b) =>
-      b.addEventListener('click', () => {
-        const what = b.dataset.buy!;
-        const ok = what === 'manager' ? buyManager(this.game.state, id) : buyStat(this.game.state, id, what as StatId, this.buyMode);
-        if (ok) sound.buy();
+    this.sheetEl.querySelectorAll<HTMLElement>('[data-buy]').forEach((b) => {
+      const what = b.dataset.buy!;
+      // holding a level up, bigger class or faster button keeps buying, faster and faster
+      this.bindBuy(b, what !== 'manager', () => (what === 'manager' ? buyManager(this.game.state, id) : buyStat(this.game.state, id, what as StatId, this.buyMode)));
+    });
+  }
+
+  /**
+   * A buy button. A tap buys once. When `hold` is true, holding the button keeps buying, and the longer it is held
+   * the faster it goes. The game is saved when the button is let go.
+   */
+  private bindBuy(btn: HTMLElement, hold: boolean, act: () => boolean) {
+    let timer = 0;
+    let delay = 0;
+    let lastSound = 0;
+    const once = () => {
+      if (act()) {
+        const now = performance.now();
+        if (now - lastSound > 90) {
+          sound.buy();
+          lastSound = now;
+        }
+      }
+      this.refreshTop();
+      this.refreshSheet();
+    };
+    let heldSince = 0;
+    const loop = () => {
+      // the longer it is held, the faster it goes: quicker ticks first, then several levels per tick
+      const burst = 1 + Math.floor((performance.now() - heldSince) / 600);
+      for (let i = 0; i < burst; i++) once();
+      delay = Math.max(25, delay * 0.8);
+      timer = window.setTimeout(loop, delay);
+    };
+    const stop = () => {
+      if (timer) {
+        clearTimeout(timer);
+        timer = 0;
         this.game.save();
-        this.refreshTop();
-        this.refreshSheet();
-      }),
-    );
+      }
+    };
+    btn.addEventListener('pointerdown', (e) => {
+      if (e.button > 0) return;
+      e.preventDefault();
+      try {
+        btn.setPointerCapture(e.pointerId);
+      } catch {
+        // capture is optional
+      }
+      once();
+      this.game.save();
+      if (hold) {
+        heldSince = performance.now();
+        delay = 300;
+        timer = window.setTimeout(loop, delay);
+      }
+    });
+    for (const type of ['pointerup', 'pointercancel', 'lostpointercapture']) btn.addEventListener(type, stop);
+    btn.addEventListener('click', (e) => {
+      if (e.detail === 0) once(); // keyboard
+    });
   }
 
   private ownedBody(id: string): string {
@@ -332,14 +383,7 @@ export class GameUI {
       </div>
       <div class="ups">${rows}</div>`;
     this.sheetEl.querySelector('[data-close]')!.addEventListener('click', () => this.closeSheet());
-    this.sheetEl.querySelectorAll<HTMLElement>('[data-buyfac]').forEach((b) =>
-      b.addEventListener('click', () => {
-        if (buyFacility(this.game.state, b.dataset.buyfac!)) sound.buy();
-        this.game.save();
-        this.refreshTop();
-        this.refreshSheet();
-      }),
-    );
+    this.sheetEl.querySelectorAll<HTMLElement>('[data-buyfac]').forEach((b) => this.bindBuy(b, true, () => buyFacility(this.game.state, b.dataset.buyfac!)));
   }
 
   private buildExpandSheet() {
@@ -427,15 +471,12 @@ export class GameUI {
   }
 
   /** The buy button of a stat: shows how many levels a tap buys and the price. */
-  private setStatBuy(btn: HTMLElement, ref: ReturnType<typeof zoneById>, stat: StatId, lvl: number, count: number, cost: number) {
-    const maxed = lvl >= STATS[stat].max;
+  private setStatBuy(btn: HTMLElement, maxed: boolean, affordable: boolean, count: number, cost: number) {
     if (maxed) return this.setBuy(btn, Infinity);
-    const affordable = count > 0;
-    const shownCost = affordable ? cost : statCost(ref, stat, lvl);
     btn.classList.remove('maxed');
     btn.toggleAttribute('data-afford', affordable);
     (btn as HTMLButtonElement).disabled = false;
-    setHtml(btn, `${count > 1 ? `<span class="plus">+${count}</span>` : ''}<span class="cost">${COIN} ${fmt(shownCost)}</span>`);
+    setHtml(btn, `${count > 1 ? `<span class="plus">+${count}</span>` : ''}<span class="cost">${COIN} ${fmt(cost)}</span>`);
   }
 
   private refreshSheet() {
@@ -490,7 +531,10 @@ export class GameUI {
       const row = q(`[data-stat="${stat}"]`);
       const lvl = z[stat];
       const plan = planBuy(ref, stat, lvl, s.coins, this.buyMode);
-      const after = lvl + Math.max(1, plan.count);
+      // when the coins are not there yet, still show what the chosen amount would cost
+      const want = this.buyMode === 'max' ? 1 : Math.min(this.buyMode, STATS[stat].max - lvl);
+      const shown = plan.count > 0 ? plan.count : Math.max(1, want);
+      const after = lvl + shown;
       const next = zoneStats(s, ref, { ...z, [stat]: after });
       const maxed = lvl >= STATS[stat].max;
       let eff = '';
@@ -502,7 +546,7 @@ export class GameUI {
         const nm = nextMilestone(lvl);
         setHtml(row.querySelector('[data-ms]')!, `${icon('star', '12px')} Bonus x${fmt(milestoneMult(lvl))} · next x${nm.mult} at level ${nm.level}`);
       }
-      this.setStatBuy(row.querySelector('[data-buy]')!, ref, stat, lvl, plan.count, plan.cost);
+      this.setStatBuy(row.querySelector('[data-buy]')!, lvl >= STATS[stat].max, plan.count > 0, shown, plan.count > 0 ? plan.cost : costOf(ref, stat, lvl, shown));
     }
     const mgrBtn = q('[data-buy="manager"]');
     if (z.manager) {

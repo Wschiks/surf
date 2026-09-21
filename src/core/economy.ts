@@ -69,7 +69,10 @@ export function upgradeCount(z: ZoneState): number {
 
 export type BuyMode = number | 'max';
 
-/** How many levels of a stat can be bought at once (up to `mode`) for `coins`, and what they cost together. */
+/**
+ * What a tap on a buy button buys. A number (x1, x10, x100) is all or nothing: exactly that many levels, if the coins
+ * are there. 'max' buys as many as the coins allow.
+ */
 export function planBuy(ref: ZoneRef, stat: StatId, level: number, coins: number, mode: BuyMode): { count: number; cost: number } {
   const limit = mode === 'max' ? STATS[stat].max : mode;
   let count = 0;
@@ -80,10 +83,18 @@ export function planBuy(ref: ZoneRef, stat: StatId, level: number, coins: number
     cost += c;
     count++;
   }
+  if (mode !== 'max' && count < limit) return { count: 0, cost: 0 };
   return { count, cost };
 }
 
-/** Buy levels of a stat: one, or up to `mode` levels (as many as the coins allow). Returns false if not even one is affordable. */
+/** What `count` levels of a stat cost together, starting at `level` (stops at the top level). Works even when the coins are not there. */
+export function costOf(ref: ZoneRef, stat: StatId, level: number, count: number): number {
+  let cost = 0;
+  for (let n = level; n < level + count && n < STATS[stat].max; n++) cost += statCost(ref, stat, n);
+  return cost;
+}
+
+/** Buy levels of a stat (see planBuy). Returns false if nothing could be bought. */
 export function buyStat(state: GameState, zoneId: string, stat: StatId, mode: BuyMode = 1): boolean {
   const ref = zoneById(zoneId);
   const z = state.zones[zoneId];

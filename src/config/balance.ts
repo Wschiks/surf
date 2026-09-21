@@ -2,7 +2,8 @@
 // (see sports.ts), so a new sport only needs data, not new formulas.
 
 export type StatId = 'capacity' | 'price' | 'speed';
-export const STAT_IDS: StatId[] = ['capacity', 'price', 'speed'];
+/** The order of the upgrade rows: level up, bigger class, faster. */
+export const STAT_IDS: StatId[] = ['price', 'capacity', 'speed'];
 
 export interface StatDef {
   id: StatId;

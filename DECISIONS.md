@@ -116,3 +116,9 @@ Every choice made while building, and why. The concept document (`docs/concept.m
   - **Bigger class / more space** is dearer than a level up (first level 25, +17% per level, up to 100 levels, one more guest each).
   - **Buy amount:** x1, x10, x100 or Max above the upgrade rows, so 1,000 levels do not need 1,000 taps. A button that buys several levels shows "+N" and the total price.
 - Balance with the bot: first unlock after about 11 minutes, the first expansion after about 2 hours, the second after about 4 hours 45 minutes, everything unlocked and managed after about 9 hours. Maxing every level up (1,000 each) is far beyond 40 hours, on purpose.
+
+## Fourth round (review changes)
+- **Order of the upgrades:** level up, bigger class, faster, then the manager (head instructor).
+- **Holding a buy button keeps buying** (level up, bigger class, faster and the beach buildings): first a slow repeat, then quicker, and after a second or so several levels per tick, so 100 levels take about two seconds. Saved when the button is let go. Sound is throttled while holding.
+- **x10 and x100 are all or nothing:** exactly that many levels or none. The button always shows the price of the chosen amount (+10, +100 and the total), greyed out while the coins are not there. Max still buys as many as the coins allow.
+- **No white as the main colour any more:** the panels, cards, menus and dialogs are now deep blue (with light text) and the map badges have dark rings; buttons stay coloured (navy, teal, purple, coral, yellow).
