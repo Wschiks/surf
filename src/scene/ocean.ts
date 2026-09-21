@@ -30,7 +30,7 @@ export class OceanView {
     }
     // race course: a triangle of buoys inside the Club racing zone
     if (state.zones[zoneId('sailing', 3)]?.owned && this.buoys.length === 0) {
-      const r = toWorld({ x: 7.6, y: 6.5, w: 3.5, h: 1.4 });
+      const r = toWorld({ x: 4.0, y: 6.5, w: 3.5, h: 1.4 });
       const pts = [
         [0.12, 0.2],
         [0.5, 0.86],
@@ -46,7 +46,7 @@ export class OceanView {
     }
     // the ocean racer of the offshore regatta
     if (state.zones[zoneId('sailing', 4)]?.owned && !this.yacht) {
-      const r = toWorld({ x: 11.3, y: 6.5, w: 3.5, h: 1.4 });
+      const r = toWorld({ x: 0.2, y: 6.5, w: 3.5, h: 1.4 });
       this.yacht = placeUpright(this.scene, 'boat-yacht', r.x + r.w * 0.5, r.y + r.h * 0.62).setDepth(DEPTH.things);
       this.yacht.setOrigin(0.5, 0.9).setDisplaySize(90 * 1.1, 84 * 1.1);
       if (animate) this.pop(this.yacht);
@@ -56,7 +56,7 @@ export class OceanView {
     };
     this.moored.forEach((m, i) => bob(m, i, (1.85 + i * 0.42) * UNIT));
     if (this.yacht) {
-      const r = toWorld({ x: 11.3, y: 6.5, w: 3.5, h: 1.4 });
+      const r = toWorld({ x: 0.2, y: 6.5, w: 3.5, h: 1.4 });
       bob(this.yacht, 0, r.y + r.h * 0.62);
     }
   }

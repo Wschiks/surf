@@ -19,11 +19,11 @@ export interface LandmarkDef {
 }
 
 export const LANDMARKS: LandmarkDef[] = [
-  { id: 'cove', texture: 'lm-cove', meaning: 'Skimboarding spot: sandy cove with clear, shallow water', at: { x: -0.45, y: 1.15 }, layer: -1 },
+  { id: 'cove', texture: 'lm-cove', meaning: 'Skimboarding spot: sandy cove with clear, shallow water', at: { x: 0.6, y: 1.15 }, layer: -1 },
   { id: 'rocks', texture: 'lm-rocks', meaning: 'Skimboarding spot: large rocks, a rock arch and cliffs', at: { x: 0, y: 0.35 } },
-  { id: 'reef', texture: 'lm-reef', meaning: 'Reef (wave surfing level 3): coral reef with a long, clean wave', at: { x: 9.8, y: 2.3 }, size: { w: 215, h: 150 } },
-  { id: 'fort', texture: 'lm-fort', meaning: 'Nazaré (wave surfing level 4): stone fort on the cliff edge, huge waves below', at: { x: 11.65, y: 2.65 } },
-  { id: 'lighthouse', texture: 'lm-lighthouse', meaning: 'Nazaré: the red lighthouse', at: { x: 15.0, y: 3.09 }, upright: true, origin: { x: 0.5, y: 0.87 }, layer: 1 },
+  { id: 'reef', texture: 'lm-reef', meaning: 'Reef (wave surfing level 3): coral reef with a long, clean wave', at: { x: 5.7, y: 2.78 }, size: { w: 450, h: 130 } },
+  { id: 'fort', texture: 'lm-fort', meaning: 'Nazaré (wave surfing level 4): stone fort on the cliff edge, huge waves below', at: { x: 11.2, y: 2.65 } },
+  { id: 'lighthouse', texture: 'lm-lighthouse', meaning: 'Nazaré: the red lighthouse', at: { x: 14.58, y: 3.09 }, upright: true, origin: { x: 0.5, y: 0.87 }, layer: 1 },
 ];
 
 export interface DecorDef {

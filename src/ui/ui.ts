@@ -69,7 +69,7 @@ export class GameUI {
       </div>
       <div class="quests" data-ref="quests">
         <button class="q-head" data-ref="qhead"><b>Quests</b><small data-ref="qsum"></small><span class="q-chev">${icon('arrow')}</span></button>
-        <div class="q-list" data-ref="qlist">${Array.from({ length: QUEST_SLOTS }, (_, i) => `<div class="q-row" data-q="${i}"><div class="q-body"><span class="q-t"></span><i class="q-bar"><b></b></i></div><button class="q-claim" hidden></button></div>`).join('')}</div>
+        <div class="q-list" data-ref="qlist">${Array.from({ length: QUEST_SLOTS }, (_, i) => `<div class="q-row" data-q="${i}"><div class="q-body"><span class="q-t"></span><i class="q-bar"><b></b></i><small class="q-n"></small></div><button class="q-claim" hidden></button></div>`).join('')}</div>
       </div>
       <div class="dock">
         <button class="dock-btn" data-ref="beach">${icon('beach')}<em>Beach</em></button>
@@ -607,12 +607,15 @@ export class GameUI {
       if (v.done) ready++;
       row.classList.toggle('done', v.done);
       const t = row.querySelector('.q-t') as HTMLElement;
-      const text = `${v.text}${v.target > 1 ? ` (${fmt(Math.min(v.current, v.target))}/${fmt(v.target)})` : ''}`;
+      const text = v.text;
       if (t.textContent !== text) t.textContent = text;
+      const n = row.querySelector('.q-n') as HTMLElement;
+      const nt = v.target > 1 ? `${fmt(Math.min(v.current, v.target))} / ${fmt(v.target)}` : v.done ? 'Done' : 'Not yet';
+      if (n.textContent !== nt) n.textContent = nt;
       (row.querySelector('.q-bar b') as HTMLElement).style.width = Math.round(Math.min(1, v.current / v.target) * 100) + '%';
       const claim = row.querySelector<HTMLElement>('.q-claim')!;
       claim.hidden = !v.done;
-      if (v.done) setHtml(claim, `Claim ${COIN} ${fmt(reward)}`);
+      if (v.done) setHtml(claim, `${COIN} ${fmt(reward)}`);
     }
     setHtml(this.refs.qsum, ready ? `${ready} to claim` : `${COIN} ${fmt(reward)} each`);
     this.refs.quests.classList.toggle('ready', ready > 0);
