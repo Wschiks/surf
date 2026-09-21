@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { EXPANSIONS, EXPANSION_MULT } from '../src/config/expansions';
 import { SPORTS, ZONES, zoneById } from '../src/config/sports';
 import { buyStat, multipliers, upgradeCount, zoneStats } from '../src/core/economy';
+import { expansionNeededFor, sportStatus, unlockSport } from '../src/core/unlocks';
 import { newGame, type GameState } from '../src/core/state';
 import { expand, expansionStatus, levelStatus, nextGoal, unlockLevel, zoneUnlockStatus } from '../src/core/unlocks';
 
@@ -19,19 +20,37 @@ function ownLevels(s: GameState, level: number) {
 }
 
 describe('the start', () => {
-  it('starts with the surfers and the skimboarders, and nothing else', () => {
+  it('starts with the surfers only', () => {
     const s = fresh();
-    const owned = ZONES.filter((z) => s.zones[z.id].owned).map((z) => z.id);
-    expect(owned.sort()).toEqual(['skimboarding-1', 'wave-1']);
-    expect(s.sports.wave && s.sports.skimboarding).toBe(true);
-    expect(s.sports.windsurfing || s.sports.kitesurfing || s.sports.foil || s.sports.sailing).toBe(false);
+    expect(ZONES.filter((z) => s.zones[z.id].owned).map((z) => z.id)).toEqual(['wave-1']);
+    expect(s.sports.wave).toBe(true);
+    expect(s.sports.skimboarding || s.sports.windsurfing || s.sports.kitesurfing || s.sports.foil || s.sports.sailing).toBe(false);
+  });
+
+  it('skimboarding is earned: Level 2 of wave surfing, reputation and coins', () => {
+    const s = fresh();
+    const rule = SPORTS.find((x) => x.id === 'skimboarding')!.unlock!;
+    expect(expansionNeededFor(s, 'skimboarding')).toBeNull();
+    s.coins = 1e12;
+    s.reputation = 1e6;
+    expect(unlockSport(s, 'skimboarding')).toBe(false); // no Level 2 yet
+    s.zones['wave-2'].owned = true;
+    s.reputation = rule.reputation - 1;
+    expect(sportStatus(s, SPORTS.find((x) => x.id === 'skimboarding')!).ready).toBe(false);
+    s.reputation = rule.reputation;
+    s.coins = rule.coins - 1;
+    expect(unlockSport(s, 'skimboarding')).toBe(false);
+    s.coins = rule.coins;
+    expect(unlockSport(s, 'skimboarding')).toBe(true);
+    expect(s.zones['skimboarding-1'].owned).toBe(true);
+    expect(s.coins).toBe(0);
   });
 
   it('closed sports cannot be reached with the level rules', () => {
     const s = fresh();
     s.coins = 1e30;
     s.reputation = 1e9;
-    for (const sport of SPORTS.filter((x) => !s.sports[x.id])) {
+    for (const sport of SPORTS.filter((x) => !s.sports[x.id] && expansionNeededFor(s, x.id) !== null)) {
       expect(zoneUnlockStatus(s, zoneById(`${sport.id}-1`))?.kind).toBe('closed');
       expect(levelStatus(s, zoneById(`${sport.id}-2`)).blockedBy).toMatch(/expansion/);
       expect(unlockLevel(s, `${sport.id}-2`)).toBe(false);
@@ -87,6 +106,7 @@ describe('beach expansions', () => {
 
   it('needs the required level in every open sport, reputation and coins', () => {
     const s = fresh();
+    s.sports.skimboarding = true;
     s.coins = 1e30;
     s.reputation = 1e9;
     expect(expansionStatus(s)!.ready).toBe(false);
@@ -106,6 +126,7 @@ describe('beach expansions', () => {
   it('opens the Sea, multiplies income by 3 and starts everything over', () => {
     const s = fresh();
     const before = zoneStats(s, zoneById('wave-1')).income;
+    s.sports.skimboarding = true;
     ownLevels(s, 4);
     s.zones['wave-1'].manager = true;
     s.zones['wave-1'].capacity = 7;
@@ -126,6 +147,7 @@ describe('beach expansions', () => {
       expect(s.zones[`${id}-1`].owned).toBe(true);
     }
     expect(s.sports.sailing).toBe(false);
+    expect(s.sports.skimboarding).toBe(true); // learned in the first part, open from the start now
     expect(multipliers(s).coins).toBe(3);
     expect(zoneStats(s, zoneById('wave-1')).income).toBeCloseTo(before * 3);
   });
@@ -133,7 +155,7 @@ describe('beach expansions', () => {
   it('the second expansion opens the Ocean and makes income x9', () => {
     const s = fresh();
     s.expansions = 1;
-    s.sports.windsurfing = s.sports.kitesurfing = s.sports.foil = true;
+    s.sports.skimboarding = s.sports.windsurfing = s.sports.kitesurfing = s.sports.foil = true;
     ownLevels(s, EXPANSIONS[1].level);
     s.reputation = 1e9;
     s.coins = 1e30;
@@ -147,6 +169,7 @@ describe('beach expansions', () => {
 
   it('the goal bar points to the expansion once it is in reach', () => {
     const s = fresh();
+    s.sports.skimboarding = true;
     expect(nextGoal(s)?.expansion).toBe(false);
     ownLevels(s, EXPANSIONS[0].level);
     s.reputation = EXPANSIONS[0].reputation;

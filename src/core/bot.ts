@@ -4,7 +4,7 @@ import { SPORTS, ZONES } from '../config/sports';
 import { buyFacility, buyManager, buyStat, collectAll, facilityCost, managerCost, multipliers, statCost, tick, zoneStats } from './economy';
 import { newGame, type GameState } from './state';
 import { EXPANSIONS } from '../config/expansions';
-import { expand, expansionStatus, levelStatus, unlockLevel } from './unlocks';
+import { expand, expansionNeededFor, expansionStatus, levelStatus, sportStatus, unlockLevel, unlockSport } from './unlocks';
 
 // A simple, patient player used to test and balance the game. It taps every waiting zone at once,
 // buys upgrades with the best payback, and saves up when a level or sport is about to unlock.
@@ -43,6 +43,11 @@ interface Candidate {
   buy: () => boolean;
 }
 
+/** How many levels to buy at once: as many as fit in a quarter of the money, so a thousand levels do not take a thousand steps. */
+function bulk(state: GameState, firstCost: number): number {
+  return Math.max(1, Math.min(200, Math.floor((state.coins * 0.25) / Math.max(firstCost, 1e-9))));
+}
+
 function candidates(state: GameState): Candidate[] {
   const out: Candidate[] = [];
   const m = multipliers(state);
@@ -54,7 +59,7 @@ function candidates(state: GameState): Candidate[] {
       const cost = statCost(r, stat, z[stat]);
       if (!isFinite(cost)) continue;
       const next = zoneStats(state, r, { ...z, [stat]: z[stat] + 1 }, m).perSecond;
-      out.push({ name: `${r.id} ${stat} ${z[stat] + 1}`, cost, gain: next - cur, buy: () => buyStat(state, r.id, stat) });
+      out.push({ name: `${r.id} ${stat} ${z[stat] + 1}`, cost, gain: next - cur, buy: () => buyStat(state, r.id, stat, bulk(state, cost)) });
     }
     if (!z.manager) out.push({ name: `${r.id} manager`, cost: managerCost(r), gain: cur * 0.15, buy: () => buyManager(state, r.id) });
   }
@@ -75,7 +80,13 @@ function savingFor(state: GameState): { name: string; cost: number } | null {
   const exp = expansionStatus(state);
   if (exp && exp.ready) best = { name: 'expansion', cost: exp.coins };
   for (const s of SPORTS) {
-    if (!state.sports[s.id]) continue;
+    if (!state.sports[s.id]) {
+      if (expansionNeededFor(state, s.id) === null) {
+        const st = sportStatus(state, s);
+        if (st.ready && (!best || st.coins < best.cost)) best = { name: `sport ${s.id}`, cost: st.coins };
+      }
+      continue;
+    }
     for (let l = 2; l <= (exp ? exp.def.level : s.levels.length); l++) {
       const ref = ZONES.find((z) => z.sport.id === s.id && z.level === l)!;
       if (state.zones[ref.id].owned) continue;
@@ -126,9 +137,14 @@ export function simulate(opts: { maxSeconds: number; step?: number; state?: Game
         bought = true;
         continue;
       }
-      const wanted = expansionStatus(state)?.def.level ?? 99; // save for the expansion first, the top levels come after it
+      for (const s of SPORTS) {
+        if (!state.sports[s.id] && unlockSport(state, s.id)) {
+          events.push({ t, what: `unlocked sport ${s.name}` });
+          noteBuy();
+          bought = true;
+        }
+      }
       for (const r of ZONES) {
-        if (r.level > wanted) continue;
         if (r.level > 1 && state.sports[r.sport.id] && !state.zones[r.id].owned && unlockLevel(state, r.id)) {
           events.push({ t, what: `unlocked ${r.sport.name} level ${r.level} (${r.def.name})` });
           noteBuy();

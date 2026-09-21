@@ -18,8 +18,6 @@ describe('full playthrough with the balance bot', () => {
   it('takes hours, not minutes and not weeks', () => {
     expect(run.finishedAt!).toBeGreaterThan(4 * HOUR);
     expect(run.finishedAt!).toBeLessThan(14 * HOUR);
-    expect(run.maxedAt).not.toBeNull();
-    expect(run.maxedAt!).toBeLessThan(36 * HOUR);
   });
 
   it('gives the first reward within minutes', () => {

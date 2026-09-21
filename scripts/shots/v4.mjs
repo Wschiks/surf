@@ -1,0 +1,35 @@
+export default async ({ page, shot, base }) => {
+  const ev = (fn, a) => page.evaluate(fn, a);
+  await page.goto(base);
+  await page.waitForTimeout(1800);
+  await shot('01-start');
+  // progress, then start over
+  await ev(() => { const s = window.__surf.game.state; s.coins = 1e9; s.zones['wave-1'].price = 40; s.zones['wave-1'].manager = true; s.reputation = 50; window.__surf.game.save(); });
+  console.log('save before:', await ev(() => !!localStorage.getItem('surf-tycoon-save-v1')));
+  await ev(() => window.__surf.ui.openZone('wave-1'));
+  await page.waitForTimeout(1000);
+  await page.click('[data-mode="10"]', { force: true });
+  await page.waitForTimeout(400);
+  await shot('02-zone-buy10');
+  await page.click('[data-mode="max"]', { force: true });
+  await page.waitForTimeout(400);
+  await shot('03-zone-max');
+  await ev(() => window.__surf.ui.closeSheet());
+  await page.waitForTimeout(700);
+  await page.click('[data-ref=expand]', { force: true });
+  await page.waitForTimeout(900);
+  await shot('04-expand-sheet');
+  await ev(() => window.__surf.ui.closeSheet());
+  await page.waitForTimeout(700);
+  await page.click('[data-ref=gear]', { force: true });
+  await page.click('[data-reset]', { force: true });
+  await page.waitForTimeout(400);
+  await shot('05-start-over-dialog');
+  await page.click('[data-really]', { force: true });
+  await page.waitForTimeout(2500);
+  const after = await ev(() => ({ coins: window.__surf.game.state.coins, price: window.__surf.game.state.zones['wave-1'].price, manager: window.__surf.game.state.zones['wave-1'].manager, rep: window.__surf.game.state.reputation, owned: Object.values(window.__surf.game.state.zones).filter((z) => z.owned).length, exp: window.__surf.game.state.expansions }));
+  console.log('after start over:', JSON.stringify(after));
+  await page.waitForTimeout(6000);
+  console.log('still fresh after 6s:', JSON.stringify(await ev(() => ({ price: window.__surf.game.state.zones['wave-1'].price, owned: Object.values(window.__surf.game.state.zones).filter((z) => z.owned).length }))));
+  await shot('06-after-start-over');
+};

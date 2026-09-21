@@ -1,6 +1,6 @@
 import { areaById } from '../config/areas';
 import { EXPANSIONS, expansionAfter, type ExpansionDef } from '../config/expansions';
-import { SPORTS, zoneById, zoneId, type SportId, type ZoneRef } from '../config/sports';
+import { SPORTS, sportById, zoneById, zoneId, type SportDef, type SportId, type ZoneRef } from '../config/sports';
 import { fmt } from '../ui/format';
 import { upgradeCount } from './economy';
 import { newZone, openAreas, type GameState } from './state';
@@ -36,6 +36,33 @@ export function expansionNeededFor(state: GameState, sport: SportId): number | n
   return need > state.expansions ? need : null;
 }
 
+/** Rule to unlock a sport that does not start open: a level of another sport, reputation and coins. */
+export function sportStatus(state: GameState, sport: SportDef): UnlockStatus {
+  const rule = sport.unlock;
+  if (!rule) return { requirements: [], coins: 0, ready: true, canBuy: true, blockedBy: null };
+  const after = sportById(rule.after);
+  const owned = ownsLevel(state, rule.after, rule.level);
+  const reqs: Requirement[] = [
+    { text: `Own Level ${rule.level} of ${after.name}`, met: owned, progress: owned ? 'Done' : 'Not yet' },
+    { text: `Reputation ${fmt(rule.reputation)}`, met: state.reputation >= rule.reputation, progress: `${fmt(Math.floor(state.reputation))} / ${fmt(rule.reputation)}` },
+  ];
+  const ready = reqs.every((r) => r.met);
+  return { requirements: reqs, coins: rule.coins, ready, canBuy: ready && state.coins >= rule.coins, blockedBy: null };
+}
+
+export function unlockSport(state: GameState, id: SportId): boolean {
+  const sport = sportById(id);
+  if (state.sports[id] || expansionNeededFor(state, id) !== null) return false;
+  const st = sportStatus(state, sport);
+  if (!st.canBuy) return false;
+  state.coins -= st.coins;
+  state.sports[id] = true;
+  const z = state.zones[zoneId(id, 1)];
+  z.owned = true;
+  z.phase = 'idle';
+  return true;
+}
+
 /** Rule for Level 2 to 4 of a sport: the level before it, upgrades or reputation, and coins. */
 export function levelStatus(state: GameState, ref: ZoneRef): UnlockStatus {
   const rule = ref.def.unlock ?? { coins: 0, reputation: 0 };
@@ -60,10 +87,11 @@ export function levelStatus(state: GameState, ref: ZoneRef): UnlockStatus {
 }
 
 /** What a locked zone needs. Level 1 of a closed area needs the beach expansion; other levels need their level rule. */
-export function zoneUnlockStatus(state: GameState, ref: ZoneRef): { kind: 'closed' | 'level'; status: UnlockStatus } | null {
+export function zoneUnlockStatus(state: GameState, ref: ZoneRef): { kind: 'closed' | 'sport' | 'level'; status: UnlockStatus } | null {
   if (state.zones[ref.id].owned) return null;
   if (ref.level === 1) {
     const exp = expansionNeededFor(state, ref.sport.id);
+    if (exp === null) return { kind: 'sport', status: sportStatus(state, ref.sport) };
     return { kind: 'closed', status: { requirements: [], coins: 0, ready: false, canBuy: false, blockedBy: `Opens with beach expansion ${exp ?? 1}` } };
   }
   return { kind: 'level', status: levelStatus(state, ref) };
@@ -82,7 +110,9 @@ export function unlockLevel(state: GameState, id: string): boolean {
 }
 
 /** Unlock a level. Returns what was unlocked, if anything. */
-export function unlockZone(state: GameState, id: string): 'level' | null {
+export function unlockZone(state: GameState, id: string): 'level' | 'sport' | null {
+  const ref = zoneById(id);
+  if (ref.level === 1) return unlockSport(state, ref.sport.id) ? 'sport' : null;
   return unlockLevel(state, id) ? 'level' : null;
 }
 
@@ -140,14 +170,22 @@ export function nextGoal(state: GameState): Goal | null {
   const exp = expansionStatus(state);
   if (exp && exp.ready) return { zoneId: null, name: exp.def.name, missing: '', coins: exp.coins, progress: Math.min(1, state.coins / exp.coins), expansion: true };
   for (const sport of SPORTS) {
-    if (!state.sports[sport.id]) continue;
+    if (expansionNeededFor(state, sport.id) !== null) continue;
+    if (!state.sports[sport.id]) {
+      const st = sportStatus(state, sport);
+      const unmet = st.requirements.find((r) => !r.met);
+      const met = st.requirements.filter((r) => r.met).length;
+      return { zoneId: zoneId(sport.id, 1), name: sport.name, missing: unmet ? `${unmet.text} (${unmet.progress})` : '', coins: st.coins, progress: unmet ? met / (st.requirements.length + 1) : Math.min(1, state.coins / st.coins), expansion: false };
+    }
+    // levels the next sports are waiting for come first
+    const waitedFor = Math.max(0, ...SPORTS.filter((o) => o.unlock?.after === sport.id && !state.sports[o.id]).map((o) => o.unlock!.level));
     for (let level = 2; level <= sport.levels.length; level++) {
       const id = zoneId(sport.id, level);
       if (state.zones[id].owned) continue;
       const ref = zoneById(id);
       const st = levelStatus(state, ref);
       if (st.blockedBy) break;
-      if (exp && level > exp.def.level) break; // the expansion needs Level 3 first
+      if (waitedFor && level > waitedFor) break;
       const unmet = st.requirements.find((r) => !r.met);
       if (unmet) {
         const met = st.requirements.filter((r) => r.met).length;

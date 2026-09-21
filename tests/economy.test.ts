@@ -24,12 +24,12 @@ const W1 = 'wave-1';
 const fresh = () => newGame(0);
 
 describe('starting state', () => {
-  it('starts with wave surfing and skimboarding level 1 only', () => {
+  it('starts with wave surfing level 1 only', () => {
     const s = fresh();
     expect(s.coins).toBe(0);
     expect(s.sports.wave).toBe(true);
     expect(s.zones[W1].owned).toBe(true);
-    expect(ZONES.filter((z) => s.zones[z.id].owned)).toHaveLength(2);
+    expect(ZONES.filter((z) => s.zones[z.id].owned)).toHaveLength(1);
   });
 });
 

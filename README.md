@@ -6,8 +6,8 @@ Built with Phaser 4, TypeScript and Vite. The game idea lives in [docs/concept.m
 ## How the game works
 
 - Guests come to a zone, ride, and pay coins. Every zone is one level of one sport. Tap a zone to start a session, tap again to collect.
-- You start with wave surfing and skimboarding. Every sport has its own way of moving (surfers catch waves, skimmers run and slide, windsurfers tack, kitesurfers jump, foilers carve, sailors race).
-- Upgrade each zone: capacity (more guests), income per guest, speed, and a manager who runs it by themselves (also while the game is closed, up to 8 hours).
+- You start with wave surfing. Skimboarding is unlocked with Level 2 of wave surfing. Every sport has its own way of moving (surfers catch waves, skimmers run and slide, windsurfers tack, kitesurfers jump, foilers carve, sailors race).
+- Upgrade each zone: bigger class (more guests), level up (up to 1000 small steps with big bonuses at level 25, 50, 75, 100, 200, 300 and then every 100), faster sessions, and a manager who runs it by themselves (also while the game is closed, up to 8 hours).
 - Beach facilities (rental shop, café, showers, lifeguard tower) boost every sport.
 - Reputation comes from happy guests. New levels need coins and reputation.
 - **Beach expansion:** when you own Level 4 of every sport, have enough reputation and coins, you can expand the beach. A big wave washes over the screen, everything starts over, all income is x3 and the next area opens (first the Sea with windsurfing, kitesurfing and foil and wing, then the Ocean with sailing).

@@ -33,7 +33,7 @@ export interface GameState {
   startedAt: number;
 }
 
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 export function newZone(owned = false): ZoneState {
   return { owned, capacity: 0, price: 0, speed: 0, manager: false, phase: 'idle', elapsed: 0, pending: 0, pendingRep: 0 };
@@ -61,6 +61,7 @@ export function newGame(now: number): GameState {
 export function openAreas(state: GameState) {
   for (const sport of SPORTS) {
     if (areaById(sport.area).expansion > state.expansions) continue;
+    if (sport.unlock && state.expansions === 0) continue; // a sport with an unlock rule is earned in the first part of the game
     state.sports[sport.id] = true;
     const z = state.zones[zoneId(sport.id, 1)];
     if (!z.owned) {

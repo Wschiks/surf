@@ -4,6 +4,7 @@ import { MAP_W, UNIT, rectCenter, rectContains, toWorld } from '../config/layout
 import { ZONES } from '../config/sports';
 import { tapZone } from '../core/economy';
 import { Game } from '../core/game';
+import { resetSave } from '../core/save';
 import { GameUI } from '../ui/ui';
 import { LabelLayer } from '../ui/labels';
 import { Minimap } from '../ui/minimap';
@@ -51,10 +52,7 @@ export class MapScene extends Phaser.Scene {
     this.ui = new GameUI(ui, this.game_, {
       onSelect: (id) => this.onSelect(id),
       onFocusBeach: () => this.view.animateTo((MAP_W / 2) * UNIT, 0.8 * UNIT, this.view.width / 3.6, this.view.height * 0.2),
-      onReset: () => {
-        this.game_.stopSaving();
-        location.reload();
-      },
+      onReset: () => this.startOver(),
       onCollected: (id, coins) => this.pop(id, coins),
       onUnlocked: (id, kind) => this.onUnlocked(id, kind),
       onExpanded: () => this.onExpanded(),
@@ -139,10 +137,10 @@ export class MapScene extends Phaser.Scene {
     }
   }
 
-  private onUnlocked(id: string, _kind: 'level') {
+  private onUnlocked(id: string, kind: 'level' | 'sport') {
     const ref = ZONES.find((z) => z.id === id)!;
     this.ui.confetti();
-    this.ui.toast(`${ref.def.name} unlocked!`);
+    this.ui.toast(kind === 'sport' ? `${ref.sport.name} unlocked!` : `${ref.def.name} unlocked!`);
     this.onSelect(id);
   }
 
@@ -164,6 +162,13 @@ export class MapScene extends Phaser.Scene {
     // the view must stay inside the map, so the beach and the ocean are shown a bit closer than the middle areas
     const across = { beach: 2.2, wave: 2.4, sea: 2.4, ocean: 2.4 }[a.id];
     this.view.animateTo(c.x, c.y, this.view.width / across);
+  }
+
+  /** Erase the save and reload the page: a completely fresh game. */
+  private startOver() {
+    this.game_.stopSaving();
+    resetSave();
+    location.reload();
   }
 
   /** The big wave has passed and the beach started over: clear the old buildings and boats and look at the start again. */

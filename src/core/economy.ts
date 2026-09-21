@@ -1,4 +1,4 @@
-import { BALANCE, costFactor, STATS, STAT_IDS, tierFactor, type StatId } from '../config/balance';
+import { BALANCE, costFactor, milestoneMult, STATS, STAT_IDS, tierFactor, type StatId } from '../config/balance';
 import { EXPANSION_MULT } from '../config/expansions';
 import { FACILITIES, facilityById } from '../config/facilities';
 import { ZONES, zoneById, type ZoneRef } from '../config/sports';
@@ -38,7 +38,7 @@ export function guestsFor(ref: ZoneRef, z: ZoneState): number {
 
 export function zoneStats(state: GameState, ref: ZoneRef, z: ZoneState = state.zones[ref.id], m: Multipliers = multipliers(state)): ZoneStats {
   const guests = guestsFor(ref, z);
-  const pricePerGuest = tierFactor(ref.def.tier) * (1 + BALANCE.priceStep * z.price) * m.coins;
+  const pricePerGuest = tierFactor(ref.def.tier) * (1 + BALANCE.priceStep * z.price) * milestoneMult(z.price) * m.coins;
   const duration = ref.def.baseSeconds / ((1 + BALANCE.speedStep * z.speed) * m.speed);
   const income = guests * pricePerGuest;
   const rep = guests * BALANCE.repPerGuest * Math.pow(BALANCE.repTierScale, ref.def.tier) * m.reputation;
@@ -49,7 +49,7 @@ export function zoneStats(state: GameState, ref: ZoneRef, z: ZoneState = state.z
 export function statCost(ref: ZoneRef, stat: StatId, level: number): number {
   const s = STATS[stat];
   if (level >= s.max) return Infinity;
-  return Math.ceil(s.baseCost * costFactor(ref.def.tier) * Math.pow(s.growth, level));
+  return Math.ceil(s.baseCost * costFactor(ref.def.tier) * Math.pow(s.growth, level) * 100) / 100;
 }
 
 export function managerCost(ref: ZoneRef): number {
@@ -67,14 +67,31 @@ export function upgradeCount(z: ZoneState): number {
   return STAT_IDS.reduce((n, s) => n + z[s], 0);
 }
 
-export function buyStat(state: GameState, zoneId: string, stat: StatId): boolean {
+export type BuyMode = number | 'max';
+
+/** How many levels of a stat can be bought at once (up to `mode`) for `coins`, and what they cost together. */
+export function planBuy(ref: ZoneRef, stat: StatId, level: number, coins: number, mode: BuyMode): { count: number; cost: number } {
+  const limit = mode === 'max' ? STATS[stat].max : mode;
+  let count = 0;
+  let cost = 0;
+  for (let n = level; count < limit && n < STATS[stat].max; n++) {
+    const c = statCost(ref, stat, n);
+    if (cost + c > coins) break;
+    cost += c;
+    count++;
+  }
+  return { count, cost };
+}
+
+/** Buy levels of a stat: one, or up to `mode` levels (as many as the coins allow). Returns false if not even one is affordable. */
+export function buyStat(state: GameState, zoneId: string, stat: StatId, mode: BuyMode = 1): boolean {
   const ref = zoneById(zoneId);
   const z = state.zones[zoneId];
   if (!z.owned) return false;
-  const cost = statCost(ref, stat, z[stat]);
-  if (!isFinite(cost) || state.coins < cost) return false;
-  state.coins -= cost;
-  z[stat] += 1;
+  const plan = planBuy(ref, stat, z[stat], state.coins, mode);
+  if (plan.count === 0) return false;
+  state.coins -= plan.cost;
+  z[stat] += plan.count;
   return true;
 }
 

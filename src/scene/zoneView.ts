@@ -19,7 +19,7 @@ export class ZoneView {
   private waves: Phaser.GameObjects.TileSprite;
   private guests: Phaser.GameObjects.Image[] = [];
   private wakes: Phaser.GameObjects.Image[] = [];
-  private baseScale: number[] = [];
+  private baseScale: { x: number; y: number }[] = [];
   private lockedShown = true;
   private lastElapsed = 0;
   private selected = false;
@@ -74,7 +74,7 @@ export class ZoneView {
       const key = guestTexture(this.scene, kind, colors[i % colors.length], i);
       const img = this.scene.add.image(0, 0, key).setOrigin(look.ox, look.oy).setDepth(DEPTH.things);
       img.setDisplaySize(look.w, look.h);
-      this.baseScale.push(img.scaleX);
+      this.baseScale.push({ x: img.scaleX, y: img.scaleY });
       this.guests.push(img);
       const wake = this.scene.add.image(0, 0, 'fx-wake').setOrigin(0.5, 0).setDepth(DEPTH.things - 0.2).setDisplaySize(11, 26);
       this.wakes.push(wake);
@@ -123,7 +123,7 @@ export class ZoneView {
         // waiting for the player: guests stand in a row at the beach side of the zone
         const x = r.x + r.w * (0.1 + (0.8 * (i + 0.5)) / n);
         g.setPosition(x, r.y + r.h * 0.2 + Math.sin(time / 500 + i) * 1.2);
-        g.setRotation(0).setScale(this.baseScale[i]);
+        g.setRotation(0).setScale(this.baseScale[i].x, this.baseScale[i].y);
         g.setAlpha(1);
         continue;
       }
@@ -139,7 +139,7 @@ export class ZoneView {
       // the picture points up; the heading is the direction of travel
       const heading = Math.abs(dx) + Math.abs(dy) > 1e-6 ? Math.atan2(dx, -dy) : g.rotation;
       g.setPosition(gx, gy).setRotation(heading + here.tilt);
-      g.setScale(this.baseScale[i] * (1 + here.lift * 0.6));
+      g.setScale(this.baseScale[i].x * (1 + here.lift * 0.6), this.baseScale[i].y * (1 + here.lift * 0.6));
       g.setAlpha(presence(kind, t));
       wake.setPosition(gx, gy + here.lift * 7).setRotation(heading).setVisible(here.wake).setAlpha(0.6 * g.alpha);
     }

@@ -24,6 +24,7 @@ const SHAPES: Record<string, string> = {
   bolt: '<path d="M13.6 2.5L5 13.6h6l-1.6 7.9L19 10h-6.2z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>',
   manager:
     '<circle cx="12" cy="7.5" r="3.7" fill="currentColor"/><path d="M4.5 21c0-4.6 3-7.2 7.5-7.2s7.5 2.6 7.5 7.2z" fill="currentColor"/><path d="M12 15.4l.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3z" fill="#ffc233"/>',
+  expand: '<path d="M14 3.5h6.5V10M10 20.5H3.5V14" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 4l-6.5 6.5M4 20l6.5-6.5" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>',
   // --- home screen buttons
   beach: '<path d="M3 12.5a9 9 0 0118 0z" fill="currentColor"/><path d="M12 12.5V20" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M3.5 21.2h17" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".55"/>',
   sports:

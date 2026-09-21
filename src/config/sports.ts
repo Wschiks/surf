@@ -46,6 +46,8 @@ export interface SportDef {
   guestKind: GuestKind;
   /** Shirt and vest colours of the guests. All levels of a sport look alike; the water around them is what changes. */
   guestColors: string[];
+  /** How a sport that does not start open is unlocked: own a level of another sport, have reputation, pay coins. After a beach expansion it is open from the start. */
+  unlock?: { after: SportId; level: number; reputation: number; coins: number };
   /** A place on the beach this sport needs (kite launch area, jetty). It appears when the sport unlocks. */
   beachSite?: { id: 'kite-launch' | 'jetty'; name: string; rect: Rect };
   /** Names for the shared upgrade types in this sport. */
@@ -64,7 +66,7 @@ export const SPORTS: SportDef[] = [
     guestColors: ['#ff6b3d', '#ffd23f', '#ff5fa2', '#4be07a', '#3fc3ff'],
     terms: {
       capacity: 'Bigger class',
-      price: 'Lesson price',
+      price: 'Level up',
       speed: 'Faster turnover',
       manager: 'Head instructor',
       managerBlurb: 'Runs this zone by themselves, even while you are away.',
@@ -91,7 +93,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 4,
         baseSeconds: 8,
         look: 'rolling',
-        unlock: { coins: unlockCoins(1.6, 25), reputation: 0, prevLevelUpgrades: 10 },
+        unlock: { coins: unlockCoins(1.6, 3), reputation: 0, prevLevelUpgrades: 12 },
       },
       {
         name: 'Reef',
@@ -126,10 +128,11 @@ export const SPORTS: SportDef[] = [
     area: 'wave',
     color: '#f2b134',
     guestKind: 'skimmer',
+    unlock: { after: 'wave', level: 2, reputation: 12, coins: unlockCoins(1.6, 60) },
     guestColors: ['#ffb74d', '#4dd0e1', '#f06292', '#aed581', '#ba68c8'],
     terms: {
       capacity: 'More boards',
-      price: 'Board rental',
+      price: 'Level up',
       speed: 'Quicker runs',
       manager: 'Cove host',
       managerBlurb: 'Looks after the cove by themselves, even while you are away.',
@@ -156,7 +159,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 4,
         baseSeconds: 8,
         look: 'flat',
-        unlock: { coins: unlockCoins(1.4, 25), reputation: 0, prevLevelUpgrades: 10 },
+        unlock: { coins: unlockCoins(1.4, 25), reputation: 0, prevLevelUpgrades: 12 },
       },
       {
         name: 'Shore break',
@@ -194,7 +197,7 @@ export const SPORTS: SportDef[] = [
     guestColors: ['#26c6da', '#ffd54f', '#ff8a65', '#9ccc65', '#ba68c8'],
     terms: {
       capacity: 'More sails',
-      price: 'Lesson and rental price',
+      price: 'Level up',
       speed: 'Faster changeovers',
       manager: 'Windsurf coach',
       managerBlurb: 'Runs the rigging area by themselves, even while you are away.',
@@ -221,7 +224,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 4,
         baseSeconds: 8,
         look: 'ripple',
-        unlock: { coins: unlockCoins(5.4, 25), reputation: 0, prevLevelUpgrades: 10 },
+        unlock: { coins: unlockCoins(5.4, 25), reputation: 0, prevLevelUpgrades: 12 },
       },
       {
         name: 'Speed and freestyle',
@@ -260,7 +263,7 @@ export const SPORTS: SportDef[] = [
     beachSite: { id: 'kite-launch', name: 'Kite launch area', rect: { x: 5.5, y: 0.9, w: 4, h: 0.6 } },
     terms: {
       capacity: 'More kite spots',
-      price: 'Lesson price',
+      price: 'Level up',
       speed: 'Quicker launches',
       manager: 'Kite instructor',
       managerBlurb: 'Runs the launch area by themselves, even while you are away.',
@@ -287,7 +290,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 4,
         baseSeconds: 8,
         look: 'ripple',
-        unlock: { coins: unlockCoins(6.0, 25), reputation: 0, prevLevelUpgrades: 10 },
+        unlock: { coins: unlockCoins(6.0, 25), reputation: 0, prevLevelUpgrades: 12 },
       },
       {
         name: 'Freestyle and big air',
@@ -325,7 +328,7 @@ export const SPORTS: SportDef[] = [
     guestColors: ['#7e57c2', '#26c6da', '#ffa726', '#ec407a', '#9ccc65'],
     terms: {
       capacity: 'More foil boards',
-      price: 'Foil rental',
+      price: 'Level up',
       speed: 'Quick swaps',
       manager: 'Foil coach',
       managerBlurb: 'Runs the foil school by themselves, even while you are away.',
@@ -352,7 +355,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 4,
         baseSeconds: 9,
         look: 'flat',
-        unlock: { coins: unlockCoins(6.6, 25), reputation: 0, prevLevelUpgrades: 10 },
+        unlock: { coins: unlockCoins(6.6, 25), reputation: 0, prevLevelUpgrades: 12 },
       },
       {
         name: 'Downwind',
@@ -391,7 +394,7 @@ export const SPORTS: SportDef[] = [
     beachSite: { id: 'jetty', name: 'Jetty', rect: { x: 4.9, y: 0.9, w: 0.55, h: 2.2 } },
     terms: {
       capacity: 'More boats',
-      price: 'Boat hire',
+      price: 'Level up',
       speed: 'Faster turnarounds',
       manager: 'Harbour master',
       managerBlurb: 'Runs the harbour by themselves, even while you are away.',
@@ -418,7 +421,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 4,
         baseSeconds: 10,
         look: 'ripple',
-        unlock: { coins: unlockCoins(9.4, 25), reputation: 0, prevLevelUpgrades: 10 },
+        unlock: { coins: unlockCoins(9.4, 25), reputation: 0, prevLevelUpgrades: 12 },
       },
       {
         name: 'Club racing',
