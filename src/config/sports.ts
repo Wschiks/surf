@@ -275,7 +275,7 @@ export const SPORTS: SportDef[] = [
     order: 4,
     color: '#ff5c8a',
     guestKind: 'kiter',
-    beachSite: { id: 'kite-launch', name: 'Kite launch area', rect: { x: 3.5, y: 1.0, w: 3, h: 0.95 } },
+    beachSite: { id: 'kite-launch', name: 'Kite launch area', rect: { x: 3.5, y: 1.15, w: 3, h: 0.8 } },
     unlock: { reputation: 140, coins: unlockCoins(6.0, 60) },
     terms: {
       capacity: 'More kite spots',

@@ -34,6 +34,8 @@ npm run smoke      # short browser test of the built game (run npm run build fir
 
 ## Screenshots
 
+The first time, install the test browser: `npx playwright install chromium`.
+
 With the dev server running, `node scripts/screenshots.mjs <prefix> --script scripts/shots/<file>.mjs`
 takes screenshots in a 400 x 800 headless browser and saves them in `screenshots/`.
 

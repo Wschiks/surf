@@ -143,7 +143,7 @@ export class GameUI {
         <div class="sheet-title"><h2>${title}</h2><p>${sub}</p></div>
         <button class="x" data-close aria-label="Close">✕</button>
       </div>
-      <div class="facts"><span>👤 ${ref.def.guests}</span><span>🌊 ${ref.def.conditions}</span></div>`;
+      <div class="facts"><span>👤 ${ref.def.guests}</span><span>🌊 ${ref.def.conditions}</span>${owned ? `<span>🎒 Comes with: ${ref.def.starterBuys.join(', ').toLowerCase()}</span>` : ''}</div>`;
     this.sheetEl.innerHTML = head + (owned ? this.ownedBody(id) : this.lockedBody(id));
     this.sheetEl.querySelector('[data-close]')!.addEventListener('click', () => this.closeSheet());
     if (!owned) {
