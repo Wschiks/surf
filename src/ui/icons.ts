@@ -25,6 +25,18 @@ const SHAPES: Record<string, string> = {
   manager:
     '<circle cx="12" cy="7.5" r="3.7" fill="currentColor"/><path d="M4.5 21c0-4.6 3-7.2 7.5-7.2s7.5 2.6 7.5 7.2z" fill="currentColor"/><path d="M12 15.4l.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3z" fill="#ffc233"/>',
   expand: '<path d="M14 3.5h6.5V10M10 20.5H3.5V14" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 4l-6.5 6.5M4 20l6.5-6.5" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>',
+  info: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M12 11v6" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/><circle cx="12" cy="7.6" r="1.6" fill="currentColor"/>',
+  help: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M9.3 9.6a2.8 2.8 0 015.4 1c0 1.8-2.7 2.2-2.7 4" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="17.6" r="1.5" fill="currentColor"/>',
+  doc: '<path d="M6 3.5h8l4 4v13a1 1 0 01-1 1H6a1 1 0 01-1-1v-16a1 1 0 011-1z" fill="currentColor"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4.5" stroke="rgba(255,255,255,.75)" stroke-width="1.8" stroke-linecap="round"/>',
+  shield: '<path d="M12 2.8l7.5 2.7v6c0 4.6-3.1 8.2-7.5 9.7-4.4-1.5-7.5-5.1-7.5-9.7v-6z" fill="currentColor"/><path d="M8.6 12l2.7 2.7 4.3-5.2" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>',
+  heart: '<path d="M12 20.5C5 15.5 3 12.2 3 9a4.7 4.7 0 018.3-3 .9.9 0 001.4 0A4.7 4.7 0 0121 9c0 3.2-2 6.5-9 11.5z" fill="currentColor"/>',
+  download: '<path d="M12 3.5v12M7 11l5 5 5-5M4.5 20.5h15" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  upload: '<path d="M12 16.5v-12M7 9.5l5-5 5 5M4.5 20.5h15" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  chart: '<path d="M4 20.5h16" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="5.5" y="12" width="3.6" height="7" rx="1" fill="currentColor"/><rect x="10.2" y="6.5" width="3.6" height="12.5" rx="1" fill="currentColor"/><rect x="14.9" y="9.5" width="3.6" height="9.5" rx="1" fill="currentColor"/>',
+  back: '<path d="M19 12H6M11.5 6.5L6 12l5.5 5.5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  chevron: '<path d="M9 5.5l6.5 6.5L9 18.5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>',
+  copy: '<rect x="8.5" y="8.5" width="11" height="12" rx="2.2" fill="currentColor"/><path d="M15.5 5.5h-9a2 2 0 00-2 2v10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
+  wrench: '<path d="M14.5 4a5 5 0 00-4.8 6.6L3.8 16.5a2 2 0 002.8 2.8l5.9-5.9A5 5 0 0020 9.5l-3 3-2.5-.5-.5-2.5 3-3A5 5 0 0014.5 4z" fill="currentColor"/>',
   // --- home screen buttons
   beach: '<path d="M3 12.5a9 9 0 0118 0z" fill="currentColor"/><path d="M12 12.5V20" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M3.5 21.2h17" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".55"/>',
   sports:

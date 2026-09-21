@@ -90,3 +90,27 @@ describe('starting over', () => {
     delete (globalThis as unknown as { localStorage?: unknown }).localStorage;
   });
 });
+
+describe('save codes', () => {
+  it('a save can be copied as text and restored', async () => {
+    const { exportSave, parseSave } = await import('../src/core/save');
+    const s = newGame(1000);
+    s.coins = 4242;
+    s.expansions = 1;
+    s.zones['wave-1'].price = 33;
+    const code = exportSave(s);
+    expect(code.startsWith('SURF1:')).toBe(true);
+    const back = parseSave(code);
+    expect(back?.coins).toBe(4242);
+    expect(back?.expansions).toBe(1);
+    expect(back?.zones['wave-1'].price).toBe(33);
+  });
+
+  it('rejects text that is not a save', async () => {
+    const { parseSave } = await import('../src/core/save');
+    expect(parseSave('hello')).toBeNull();
+    expect(parseSave('SURF1:!!!')).toBeNull();
+    expect(parseSave('{"version":1,"coins":5}')).toBeNull();
+    expect(parseSave('')).toBeNull();
+  });
+});

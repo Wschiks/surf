@@ -1,6 +1,6 @@
 import { STATS, STAT_IDS, type StatId } from '../config/balance';
 import { FACILITIES } from '../config/facilities';
-import { SPORTS, ZONES, sportById, zoneById, zoneId } from '../config/sports';
+import { SPORTS, sportById, zoneById, zoneId } from '../config/sports';
 import { autoIncomePerSecond, buyFacility, buyManager, buyStat, costOf, facilityCost, managerCost, planBuy, tapZone, zoneStats, type BuyMode } from '../core/economy';
 import { milestoneMult, nextMilestone } from '../config/balance';
 import type { Game } from '../core/game';
@@ -11,7 +11,8 @@ import { BALANCE } from '../config/balance';
 import { claimQuest, questReward, questView, QUEST_SLOTS } from '../core/quests';
 import { COIN, fmt, fmtSeconds, fmtTime } from './format';
 import { icon, tile } from './icons';
-import { isMuted, setMuted, sound } from './sound';
+import { Menu } from './menu';
+import { sound } from './sound';
 
 export interface UICallbacks {
   /** The player selected a zone (or null when the sheet closed). */
@@ -19,16 +20,14 @@ export interface UICallbacks {
   /** The beach sheet opened: show the beach. */
   onFocusBeach: () => void;
   onReset: () => void;
+  /** A save code was restored: stop saving and reload. */
+  onRestored: () => void;
   /** Coins were collected from a zone, for a floating number on the map. */
   onCollected: (zoneId: string | null, coins: number) => void;
   /** A level or a whole sport was unlocked. */
   onUnlocked: (zoneId: string, kind: 'level' | 'sport') => void;
   /** A beach expansion was bought at the height of the big wave: the beach starts over. */
   onExpanded: () => void;
-}
-
-function soundLabel(): string {
-  return isMuted() ? `${icon('mute')} Sound is off` : `${icon('sound')} Sound is on`;
 }
 
 /** Set the HTML of an element only when it changed, so a button is not rebuilt while it is being pressed. */
@@ -696,35 +695,14 @@ export class GameUI {
   }
 
   private openMenu() {
-    const s = this.game.state;
-    const m = this.modal(`
-      <h2>Surf Tycoon</h2>
-      <ul class="tips">
-        <li>Tap a zone to start a session. When it is done, tap it again to collect the coins.</li>
-        <li>Hire a manager to keep a zone running by itself, even while the game is closed.</li>
-        <li>Swipe to move around, pinch to zoom. The small map in the corner jumps to an area.</li>
-        <li>New levels and sports need coins and reputation. The quests give coins.</li>
-      </ul>
-      <p>Zones unlocked: <b>${ZONES.filter((z) => s.zones[z.id].owned).length} / ${ZONES.length}</b> · Managers hired: <b>${ZONES.filter((z) => s.zones[z.id].manager).length}</b></p>
-      <p>Coins earned in total: <b>${COIN} ${fmt(s.totalCoins)}</b></p>
-      <p>Playing since <b>${new Date(s.startedAt).toLocaleDateString()}</b></p>
-      <button class="btn soft" data-sound>${soundLabel()}</button>
-      <button class="btn soft" data-cheat>${icon('coins')} Add 100B coins (test)</button>
-      <button class="go big" data-ok>Back to the beach</button>
-      <button class="danger" data-reset>Start over (erases your save)</button>`);
-    m.querySelector('[data-ok]')!.addEventListener('click', () => this.closeModal());
-    m.querySelector('[data-sound]')!.addEventListener('click', (e) => {
-      setMuted(!isMuted());
-      (e.currentTarget as HTMLElement).innerHTML = soundLabel();
-      sound.tap();
-    });
-    m.querySelector('[data-cheat]')!.addEventListener('click', () => {
-      this.game.state.coins += 100e9;
-      this.game.save();
-      this.refreshTop();
-      sound.coin();
-      this.toast('Added 100B coins');
-    });
-    m.querySelector('[data-reset]')!.addEventListener('click', () => this.confirmReset());
+    const m = this.modal('');
+    new Menu(m.querySelector('.modal') as HTMLElement, {
+      game: this.game,
+      close: () => this.closeModal(),
+      toast: (t) => this.toast(t),
+      askReset: () => this.confirmReset(),
+      restored: () => this.cb.onRestored(),
+      refreshTop: () => this.refreshTop(),
+    }).show('main');
   }
 }

@@ -235,3 +235,54 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 .q-claim[hidden] { display: none; }
 .q-claim:active { transform: translateY(2px); box-shadow: none; }
 .q-n { font-size: 10.5px; font-weight: 700; color: var(--mute); }
+
+/* ---------- menu ---------- */
+.modal.menu { max-width: 380px; padding: 16px; max-height: 92%; overflow-y: auto; overscroll-behavior: contain; touch-action: pan-y; }
+.menu-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.menu-title { flex: 1; min-width: 0; }
+.menu-title h2 { margin: 0; font-size: 22px; }
+.x.back { background: var(--gloss), var(--tile); box-shadow: 0 3px 0 #163f60; }
+.menu-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+.menu-stats div { background: var(--tile); border-radius: 14px; padding: 8px 2px; text-align: center; }
+.menu-stats b { display: block; font-size: 18px; }
+.menu-stats b em { font-style: normal; font-size: 12px; color: var(--mute); }
+.menu-stats small { font-size: 10px; font-weight: 800; color: var(--mute); text-transform: uppercase; letter-spacing: 0.04em; }
+.menu-line { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; font-size: 12.5px; color: var(--mute); font-weight: 600; margin: 10px 0 2px; }
+.menu-line .ic { width: 16px; height: 16px; }
+.menu-line b { color: var(--text); }
+.modal.menu h4 { margin: 14px 0 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--mute); }
+.set-group { display: flex; flex-direction: column; gap: 6px; }
+.set-row { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; background: var(--card); border-radius: 16px; padding: 8px 10px; min-height: 58px; }
+.set-row:active { transform: translateY(2px); }
+.set-txt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; }
+.set-txt b { font-size: 15px; }
+.set-txt small { font-size: 12px; color: var(--mute); font-weight: 600; }
+.set-r { flex: none; width: 22px; height: 22px; color: var(--mute); display: grid; place-items: center; }
+.set-r .ic { width: 20px; height: 20px; }
+.set-r:has(.switch) { width: 50px; }
+.switch { width: 46px; height: 28px; border-radius: 99px; background: #0a2439; position: relative; display: block; box-shadow: inset 0 2px 0 rgba(0, 0, 0, 0.3); transition: background 0.2s; }
+.switch i { position: absolute; top: 3px; left: 3px; width: 22px; height: 22px; border-radius: 50%; background: #9cc3da; transition: transform 0.2s, background 0.2s; }
+.switch.on { background: #2fbf8a; }
+.switch.on i { transform: translateX(18px); background: #fff; }
+.menu-body { display: block; }
+.menu-updated { font-size: 12.5px; color: var(--mute); font-weight: 600; margin: 4px 0 10px; line-height: 1.4; }
+.legal { background: var(--card); border-radius: 14px; padding: 11px 12px; margin-bottom: 8px; }
+.legal h3 { margin: 0 0 4px; font-size: 14px; color: var(--sun); }
+.legal p { margin: 0; font-size: 13px; line-height: 1.45; color: var(--text); }
+.howto { display: flex; flex-direction: column; gap: 8px; }
+.howto div { background: var(--card); border-radius: 14px; padding: 10px 12px; }
+.howto b { font-size: 14px; color: var(--sun); }
+.howto p { margin: 3px 0 0; font-size: 13px; line-height: 1.4; }
+.about-logo { display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 10px 0 4px; }
+.about-logo span { width: 64px; height: 64px; border-radius: 20px; background: var(--gloss), var(--teal); color: #fff; display: grid; place-items: center; padding: 14px; box-shadow: 0 4px 0 var(--teal-d); }
+.about-logo b { font-size: 22px; }
+.about-logo small { color: var(--mute); font-weight: 700; }
+.credit { display: flex; justify-content: space-between; gap: 12px; padding: 9px 2px; border-bottom: 1px solid rgba(255, 255, 255, 0.1); font-size: 13px; }
+.credit b { color: var(--mute); font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; padding-top: 2px; }
+.credit span { text-align: right; font-weight: 600; }
+.menu-links { display: flex; gap: 8px; margin-top: 10px; }
+.menu-links .btn { margin-top: 0; font-size: 13px; padding: 0 6px; }
+.code { width: 100%; background: #0a2439; color: #cfe6f3; border: 2px solid #24699a; border-radius: 12px; padding: 8px 10px; font: 11px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; resize: none; user-select: text; -webkit-user-select: text; margin-bottom: 6px; }
+.menu-error { color: #ffb3a8; font-weight: 700; font-size: 13px; margin: 4px 0; }
+.menu-error[hidden] { display: none; }
+.modal.menu .go.big { margin-top: 10px; }

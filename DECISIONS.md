@@ -135,3 +135,9 @@ Every choice made while building, and why. The concept document (`docs/concept.m
 
 ## Expanding is no longer free
 - `BALANCE.testAlwaysExpand` is now `false`: the Expand button follows the real rules again (Level 4 of every sport in the open areas, reputation and coins). It is only enabled when everything is met, and it needs the coins (it is not free). Set it to `true` again to watch the big wave at any time.
+
+## The menu (gear button)
+- Rebuilt as a proper menu (`src/ui/menu.ts`) with a header, your stats (zones, managers, expansions, quests done, coins earned, time played) and grouped rows: **Settings** (sound switch), **Help** (how to play), **Your save** (save code), **Legal** (Terms of Service, Privacy Policy, About and credits), **Testing** (add 100B coins) and a red **Start over**. Every page has a back button.
+- **Terms of Service and Privacy Policy** are real screens with the text in `src/config/legal.ts`. They describe what the game does today: free, no purchases or ads, no accounts, nothing collected, the save only on the device. They are short, plain placeholder texts, **not legal advice**: before a store release the publisher's name and contact details must be added and the texts checked by someone who knows the rules of the target stores.
+- **Save code:** copy your whole game as text (starts with `SURF1:`) and restore it by pasting it back (also to move to another device). Invalid text is rejected with a message. Tested in `tests/save.test.ts` and in the browser.
+- Version and credits come from `package.json` and `src/config/legal.ts`.
