@@ -1,4 +1,5 @@
 import { applyOffline, tick, type OfflineReport } from './economy';
+import { refreshQuests } from './quests';
 import { loadGame, saveGame } from './save';
 import type { GameState } from './state';
 
@@ -10,9 +11,11 @@ export class Game {
   private last: number;
   private saveTimer = 0;
   private saving = true;
+  private questTimer = 0;
 
   constructor(now = Date.now()) {
     this.state = loadGame(now);
+    refreshQuests(this.state);
     this.last = now;
     const away = (now - this.state.savedAt) / 1000;
     if (away > 5) {
@@ -33,6 +36,11 @@ export class Game {
       dt = 0;
     } else {
       tick(this.state, dt);
+    }
+    this.questTimer += dt;
+    if (this.questTimer > 1) {
+      this.questTimer = 0;
+      refreshQuests(this.state);
     }
     this.saveTimer += dt;
     if (this.saveTimer > 5 || dt === 0) {

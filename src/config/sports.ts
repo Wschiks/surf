@@ -43,6 +43,8 @@ export interface SportDef {
   icon: string;
   area: AreaId;
   color: string;
+  /** What the guests are called, for quests ("Get 30 surfers"). */
+  noun: string;
   guestKind: GuestKind;
   /** Shirt and vest colours of the guests. All levels of a sport look alike; the water around them is what changes. */
   guestColors: string[];
@@ -58,6 +60,7 @@ export interface SportDef {
 export const SPORTS: SportDef[] = [
   {
     id: 'wave',
+    noun: 'surfers',
     name: 'Wave surfing',
     icon: 'wave',
     area: 'wave',
@@ -123,6 +126,7 @@ export const SPORTS: SportDef[] = [
   },
   {
     id: 'skimboarding',
+    noun: 'skimboarders',
     name: 'Skimboarding',
     icon: 'skim',
     area: 'wave',
@@ -189,6 +193,7 @@ export const SPORTS: SportDef[] = [
   },
   {
     id: 'windsurfing',
+    noun: 'windsurfers',
     name: 'Windsurfing',
     icon: 'wind',
     area: 'sea',
@@ -254,6 +259,7 @@ export const SPORTS: SportDef[] = [
   },
   {
     id: 'kitesurfing',
+    noun: 'kitesurfers',
     name: 'Kitesurfing',
     icon: 'kite',
     area: 'sea',
@@ -320,6 +326,7 @@ export const SPORTS: SportDef[] = [
   },
   {
     id: 'foil',
+    noun: 'foilers',
     name: 'Foil and wing',
     icon: 'foil',
     area: 'sea',
@@ -385,6 +392,7 @@ export const SPORTS: SportDef[] = [
   },
   {
     id: 'sailing',
+    noun: 'sailors',
     name: 'Sailing',
     icon: 'sail',
     area: 'ocean',

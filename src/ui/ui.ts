@@ -5,8 +5,10 @@ import { autoIncomePerSecond, buyFacility, buyManager, buyStat, costOf, facility
 import { milestoneMult, nextMilestone } from '../config/balance';
 import type { Game } from '../core/game';
 import type { OfflineReport } from '../core/economy';
-import { expand, expansionNeededFor, expansionStatus, nextGoal, unlockZone, zoneUnlockStatus } from '../core/unlocks';
+import { canExpand, expand, expansionNeededFor, expansionStatus, unlockZone, zoneUnlockStatus } from '../core/unlocks';
 import { EXPANSION_MULT } from '../config/expansions';
+import { BALANCE } from '../config/balance';
+import { claimQuest, questReward, questView, QUEST_SLOTS } from '../core/quests';
 import { COIN, fmt, fmtSeconds, fmtTime } from './format';
 import { icon, tile } from './icons';
 import { isMuted, setMuted, sound } from './sound';
@@ -65,7 +67,10 @@ export class GameUI {
         <div class="pill rep" title="Reputation"><span class="ico">${icon('star')}</span><b data-ref="rep">0</b></div>
         <button class="pill gear" data-ref="gear" aria-label="Menu">${icon('gear')}</button>
       </div>
-      <button class="goal" data-ref="goal" hidden><span class="goal-ic">${icon('flag')}</span><span class="goal-body"><span class="goal-t"></span><i class="goal-bar"><b></b></i></span></button>
+      <div class="quests" data-ref="quests">
+        <button class="q-head" data-ref="qhead"><b>Quests</b><small data-ref="qsum"></small><span class="q-chev">${icon('arrow')}</span></button>
+        <div class="q-list" data-ref="qlist">${Array.from({ length: QUEST_SLOTS }, (_, i) => `<div class="q-row" data-q="${i}"><div class="q-body"><span class="q-t"></span><i class="q-bar"><b></b></i></div><button class="q-claim" hidden></button></div>`).join('')}</div>
+      </div>
       <div class="dock">
         <button class="dock-btn" data-ref="beach">${icon('beach')}<em>Beach</em></button>
         <button class="dock-btn" data-ref="sports">${icon('sports')}<em>Sports</em></button>
@@ -80,13 +85,20 @@ export class GameUI {
     this.dockEl = this.root.querySelector('.dock')!;
     this.refs.beach.addEventListener('click', () => this.openBeach());
     this.refs.sports.addEventListener('click', () => this.openSports());
-    this.refs.goal.addEventListener('click', () => {
-      const g = nextGoal(this.game.state);
-      if (g?.zoneId) this.openZone(g.zoneId);
-      else if (g) this.openExpand();
-    });
     this.refs.gear.addEventListener('click', () => this.openMenu());
     this.refs.expand.addEventListener('click', () => this.openExpand());
+    this.refs.qhead.addEventListener('click', () => this.refs.quests.classList.toggle('collapsed'));
+    this.refs.qlist.querySelectorAll<HTMLElement>('.q-claim').forEach((b, i) =>
+      b.addEventListener('click', () => {
+        const got = claimQuest(this.game.state, i);
+        if (got > 0) {
+          sound.coin();
+          this.game.save();
+          this.cb.onCollected(null, got);
+        }
+        this.refreshTop();
+      }),
+    );
     if (this.game.offlineReport) this.showOffline(this.game.offlineReport);
   }
 
@@ -404,10 +416,12 @@ export class GameUI {
     const s = this.game.state;
     const st = expansionStatus(s);
     if (!st) {
-      const html = `<h3>${icon('trophy')} Fully expanded</h3><p class="get">The whole map is open. All income is x${Math.pow(EXPANSION_MULT, s.expansions)}.</p>`;
+      const test = BALANCE.testAlwaysExpand;
+      const html = `<h3>${icon('trophy')} Fully expanded</h3><p class="get">The whole map is open. All income is x${Math.pow(EXPANSION_MULT, s.expansions)}.</p>${test ? `<button class="go ready" data-xbtn>Replay the big wave (test)</button>` : ''}`;
       if (card.dataset.h !== html) {
         card.innerHTML = html;
         card.dataset.h = html;
+        card.querySelector('[data-xbtn]')?.addEventListener('click', () => this.startExpansion());
       }
       return;
     }
@@ -428,14 +442,15 @@ export class GameUI {
       li.querySelector('em')!.textContent = r.progress;
     });
     const btn = card.querySelector<HTMLButtonElement>('[data-xbtn]')!;
-    btn.disabled = !st.canBuy;
-    btn.className = 'go' + (st.canBuy ? ' ready' : '');
-    setHtml(btn, `Expand · ${COIN} ${fmt(st.coins)}`);
+    const can = canExpand(s);
+    btn.disabled = !can;
+    btn.className = 'go' + (can ? ' ready' : '');
+    setHtml(btn, can && !st.canBuy ? 'Expand (test: no requirements)' : `Expand · ${COIN} ${fmt(st.coins)}`);
   }
 
   /** Buy the expansion: the big wave sweeps over the screen and, while everything is hidden, the beach starts over. */
   private startExpansion() {
-    if (!expansionStatus(this.game.state)?.canBuy || document.querySelector('.tsunami')) return;
+    if (!canExpand(this.game.state) || document.querySelector('.tsunami')) return;
     sound.unlock();
     const box = document.createElement('div');
     box.className = 'tsunami';
@@ -567,23 +582,34 @@ export class GameUI {
     this.refs.rep.textContent = fmt(Math.floor(s.reputation));
     this.refs.mult.hidden = s.expansions === 0;
     this.refs.mult.textContent = `x${Math.pow(EXPANSION_MULT, s.expansions)}`;
-    const goal = nextGoal(s);
-    const allOwned = ZONES.every((z) => s.zones[z.id].owned);
-    this.refs.goal.hidden = (!goal && !allOwned) || !!this.sheet;
-    this.refs.goal.classList.toggle('done', !goal && allOwned);
-    if (!goal && allOwned) {
-      const gt = this.refs.goal.querySelector('.goal-t')!;
-      if (gt.innerHTML !== 'Everything is unlocked! Max out your upgrades.') gt.innerHTML = 'Everything is unlocked! Max out your upgrades.';
-      (this.refs.goal.querySelector('.goal-bar b') as HTMLElement).style.width = '100%';
+    this.refs.expand.classList.toggle('ready', canExpand(s));
+    this.refs.expand.classList.toggle('pulse', canExpand(s));
+    this.refreshQuests();
+  }
+
+  private refreshQuests() {
+    const s = this.game.state;
+    this.refs.quests.classList.toggle('hidden', !!this.sheet);
+    const reward = questReward(s);
+    let ready = 0;
+    for (let i = 0; i < QUEST_SLOTS; i++) {
+      const row = this.refs.qlist.querySelector<HTMLElement>(`[data-q="${i}"]`)!;
+      const q = s.quests[i];
+      row.hidden = !q;
+      if (!q) continue;
+      const v = questView(s, q);
+      if (v.done) ready++;
+      row.classList.toggle('done', v.done);
+      const t = row.querySelector('.q-t') as HTMLElement;
+      const text = `${v.text}${v.target > 1 ? ` (${fmt(Math.min(v.current, v.target))}/${fmt(v.target)})` : ''}`;
+      if (t.textContent !== text) t.textContent = text;
+      (row.querySelector('.q-bar b') as HTMLElement).style.width = Math.round(Math.min(1, v.current / v.target) * 100) + '%';
+      const claim = row.querySelector<HTMLElement>('.q-claim')!;
+      claim.hidden = !v.done;
+      if (v.done) setHtml(claim, `Claim ${COIN} ${fmt(reward)}`);
     }
-    if (goal) {
-      const t = goal.missing ? `${goal.name}: ${goal.missing}` : `${goal.name}: save ${COIN} ${fmt(goal.coins)}`;
-      const gt = this.refs.goal.querySelector('.goal-t')!;
-      if (gt.innerHTML !== t) gt.innerHTML = t;
-      (this.refs.goal.querySelector('.goal-bar b') as HTMLElement).style.width = Math.round(goal.progress * 100) + '%';
-    }
-    this.refs.expand.classList.toggle('ready', !!expansionStatus(s)?.canBuy);
-    this.refs.expand.classList.toggle('pulse', !!expansionStatus(s)?.canBuy);
+    setHtml(this.refs.qsum, ready ? `${ready} to claim` : `${COIN} ${fmt(reward)} each`);
+    this.refs.quests.classList.toggle('ready', ready > 0);
   }
 
   /** Call every frame. Cheap: the heavier refresh only runs about ten times a second. */
@@ -668,7 +694,7 @@ export class GameUI {
         <li>Tap a zone to start a session. When it is done, tap it again to collect the coins.</li>
         <li>Hire a manager to keep a zone running by itself, even while the game is closed.</li>
         <li>Swipe to move around, pinch to zoom. The small map in the corner jumps to an area.</li>
-        <li>New levels and sports need coins and reputation. The goal bar shows what is next.</li>
+        <li>New levels and sports need coins and reputation. The quests give coins.</li>
       </ul>
       <p>Zones unlocked: <b>${ZONES.filter((z) => s.zones[z.id].owned).length} / ${ZONES.length}</b> · Managers hired: <b>${ZONES.filter((z) => s.zones[z.id].manager).length}</b></p>
       <p>Coins earned in total: <b>${COIN} ${fmt(s.totalCoins)}</b></p>

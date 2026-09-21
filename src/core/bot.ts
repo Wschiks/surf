@@ -1,8 +1,9 @@
-import { STAT_IDS, type StatId } from '../config/balance';
+import { BALANCE, STAT_IDS, type StatId } from '../config/balance';
 import { FACILITIES } from '../config/facilities';
 import { SPORTS, ZONES, type ZoneRef } from '../config/sports';
 import { buyFacility, buyManager, buyStat, collectAll, facilityCost, managerCost, multipliers, planBuy, statCost, tick, zoneStats } from './economy';
 import { newGame, type GameState } from './state';
+import { claimQuest, refreshQuests } from './quests';
 import { EXPANSIONS } from '../config/expansions';
 import { expand, expansionNeededFor, expansionStatus, levelStatus, sportStatus, unlockLevel, unlockSport } from './unlocks';
 
@@ -108,6 +109,7 @@ function allMaxed(state: GameState): boolean {
 }
 
 export function simulate(opts: { maxSeconds: number; step?: number; state?: GameState } = { maxSeconds: 3600 * 24 }): SimResult {
+  BALANCE.testAlwaysExpand = false; // the bot plays by the real rules
   const state = opts.state ?? newGame(0);
   const step = opts.step ?? 1;
   const events: SimEvent[] = [];
@@ -131,6 +133,9 @@ export function simulate(opts: { maxSeconds: number; step?: number; state?: Game
     // buy, as many times as the money allows this step
     for (let guard = 0; guard < 50; guard++) {
       let bought = false;
+      // quests: claim what is finished
+      refreshQuests(state);
+      for (let q = state.quests.length - 1; q >= 0; q--) claimQuest(state, q);
       // 1. expansions and level unlocks come first
       if (expansionStatus(state)?.canBuy && expand(state)) {
         events.push({ t, what: `EXPANSION ${state.expansions}: the big wave. Area opened, everything starts over` });

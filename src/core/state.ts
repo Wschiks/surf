@@ -28,6 +28,9 @@ export interface GameState {
   facilities: Record<string, number>;
   /** Beach expansions bought so far. Each one opens an area, multiplies income and restarts the beach. */
   expansions: number;
+  /** The quests on offer (three at a time) and how many were completed. */
+  quests: import('./quests').Quest[];
+  questsDone: number;
   /** Real time (ms since 1970) when the game was last saved or updated. */
   savedAt: number;
   startedAt: number;
@@ -49,6 +52,8 @@ export function newGame(now: number): GameState {
     zones: {},
     facilities: {},
     expansions: 0,
+    quests: [],
+    questsDone: 0,
     savedAt: now,
     startedAt: now,
   };
@@ -77,6 +82,8 @@ export function ensureState(state: GameState): GameState {
   for (const z of ZONES) state.zones[z.id] ??= newZone();
   for (const f of FACILITIES) state.facilities[f.id] ??= 0;
   state.expansions ??= 0;
+  state.quests ??= [];
+  state.questsDone ??= 0;
   return state;
 }
 

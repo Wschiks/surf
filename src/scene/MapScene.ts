@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { AREAS, areaById, areaRect, type AreaDef, type AreaId } from '../config/areas';
+import { AREAS, areaRect, type AreaId } from '../config/areas';
 import { MAP_W, UNIT, rectCenter, rectContains, toWorld } from '../config/layout';
 import { ZONES } from '../config/sports';
 import { tapZone } from '../core/economy';
@@ -7,7 +7,6 @@ import { Game } from '../core/game';
 import { resetSave } from '../core/save';
 import { GameUI } from '../ui/ui';
 import { LabelLayer } from '../ui/labels';
-import { Minimap } from '../ui/minimap';
 import { ZoneChips } from '../ui/zoneChips';
 import { buildBackground, Haze } from './background';
 import { BeachView } from './beach';
@@ -24,7 +23,6 @@ export class MapScene extends Phaser.Scene {
   private bg!: ReturnType<typeof buildBackground>;
   private hazes = new Map<AreaId, Haze>();
   private labels!: LabelLayer;
-  private minimap!: Minimap;
   private ui!: GameUI;
   private chips!: ZoneChips;
   private beach!: BeachView;
@@ -45,10 +43,6 @@ export class MapScene extends Phaser.Scene {
     const ui = document.getElementById('ui')!;
     ui.innerHTML = '';
     this.labels = new LabelLayer(ui);
-    this.minimap = new Minimap(ui, this.view, {
-      isCleared: (a) => this.isAreaCleared(a.id),
-      onJump: (a) => this.jumpToArea(a),
-    });
     this.ui = new GameUI(ui, this.game_, {
       onSelect: (id) => this.onSelect(id),
       onFocusBeach: () => this.view.animateTo((MAP_W / 2) * UNIT, 0.8 * UNIT, this.view.width / 3.6, this.view.height * 0.2),
@@ -157,13 +151,6 @@ export class MapScene extends Phaser.Scene {
     }, 1100);
   }
 
-  jumpToArea(a: AreaDef) {
-    const c = { x: (MAP_W / 2) * UNIT, y: rectCenter(areaRect(a)).y * UNIT };
-    // the view must stay inside the map, so the beach and the ocean are shown a bit closer than the middle areas
-    const across = { beach: 2.2, wave: 2.4, sea: 2.4, ocean: 2.4 }[a.id];
-    this.view.animateTo(c.x, c.y, this.view.width / across);
-  }
-
   /** Erase the save and reload the page: a completely fresh game. */
   private startOver() {
     this.game_.stopSaving();
@@ -190,10 +177,6 @@ export class MapScene extends Phaser.Scene {
     this.hazes.get(id)?.clear(animate);
   }
 
-  isAreaCleared(id: AreaId) {
-    return this.clearedAreas.has(id) || areaById(id).expansion === 0;
-  }
-
   update(time: number, delta: number) {
     const now = Date.now();
     this.game_.update(now);
@@ -217,7 +200,6 @@ export class MapScene extends Phaser.Scene {
     this.ocean.update(this.game_.state, time);
     this.chips.update(this.game_.state, this.view.ppu, this.ui.selectedZone);
     this.labels.update(this.view);
-    this.minimap.draw();
     this.ui.update(now);
   }
 }
