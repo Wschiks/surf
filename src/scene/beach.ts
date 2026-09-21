@@ -65,9 +65,9 @@ export class BeachView {
     for (const g of this.plots.values()) g.setVisible(true);
   }
 
-  /** People strolling along the water line. More of them come as the spot gets a better reputation. */
+  /** People strolling along the water line. More of them come as the beach grows. */
   animateWalkers(state: GameState, time: number) {
-    const want = Math.min(WALKER_COLORS.length, 3 + Math.floor(Math.log10(state.reputation + 1) * 2));
+    const want = Math.min(WALKER_COLORS.length, 3 + Math.floor(Math.log10(state.totalCoins + 1) / 1.5));
     while (this.walkers.length < want) {
       const i = this.walkers.length;
       const key = guestTexture(this.scene, 'walker', WALKER_COLORS[i], i);

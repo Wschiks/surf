@@ -70,7 +70,7 @@ function candidates(state: GameState): Candidate[] {
     const lvl = state.facilities[f.id];
     const cost = facilityCost(f.id, lvl);
     if (!isFinite(cost)) continue;
-    const gainFactor = f.effect === 'reputation' ? 0.02 : (1 + f.perLevel * (lvl + 1)) / (1 + f.perLevel * lvl) - 1;
+    const gainFactor = f.effect === 'speed' ? f.perLevel : (1 + f.perLevel * (lvl + 1)) / (1 + f.perLevel * lvl) - 1;
     out.push({ name: `facility ${f.id} ${lvl + 1}`, cost, gain: rate * gainFactor, buy: () => buyFacility(state, f.id) });
   }
   return out;

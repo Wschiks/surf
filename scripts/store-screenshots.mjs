@@ -31,7 +31,7 @@ for (const set of sets) {
   // 2. a busy first part: wave surfing and skimboarding with managers
   await ev(() => {
     const s = window.__surf.game.state;
-    s.coins = 4200; s.reputation = 60; s.sports.skimboarding = true;
+    s.coins = 4200; s.sports.skimboarding = true;
     for (const id of ['wave-1', 'wave-2', 'skimboarding-1']) { const z = s.zones[id]; z.owned = true; z.manager = true; z.capacity = 6; z.price = 30; z.speed = 3; }
     s.zones['skimboarding-1'].manager = true;
     s.facilities.shop = 2;
@@ -46,7 +46,7 @@ for (const set of sets) {
   // 4. the Sea after the first expansion, everything busy
   await ev(() => {
     const s = window.__surf.game.state;
-    s.expansions = 1; s.reputation = 5000; s.coins = 2.5e9;
+    s.expansions = 1; s.coins = 2.5e9;
     for (const k of Object.keys(s.sports)) s.sports[k] = k !== 'sailing';
     for (const [id, z] of Object.entries(s.zones)) if (!id.startsWith('sailing')) { z.owned = true; z.manager = true; z.capacity = 5; z.price = 40; }
   });

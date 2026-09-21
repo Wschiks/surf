@@ -216,7 +216,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 
 /* ---------- quests ---------- */
 .quests { position: absolute; top: max(62px, calc(env(safe-area-inset-top) + 52px)); left: 10px; right: 10px; background: rgba(10, 36, 57, 0.9); border-radius: calc(18px * var(--u)); box-shadow: 0 3px 0 #061a2b; padding: 4px 8px 8px; pointer-events: auto; transition: opacity 0.2s, transform 0.2s; color: #fff; }
-.quests.hidden { opacity: 0; transform: translateY(-10px); pointer-events: none; }
+.quests.hidden { opacity: 0; transform: translateY(-10px); pointer-events: none; visibility: hidden; }
 .q-head { display: flex; align-items: center; gap: 8px; width: 100%; height: 30px; font-size: 13px; }
 .q-head b { letter-spacing: 0.04em; text-transform: uppercase; font-size: 12px; color: var(--sun); }
 .q-head small { flex: 1; text-align: left; font-size: 11px; font-weight: 700; color: var(--mute); display: flex; align-items: center; gap: 4px; }

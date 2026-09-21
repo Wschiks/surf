@@ -30,7 +30,7 @@ export function contactText(): string {
 
 export const TERMS: LegalSection[] = [
   { title: '1. About this game', body: 'Surf Tycoon is a free idle game about running a water-sports spot. By playing it you agree to these terms. If you do not agree, please do not play.' },
-  { title: '2. Free to play', body: 'The game is free. There are no in-app purchases, no ads and no real-money items. Coins, reputation and everything else in the game have no value outside the game and cannot be exchanged for money.' },
+  { title: '2. Free to play', body: 'The game is free. There are no in-app purchases, no ads and no real-money items. Coins and everything else in the game have no value outside the game and cannot be exchanged for money.' },
   { title: '3. Your progress', body: 'Your progress is saved on your own device. If you clear the data of the app or the browser, or use "Start over" in the menu, your progress is gone. You can make a backup with a save code in the menu. We cannot restore lost progress.' },
   { title: '4. Fair play', body: 'You may play the game for your own enjoyment. Please do not copy, sell or pass off the game as your own, and do not try to break or misuse it. Options marked as test options in the menu are there to try the game out.' },
   { title: '5. No promises', body: 'The game is provided "as is". It is still being built, so things can change, get rebalanced or contain mistakes. We do not promise that it will always work or be available, and we are not responsible for any loss that comes from playing it, as far as the law allows.' },

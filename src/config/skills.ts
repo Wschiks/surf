@@ -14,7 +14,7 @@ export type SkillKind =
   | 'guests' // +x guests in every zone of this sport
   | 'cost' // upgrades of this sport are x cheaper
   | 'manager' // managers of this sport are x cheaper
-  | 'rep' // +x reputation from this sport
+  | 'capacityCost' // bigger class / more space costs x less
   | 'unlock' // levels and the sport itself unlock x cheaper
   // for the beach
   | 'facilityPower' // beach buildings work x better
@@ -79,7 +79,7 @@ const SPORT_SHAPE: Shape[] = [
   { key: 'guests1', kind: 'guests', value: 1, cost: 2, parent: 1, x: -1.85, y: -2 },
   { key: 'cost1', kind: 'cost', value: 0.1, cost: 2, parent: 1, x: -0.35, y: -2 },
   { key: 'manager1', kind: 'manager', value: 0.25, cost: 2, parent: 2, x: 0.7, y: -2 },
-  { key: 'rep1', kind: 'rep', value: 0.15, cost: 2, parent: 2, x: 1.9, y: -2 },
+  { key: 'space1', kind: 'capacityCost', value: 0.2, cost: 2, parent: 2, x: 1.9, y: -2 },
   { key: 'prices2', kind: 'coins', value: 0.12, cost: 4, parent: 3, x: -1.85, y: -3 },
   { key: 'unlock1', kind: 'unlock', value: 0.15, cost: 4, parent: 4, x: -0.5, y: -3 },
   { key: 'speed2', kind: 'speed', value: 0.12, cost: 4, parent: 5, x: 0.7, y: -3 },
@@ -102,7 +102,7 @@ const BEACH_SHAPE: Shape[] = [
   { key: 'grand', kind: 'facilityPower', value: 0.3, cost: 12, parent: 9, x: 0.7, y: -4.1 },
 ];
 
-const SPORT_NAMES: Record<string, string> = { coins: 'Better prices', speed: 'Quicker sessions', guests: 'Bigger crowds', cost: 'Cheaper upgrades', manager: 'Cheaper managers', rep: 'Happy guests', unlock: 'Cheaper unlocks' };
+const SPORT_NAMES: Record<string, string> = { coins: 'Better prices', speed: 'Quicker sessions', guests: 'Bigger crowds', cost: 'Cheaper upgrades', manager: 'Cheaper managers', capacityCost: 'Cheaper space', unlock: 'Cheaper unlocks' };
 const BEACH_NAMES: Record<string, string> = { offline: 'Away time', facilityPower: 'Better buildings', facilityCost: 'Cheap materials', quest: 'Quest bonus', allCoins: 'Busy beach' };
 
 function build(id: TreeId, shape: Shape[], names: Record<string, string>, rootName: string, masterName: string): SkillNode[] {
@@ -177,8 +177,8 @@ export function describeSkill(n: SkillNode): string {
       return `${sport} upgrades cost ${pct} less`;
     case 'manager':
       return `${sport} managers cost ${pct} less`;
-    case 'rep':
-      return `+${pct} reputation from ${sport}`;
+    case 'capacityCost':
+      return `${sport} bigger class costs ${pct} less`;
     case 'unlock':
       return `${sport} levels and unlocks cost ${pct} less`;
     case 'facilityPower':

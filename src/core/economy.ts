@@ -8,12 +8,11 @@ import type { GameState, ZoneState } from './state';
 export interface Multipliers {
   coins: number;
   speed: number;
-  reputation: number;
 }
 
 export function multipliers(state: GameState): Multipliers {
   const fx = skillEffects(state);
-  const m: Multipliers = { coins: Math.pow(EXPANSION_MULT, state.expansions) * (1 + fx.allCoins), speed: 1, reputation: 1 };
+  const m: Multipliers = { coins: Math.pow(EXPANSION_MULT, state.expansions) * (1 + fx.allCoins), speed: 1 };
   for (const f of FACILITIES) {
     const lvl = state.facilities[f.id] ?? 0;
     m[f.effect] *= 1 + f.perLevel * (1 + fx.facilityPower) * lvl;
@@ -28,8 +27,6 @@ export interface ZoneStats {
   duration: number;
   /** Coins one session earns (all guests). */
   income: number;
-  /** Reputation one session earns. */
-  rep: number;
   /** Coins per second while running. */
   perSecond: number;
 }
@@ -46,15 +43,14 @@ export function zoneStats(state: GameState, ref: ZoneRef, z: ZoneState = state.z
   const pricePerGuest = tierFactor(ref.def.tier) * (1 + BALANCE.priceStep * z.price) * milestoneMult(z.price) * m.coins * (1 + (fx.coins[sp] ?? 0));
   const duration = ref.def.baseSeconds / ((1 + BALANCE.speedStep * z.speed) * m.speed * (1 + (fx.speed[sp] ?? 0)));
   const income = guests * pricePerGuest;
-  const rep = guests * BALANCE.repPerGuest * Math.pow(BALANCE.repTierScale, ref.def.tier) * m.reputation * (1 + (fx.rep[sp] ?? 0));
-  return { guests, pricePerGuest, duration, income, rep, perSecond: income / duration };
+  return { guests, pricePerGuest, duration, income, perSecond: income / duration };
 }
 
 /** Cost of the next level of a stat, or Infinity at the maximum. */
 export function statCost(ref: ZoneRef, stat: StatId, level: number, discount = 0): number {
   const s = STATS[stat];
   if (level >= s.max) return Infinity;
-  return Math.ceil(s.baseCost * costFactor(ref.def.tier) * Math.pow(s.growth, level) * (1 - discount) * 100) / 100;
+  return Math.ceil(s.baseCost * costFactor(ref.def.tier) * Math.pow(s.growth, level) * (1 + s.surge * level) * (1 - discount) * 100) / 100;
 }
 
 export function managerCost(ref: ZoneRef, discount = 0): number {
@@ -67,10 +63,12 @@ export function facilityCost(id: string, level: number, discount = 0): number {
   return Math.ceil(f.baseCost * Math.pow(f.growth, level) * (1 - discount));
 }
 
-/** The skill discounts that apply to a sport (upgrades, managers). */
-export function discounts(state: GameState, sport: string): { stat: number; manager: number } {
+/** The skill discounts that apply to a sport: for each upgrade, and for managers. */
+export function discounts(state: GameState, sport: string): { stat: (s: StatId) => number; manager: number } {
   const fx = skillEffects(state);
-  return { stat: fx.cost[sport] ?? 0, manager: fx.manager[sport] ?? 0 };
+  const general = fx.cost[sport] ?? 0;
+  const space = fx.capacityCost[sport] ?? 0;
+  return { stat: (s) => Math.min(0.7, general + (s === 'capacity' ? space : 0)), manager: fx.manager[sport] ?? 0 };
 }
 
 /** Seconds away that still earn coins: 2 hours, plus what the beach skills add. */
@@ -115,7 +113,7 @@ export function buyStat(state: GameState, zoneId: string, stat: StatId, mode: Bu
   const ref = zoneById(zoneId);
   const z = state.zones[zoneId];
   if (!z.owned) return false;
-  const plan = planBuy(ref, stat, z[stat], state.coins, mode, discounts(state, ref.sport.id).stat);
+  const plan = planBuy(ref, stat, z[stat], state.coins, mode, discounts(state, ref.sport.id).stat(stat));
   if (plan.count === 0) return false;
   state.coins -= plan.cost;
   z[stat] += plan.count;
@@ -155,9 +153,7 @@ export function collect(state: GameState, id: string): number {
   if (z.phase !== 'ready') return 0;
   const got = z.pending;
   addCoins(state, got);
-  state.reputation += z.pendingRep;
   z.pending = 0;
-  z.pendingRep = 0;
   z.phase = 'idle';
   z.elapsed = 0;
   return got;
@@ -218,7 +214,6 @@ export function advanceZone(state: GameState, ref: ZoneRef, dt: number, m: Multi
     const n = Math.floor(z.elapsed / st.duration);
     z.elapsed -= n * st.duration;
     addCoins(state, n * st.income);
-    state.reputation += n * st.rep;
     z.sessions += n;
     z.served += n * st.guests;
   } else {
@@ -226,7 +221,6 @@ export function advanceZone(state: GameState, ref: ZoneRef, dt: number, m: Multi
     z.served += st.guests;
     z.phase = 'ready';
     z.pending = st.income;
-    z.pendingRep = st.rep;
     z.elapsed = 0;
   }
 }
@@ -243,7 +237,6 @@ export interface OfflineReport {
   away: number;
   capped: boolean;
   coins: number;
-  reputation: number;
   /** Zones without a manager that finished a session and wait for you. */
   waiting: number;
 }
@@ -252,7 +245,7 @@ export interface OfflineReport {
 export function applyOffline(state: GameState, awaySeconds: number): OfflineReport {
   const cap = offlineCap(state);
   const seconds = Math.max(0, Math.min(awaySeconds, cap));
-  const before = { coins: state.coins, rep: state.reputation };
+  const before = { coins: state.coins };
   if (seconds > 0) tick(state, seconds);
   const waiting = ZONES.filter((r) => {
     const z = state.zones[r.id];
@@ -263,7 +256,6 @@ export function applyOffline(state: GameState, awaySeconds: number): OfflineRepo
     away: awaySeconds,
     capped: awaySeconds > cap,
     coins: state.coins - before.coins,
-    reputation: state.reputation - before.rep,
     waiting,
   };
 }

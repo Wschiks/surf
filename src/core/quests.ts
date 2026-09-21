@@ -186,7 +186,7 @@ function build(state: GameState, slot: number, taken: Quest[]): Quest | null {
       }
       if (kind === 'speed') {
         const r = pick('speed', (z) => state.zones[z.id].speed >= STATS.speed.max, 3);
-        if (r) return { kind, zone: r.id, target: nextMultiple(state.zones[r.id].speed, 5) };
+        if (r) return { kind, zone: r.id, target: nextMultiple(state.zones[r.id].speed, 10) };
       }
       if (kind === 'facility') {
         const f = FACILITIES.find((x) => (state.facilities[x.id] ?? 0) < x.max && !taken.some((t) => t.facility === x.id));

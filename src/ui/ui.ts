@@ -70,7 +70,6 @@ export class GameUI {
       <div class="col">
       <div class="hud">
         <div class="pill coins"><span class="ico">${COIN}</span><b data-ref="coins">0</b><small data-ref="rate">+0/s</small><em class="mult" data-ref="mult" hidden></em></div>
-        <button class="pill rep" data-ref="repbtn" aria-label="Reputation"><span class="ico">${icon('star')}</span><b data-ref="rep">0</b></button>
         <button class="pill gems" data-ref="gembtn" aria-label="Skill points"><span class="ico">${icon('gem')}</span><b data-ref="gems">0</b></button>
         <button class="pill gear" data-ref="gear" aria-label="Menu">${icon('gear')}</button>
       </div>
@@ -98,9 +97,12 @@ export class GameUI {
     this.refs.sports.addEventListener('click', () => this.openSports());
     this.refs.skills.addEventListener('click', () => this.openSkills());
     this.refs.gembtn.addEventListener('click', () => this.openSkills());
-    this.refs.repbtn.addEventListener('click', () => this.showReputationInfo());
     this.refs.gear.addEventListener('click', () => this.openMenu());
     this.refs.expand.addEventListener('click', () => this.openExpand());
+    // tapping the dark area around a dialog closes it
+    this.refs.modal.addEventListener('click', (e) => {
+      if (e.target === this.refs.modal) this.closeModal();
+    });
     this.refs.qhead.addEventListener('click', () => this.refs.quests.classList.toggle('collapsed'));
     this.refs.qlist.querySelectorAll<HTMLElement>('.q-claim').forEach((b, i) =>
       b.addEventListener('click', () => {
@@ -118,6 +120,10 @@ export class GameUI {
   }
 
   // ------------------------------------------------------------ sheets
+
+  get isSheetOpen(): boolean {
+    return this.sheet !== null;
+  }
 
   get selectedZone(): string | null {
     return this.sheet?.kind === 'zone' ? this.sheet.id : null;
@@ -139,16 +145,6 @@ export class GameUI {
   openSkills(tree: TreeId | 'hub' = 'hub') {
     this.closeSheet();
     this.skillScreen.open(tree);
-  }
-
-  private showReputationInfo() {
-    const s = this.game.state;
-    const m = this.modal(`
-      <h2>${icon('star')} Reputation</h2>
-      <p>Reputation is how much your guests love your beach. It grows every time a guest finishes a session, and buildings like the lifeguard tower make it grow faster.</p>
-      <p>Higher levels and new sports need a minimum reputation. You have <b>${fmt(Math.floor(s.reputation))}</b>. The unlock cards show how much a level needs. You keep your reputation when you expand the beach.</p>
-      <button class="go big" data-ok>Got it</button>`);
-    m.querySelector('[data-ok]')!.addEventListener('click', () => this.closeModal());
   }
 
   openExpand() {
@@ -399,7 +395,7 @@ export class GameUI {
       if (unlocked) info = `${sp.area[0].toUpperCase()}${sp.area.slice(1)} area · ${owned} of ${sp.levels.length} levels`;
       else {
         const exp = expansionNeededFor(s, sp.id);
-        info = exp !== null ? `Locked · opens with beach expansion ${exp}` : `Locked · needs Level ${sp.unlock?.level} of ${sportById(sp.unlock!.after).name} and reputation ${fmt(sp.unlock?.reputation ?? 0)}`;
+        info = exp !== null ? `Locked · opens with beach expansion ${exp}` : `Locked · needs Level ${sp.unlock?.level} of ${sportById(sp.unlock!.after).name}`;
       }
       row.classList.toggle('locked', !unlocked);
       row.querySelector('[data-info]')!.textContent = info;
@@ -456,7 +452,7 @@ export class GameUI {
       card.innerHTML = `
         <h3>${icon('beach')} ${st.def.name} ${st.def.n}</h3>
         <p class="get">${st.def.blurb}</p>
-        <p class="get">All income x${EXPANSION_MULT}. A big wave washes over the beach and you start over, faster than before. Reputation stays.</p>
+        <p class="get">All income x${EXPANSION_MULT}. A big wave washes over the beach and you start over, faster than before. Your skills stay.</p>
         <ul class="reqs">${st.requirements.map((r, i) => `<li data-xreq="${i}"><span class="tick"></span><span class="rt">${r.text}</span><em></em></li>`).join('')}</ul>
         <button class="go" data-xbtn></button>`;
       card.querySelector('[data-xbtn]')!.addEventListener('click', () => this.startExpansion());
@@ -537,7 +533,7 @@ export class GameUI {
         const row = this.sheetEl.querySelector<HTMLElement>(`[data-fac="${f.id}"]`)!;
         const lvl = s.facilities[f.id] ?? 0;
         row.querySelector('[data-lvl]')!.textContent = `Lv ${lvl}/${f.max}`;
-        const what = f.effect === 'coins' ? 'coins' : f.effect === 'speed' ? 'speed' : 'reputation';
+        const what = f.effect === 'coins' ? 'coins' : 'speed';
         row.querySelector('[data-eff]')!.textContent = `+${Math.round(f.perLevel * lvl * 100)}% ${what} now, +${Math.round(f.perLevel * 100)}% per level`;
         this.setBuy(row.querySelector('[data-buyfac]')!, facilityCost(f.id, lvl, skillEffects(s).facilityCost));
       }
@@ -579,7 +575,7 @@ export class GameUI {
       const row = q(`[data-stat="${stat}"]`);
       const lvl = z[stat];
       const disc = discounts(s, ref.sport.id);
-      const plan = planBuy(ref, stat, lvl, s.coins, this.buyMode, disc.stat);
+      const plan = planBuy(ref, stat, lvl, s.coins, this.buyMode, disc.stat(stat));
       // when the coins are not there yet, still show what the chosen amount would cost
       const want = this.buyMode === 'max' ? 1 : Math.min(this.buyMode, STATS[stat].max - lvl);
       const shown = plan.count > 0 ? plan.count : Math.max(1, want);
@@ -595,7 +591,7 @@ export class GameUI {
         const nm = nextMilestone(lvl);
         setHtml(row.querySelector('[data-ms]')!, `${icon('star', '12px')} Bonus x${fmt(milestoneMult(lvl))} · next x${nm.mult} at level ${nm.level}`);
       }
-      this.setStatBuy(row.querySelector('[data-buy]')!, lvl >= STATS[stat].max, plan.count > 0, shown, plan.count > 0 ? plan.cost : costOf(ref, stat, lvl, shown, disc.stat));
+      this.setStatBuy(row.querySelector('[data-buy]')!, lvl >= STATS[stat].max, plan.count > 0, shown, plan.count > 0 ? plan.cost : costOf(ref, stat, lvl, shown, disc.stat(stat)));
     }
     const mgrBtn = q('[data-buy="manager"]');
     if (z.manager) {
@@ -613,7 +609,6 @@ export class GameUI {
     const s = this.game.state;
     this.refs.coins.textContent = fmt(s.coins);
     this.refs.rate.textContent = `+${fmt(autoIncomePerSecond(s))}/s`;
-    this.refs.rep.textContent = fmt(Math.floor(s.reputation));
     this.refs.gems.textContent = String(s.skillPoints);
     this.refs.skills.classList.toggle('pulse', hasAffordableSkill(s));
     this.refs.mult.hidden = s.expansions === 0;
@@ -705,7 +700,7 @@ export class GameUI {
   showOffline(rep: OfflineReport) {
     this.game.offlineReport = null;
     const lines = [`You were away for <b>${fmtTime(rep.away)}</b>.`];
-    if (rep.coins > 0) lines.push(`Your managers earned <b>${COIN} ${fmt(rep.coins)}</b>${rep.reputation >= 1 ? ` and <b>${icon('star')} ${fmt(Math.floor(rep.reputation))}</b>` : ''}.`);
+    if (rep.coins > 0) lines.push(`Your managers earned <b>${COIN} ${fmt(rep.coins)}</b>.`);
     if (rep.capped) lines.push(`<small>Away time only earns for ${fmtTime(rep.seconds)}. Skills in the Beach tree add more.</small>`);
     if (rep.waiting > 0) lines.push(`${rep.waiting} zone${rep.waiting > 1 ? 's are' : ' is'} waiting for you. Hire a manager to keep them running while you are away.`);
     const m = this.modal(`<h2>Welcome back!</h2><p>${lines.join('</p><p>')}</p><button class="go big" data-ok>Nice</button>`);
@@ -716,7 +711,7 @@ export class GameUI {
   private confirmReset() {
     const m = this.modal(`
       <h2>Start over?</h2>
-      <p>This erases everything: coins, zones, upgrades, expansions and reputation. You start again with wave surfing only.</p>
+      <p>This erases everything: coins, zones, upgrades, expansions and skills. You start again with wave surfing only.</p>
       <button class="go big" data-keep>No, keep playing</button>
       <button class="danger" data-really>Yes, erase everything</button>`);
     m.querySelector('[data-keep]')!.addEventListener('click', () => this.closeModal());

@@ -135,7 +135,6 @@ describe('quests', () => {
     for (const z of ZONES) if (s.sports[z.sport.id]) s.zones[z.id].owned = true;
     s.sports.skimboarding = true;
     for (const z of ZONES) if (z.sport.id === 'skimboarding') s.zones[z.id].owned = true;
-    s.reputation = 1e6;
     s.coins = 1e15;
     expect(expand(s)).toBe(true);
     refreshQuests(s);

@@ -27,17 +27,15 @@ describe('the start', () => {
     expect(s.sports.skimboarding || s.sports.windsurfing || s.sports.kitesurfing || s.sports.foil || s.sports.sailing).toBe(false);
   });
 
-  it('skimboarding is earned: Level 2 of wave surfing, reputation and coins', () => {
+  it('skimboarding is earned: Level 2 of wave surfing and coins', () => {
     const s = fresh();
     const rule = SPORTS.find((x) => x.id === 'skimboarding')!.unlock!;
     expect(expansionNeededFor(s, 'skimboarding')).toBeNull();
     s.coins = 1e12;
-    s.reputation = 1e6;
     expect(unlockSport(s, 'skimboarding')).toBe(false); // no Level 2 yet
-    s.zones['wave-2'].owned = true;
-    s.reputation = rule.reputation - 1;
     expect(sportStatus(s, SPORTS.find((x) => x.id === 'skimboarding')!).ready).toBe(false);
-    s.reputation = rule.reputation;
+    s.zones['wave-2'].owned = true;
+    expect(sportStatus(s, SPORTS.find((x) => x.id === 'skimboarding')!).ready).toBe(true);
     s.coins = rule.coins - 1;
     expect(unlockSport(s, 'skimboarding')).toBe(false);
     s.coins = rule.coins;
@@ -49,7 +47,6 @@ describe('the start', () => {
   it('closed sports cannot be reached with the level rules', () => {
     const s = fresh();
     s.coins = 1e30;
-    s.reputation = 1e9;
     for (const sport of SPORTS.filter((x) => !s.sports[x.id] && expansionNeededFor(s, x.id) !== null)) {
       expect(zoneUnlockStatus(s, zoneById(`${sport.id}-1`))?.kind).toBe('closed');
       expect(levelStatus(s, zoneById(`${sport.id}-2`)).blockedBy).toMatch(/expansion/);
@@ -74,17 +71,19 @@ describe('levels of a sport', () => {
     expect(s.coins).toBe(0);
   });
 
-  it('Level 3 needs reputation and coins and Level 2; Level 4 needs high reputation', () => {
+  it('Level 3 needs 30 upgrades on Level 2 and Level 4 needs 60 on Level 3, plus coins; there is no reputation', () => {
     const s = fresh();
     s.coins = 1e15;
-    s.reputation = 1e9;
     expect(unlockLevel(s, 'wave-3')).toBe(false); // no Level 2 yet
     s.zones['wave-2'].owned = true;
-    s.reputation = 0;
+    expect(unlockLevel(s, 'wave-3')).toBe(false); // no upgrades on Level 2
+    s.zones['wave-2'].price = 29;
     expect(unlockLevel(s, 'wave-3')).toBe(false);
-    s.reputation = zoneById('wave-3').def.unlock!.reputation;
+    s.zones['wave-2'].price = 30;
     expect(unlockLevel(s, 'wave-3')).toBe(true);
-    expect(zoneById('wave-4').def.unlock!.reputation).toBeGreaterThan(zoneById('wave-3').def.unlock!.reputation * 3);
+    expect(zoneById('wave-3').def.unlock!.prevLevelUpgrades).toBe(30);
+    expect(zoneById('wave-4').def.unlock!.prevLevelUpgrades).toBe(60);
+    expect('reputation' in s).toBe(false);
   });
 
   it('each level costs more than the one before', () => {
@@ -104,19 +103,15 @@ describe('beach expansions', () => {
     expect(EXPANSION_MULT).toBe(3);
   });
 
-  it('needs the required level in every open sport, reputation and coins', () => {
+  it('needs the required level in every open sport and coins', () => {
     const s = fresh();
     s.sports.skimboarding = true;
     s.coins = 1e30;
-    s.reputation = 1e9;
     expect(expansionStatus(s)!.ready).toBe(false);
     expect(expand(s)).toBe(false);
     ownLevels(s, EXPANSIONS[0].level - 1);
     expect(expand(s)).toBe(false);
     ownLevels(s, EXPANSIONS[0].level);
-    s.reputation = 0;
-    expect(expand(s)).toBe(false);
-    s.reputation = EXPANSIONS[0].reputation;
     s.coins = EXPANSIONS[0].coins - 1;
     expect(expand(s)).toBe(false);
     s.coins = EXPANSIONS[0].coins;
@@ -131,7 +126,6 @@ describe('beach expansions', () => {
     s.zones['wave-1'].manager = true;
     s.zones['wave-1'].capacity = 7;
     s.facilities.shop = 3;
-    s.reputation = 5000;
     s.coins = EXPANSIONS[0].coins + 123;
     expect(expand(s)).toBe(true);
     expect(s.expansions).toBe(1);
@@ -140,7 +134,6 @@ describe('beach expansions', () => {
     expect(s.zones['wave-1'].manager).toBe(false);
     expect(s.zones['wave-1'].capacity).toBe(0);
     expect(s.zones['wave-2'].owned).toBe(false);
-    expect(s.reputation).toBe(5000); // reputation stays
     // the beach starts over like a new game: only wave surfing is owned, nothing is given for free
     expect(ZONES.filter((z) => s.zones[z.id].owned).map((z) => z.id)).toEqual(['wave-1']);
     for (const id of ['skimboarding', 'windsurfing', 'kitesurfing', 'foil', 'sailing'] as const) expect(s.sports[id]).toBe(false);
@@ -156,7 +149,6 @@ describe('beach expansions', () => {
     s.expansions = 1;
     s.sports.skimboarding = s.sports.windsurfing = s.sports.kitesurfing = s.sports.foil = true;
     ownLevels(s, EXPANSIONS[1].level);
-    s.reputation = 1e9;
     s.coins = 1e30;
     expect(expand(s)).toBe(true);
     expect(expansionNeededFor(s, 'sailing')).toBeNull(); // the Ocean is open, sailing still has to be earned
@@ -171,7 +163,6 @@ describe('beach expansions', () => {
     s.sports.skimboarding = true;
     expect(nextGoal(s)?.expansion).toBe(false);
     ownLevels(s, EXPANSIONS[0].level);
-    s.reputation = EXPANSIONS[0].reputation;
     const g = nextGoal(s)!;
     expect(g.expansion).toBe(true);
     expect(g.coins).toBe(EXPANSIONS[0].coins);

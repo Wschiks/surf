@@ -134,7 +134,6 @@ describe('learning skills', () => {
     s.skills = { ...s.skills, 'wave:prices1': true, 'beach:away1': true };
     s.sports.skimboarding = true;
     for (const z of SPORTS.filter((x) => x.area !== 'sea' && x.area !== 'ocean').flatMap((x) => x.levels.map((_, i) => `${x.id}-${i + 1}`))) s.zones[z].owned = true;
-    s.reputation = 1e6;
     s.coins = 1e15;
     const points = s.skillPoints;
     expect(expand(s)).toBe(true);
@@ -155,16 +154,17 @@ describe('what the skills do', () => {
     expect(zoneStats(s, zoneById('skimboarding-1')).income).toBeCloseTo(other);
   });
 
-  it('speed, guests and reputation', () => {
+  it('speed, guests and cheaper space', () => {
     const s = game();
     const st = zoneStats(s, W1);
     learnPath(s, 'wave:speed1');
     learnPath(s, 'wave:guests1');
-    learnPath(s, 'wave:rep1');
+    learnPath(s, 'wave:space1');
     const after = zoneStats(s, W1);
     expect(after.duration).toBeCloseTo(st.duration / 1.08);
     expect(after.guests).toBe(st.guests + 1);
-    expect(after.rep).toBeGreaterThan(st.rep);
+    expect(statCost(W1, 'capacity', 0, discounts(s, 'wave').stat('capacity'))).toBeLessThan(statCost(W1, 'capacity', 0));
+    expect(discounts(s, 'wave').stat('price')).toBe(0); // only the bigger class gets cheaper
   });
 
   it('cost, manager and unlock discounts', () => {
@@ -176,7 +176,7 @@ describe('what the skills do', () => {
     learnPath(s, 'wave:manager1');
     learnPath(s, 'wave:unlock1');
     const d = discounts(s, 'wave');
-    expect(statCost(W1, 'price', 0, d.stat)).toBeLessThan(up);
+    expect(statCost(W1, 'price', 0, d.stat('price'))).toBeLessThan(up);
     expect(managerCost(W1, d.manager)).toBeLessThan(mgr);
     expect(levelStatus(s, zoneById('wave-2')).coins).toBeLessThan(unlock);
     // the discount is really paid when buying

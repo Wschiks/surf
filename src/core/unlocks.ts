@@ -1,7 +1,6 @@
 import { areaById } from '../config/areas';
 import { EXPANSIONS, expansionAfter, type ExpansionDef } from '../config/expansions';
 import { SPORTS, sportById, zoneById, zoneId, type SportDef, type SportId, type ZoneRef } from '../config/sports';
-import { fmt } from '../ui/format';
 import { upgradeCount } from './economy';
 import { addSkillPoints, skillEffects } from './skills';
 import { EXPANSION_POINTS } from '../config/skills';
@@ -38,16 +37,13 @@ export function expansionNeededFor(state: GameState, sport: SportId): number | n
   return need > state.expansions ? need : null;
 }
 
-/** Rule to unlock a sport that does not start open: a level of another sport, reputation and coins. */
+/** Rule to unlock a sport that does not start open: a level of another sport and coins. */
 export function sportStatus(state: GameState, sport: SportDef): UnlockStatus {
   const rule = sport.unlock;
   if (!rule) return { requirements: [], coins: 0, ready: true, canBuy: true, blockedBy: null };
   const after = sportById(rule.after);
   const owned = ownsLevel(state, rule.after, rule.level);
-  const reqs: Requirement[] = [
-    { text: `Own Level ${rule.level} of ${after.name}`, met: owned, progress: owned ? 'Done' : 'Not yet' },
-    { text: `Reputation ${fmt(rule.reputation)}`, met: state.reputation >= rule.reputation, progress: `${fmt(Math.floor(state.reputation))} / ${fmt(rule.reputation)}` },
-  ];
+  const reqs: Requirement[] = [{ text: `Own Level ${rule.level} of ${after.name}`, met: owned, progress: owned ? 'Done' : 'Not yet' }];
   const ready = reqs.every((r) => r.met);
   const coins = discounted(state, sport.id, rule.coins);
   return { requirements: reqs, coins, ready, canBuy: ready && state.coins >= coins, blockedBy: null };
@@ -71,9 +67,9 @@ export function unlockSport(state: GameState, id: SportId): boolean {
   return true;
 }
 
-/** Rule for Level 2 to 4 of a sport: the level before it, upgrades or reputation, and coins. */
+/** Rule for Level 2 to 4 of a sport: the level before it, upgrades on it, and coins. */
 export function levelStatus(state: GameState, ref: ZoneRef): UnlockStatus {
-  const rule = ref.def.unlock ?? { coins: 0, reputation: 0 };
+  const rule = ref.def.unlock ?? { coins: 0 };
   const reqs: Requirement[] = [];
   let blockedBy: string | null = null;
   const exp = expansionNeededFor(state, ref.sport.id);
@@ -86,9 +82,6 @@ export function levelStatus(state: GameState, ref: ZoneRef): UnlockStatus {
       const have = upgradeCount(state.zones[zoneId(ref.sport.id, prevLevel)]);
       reqs.push({ text: `Upgrade ${ref.sport.levels[prevLevel - 1].name}`, met: have >= rule.prevLevelUpgrades, progress: `${Math.min(have, rule.prevLevelUpgrades)} / ${rule.prevLevelUpgrades} upgrades` });
     }
-  }
-  if (rule.reputation > 0 || ref.level > 2) {
-    reqs.push({ text: `Reputation ${fmt(rule.reputation)}`, met: state.reputation >= rule.reputation, progress: `${fmt(Math.floor(state.reputation))} / ${fmt(rule.reputation)}` });
   }
   const ready = !blockedBy && reqs.every((r) => r.met);
   const coins = discounted(state, ref.sport.id, rule.coins);
@@ -141,14 +134,13 @@ export function expansionStatus(state: GameState): ExpansionStatus | null {
     const owned = ownsLevel(state, sport.id, def.level);
     reqs.push({ text: `Own Level ${def.level} of ${sport.name}`, met: owned, progress: owned ? 'Done' : 'Not yet' });
   }
-  reqs.push({ text: `Reputation ${fmt(def.reputation)}`, met: state.reputation >= def.reputation, progress: `${fmt(Math.floor(state.reputation))} / ${fmt(def.reputation)}` });
   const ready = reqs.every((r) => r.met);
   return { def, requirements: reqs, coins: def.coins, ready, canBuy: ready && state.coins >= def.coins, blockedBy: null };
 }
 
 /**
  * Buy the next beach expansion. Everything on the beach starts over (coins, zones, upgrades, managers, facilities),
- * the next area opens, and income is multiplied for good. Reputation is kept.
+ * the next area opens, and income is multiplied for good. Skills are kept.
  */
 export function expand(state: GameState): boolean {
   const st = expansionStatus(state);

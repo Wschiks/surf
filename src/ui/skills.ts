@@ -17,7 +17,7 @@ const KIND_ICON: Record<SkillKind, string> = {
   guests: 'people',
   cost: 'tag',
   manager: 'manager',
-  rep: 'star',
+  capacityCost: 'people',
   unlock: 'lock',
   facilityPower: 'shop',
   facilityCost: 'tag',

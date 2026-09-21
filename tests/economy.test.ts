@@ -39,13 +39,12 @@ describe('starting state', () => {
 });
 
 describe('income', () => {
-  it('a zone earns guests x price per session and reputation', () => {
+  it('a zone earns guests x price per session', () => {
     const s = fresh();
     const st = zoneStats(s, zoneById(W1));
     expect(st.guests).toBe(3);
     expect(st.income).toBeCloseTo(3);
     expect(st.duration).toBeCloseTo(6);
-    expect(st.rep).toBeGreaterThan(0);
   });
 
   it('a zone without a manager waits for the player after one session', () => {
@@ -57,7 +56,6 @@ describe('income', () => {
     expect(s.zones[W1].pending).toBeCloseTo(3);
     expect(collect(s, W1)).toBeCloseTo(3);
     expect(s.coins).toBeCloseTo(3);
-    expect(s.reputation).toBeGreaterThan(0);
   });
 
   it('tapping a ready zone collects and starts the next session', () => {

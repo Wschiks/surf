@@ -8,7 +8,7 @@ export interface SkillEffects {
   guests: Record<string, number>;
   cost: Record<string, number>;
   manager: Record<string, number>;
-  rep: Record<string, number>;
+  capacityCost: Record<string, number>;
   unlock: Record<string, number>;
   facilityPower: number;
   facilityCost: number;
@@ -23,7 +23,7 @@ const cache = new WeakMap<object, SkillEffects>();
 export function skillEffects(state: GameState): SkillEffects {
   const hit = cache.get(state.skills);
   if (hit) return hit;
-  const fx: SkillEffects = { coins: {}, speed: {}, guests: {}, cost: {}, manager: {}, rep: {}, unlock: {}, facilityPower: 0, facilityCost: 0, offlineHours: 0, quest: 0, allCoins: 0 };
+  const fx: SkillEffects = { coins: {}, speed: {}, guests: {}, cost: {}, manager: {}, capacityCost: {}, unlock: {}, facilityPower: 0, facilityCost: 0, offlineHours: 0, quest: 0, allCoins: 0 };
   for (const n of SKILL_NODES) {
     if (!state.skills[n.id]) continue;
     switch (n.kind) {
@@ -43,7 +43,7 @@ export function skillEffects(state: GameState): SkillEffects {
     }
   }
   // discounts never go below 30% of the price
-  for (const bag of [fx.cost, fx.manager, fx.unlock]) for (const k of Object.keys(bag)) bag[k] = Math.min(0.7, bag[k]);
+  for (const bag of [fx.cost, fx.manager, fx.unlock, fx.capacityCost]) for (const k of Object.keys(bag)) bag[k] = Math.min(0.7, bag[k]);
   fx.facilityCost = Math.min(0.7, fx.facilityCost);
   cache.set(state.skills, fx);
   return fx;

@@ -59,8 +59,7 @@ describe('full playthrough with the balance bot', () => {
   });
 
   it('keeps a growing income the whole way', () => {
-    // every sport has been played, so reputation and coins are far above where they started
-    expect(run.state.reputation).toBeGreaterThan(10_000);
+    // every sport has been played, so the coins are far above where they started
     expect(run.state.totalCoins).toBeGreaterThan(1e9);
   });
 });

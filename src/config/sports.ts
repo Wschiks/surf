@@ -12,9 +12,7 @@ export type GuestKind = 'surfer' | 'skimmer' | 'windsurfer' | 'kiter' | 'foiler'
 export interface UnlockRule {
   /** Coins to pay. */
   coins: number;
-  /** Reputation the player must have. */
-  reputation: number;
-  /** Total upgrade levels the previous level must have (the rule for Level 2). */
+  /** Total upgrade levels the previous level must have bought (Level 2: 12, Level 3: 30, Level 4: 60). */
   prevLevelUpgrades?: number;
 }
 
@@ -48,8 +46,8 @@ export interface SportDef {
   guestKind: GuestKind;
   /** Shirt and vest colours of the guests. All levels of a sport look alike; the water around them is what changes. */
   guestColors: string[];
-  /** How a sport that does not start open is unlocked: own a level of another sport, have reputation, pay coins. After a beach expansion it is open from the start. */
-  unlock?: { after: SportId; level: number; reputation: number; coins: number };
+  /** How a sport that does not start open is unlocked: own a level of another sport and pay coins. After a beach expansion it is open from the start. */
+  unlock?: { after: SportId; level: number; coins: number };
   /** A place on the beach this sport needs (kite launch area, jetty). It appears when the sport unlocks. */
   beachSite?: { id: 'kite-launch' | 'jetty'; name: string; rect: Rect };
   /** Names for the shared upgrade types in this sport. */
@@ -96,7 +94,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 4,
         baseSeconds: 8,
         look: 'rolling',
-        unlock: { coins: unlockCoins(1.6, 3), reputation: 0, prevLevelUpgrades: 12 },
+        unlock: { coins: unlockCoins(1.6, 3), prevLevelUpgrades: 12 },
       },
       {
         name: 'Reef',
@@ -108,7 +106,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 3,
         baseSeconds: 10,
         look: 'reef',
-        unlock: { coins: unlockCoins(3.2, 70), reputation: 31 },
+        unlock: { coins: unlockCoins(3.2, 70), prevLevelUpgrades: 30 },
       },
       {
         name: 'Nazaré',
@@ -120,7 +118,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 2,
         baseSeconds: 12,
         look: 'big',
-        unlock: { coins: unlockCoins(4.8, 150), reputation: 260 },
+        unlock: { coins: unlockCoins(4.8, 150), prevLevelUpgrades: 60 },
       },
     ],
   },
@@ -132,7 +130,7 @@ export const SPORTS: SportDef[] = [
     area: 'wave',
     color: '#f2b134',
     guestKind: 'skimmer',
-    unlock: { after: 'wave', level: 2, reputation: 12, coins: unlockCoins(1.6, 60) },
+    unlock: { after: 'wave', level: 2, coins: unlockCoins(1.6, 60) },
     guestColors: ['#ffb74d', '#4dd0e1', '#f06292', '#aed581', '#ba68c8'],
     terms: {
       capacity: 'More boards',
@@ -163,7 +161,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 4,
         baseSeconds: 8,
         look: 'flat',
-        unlock: { coins: unlockCoins(1.4, 25), reputation: 0, prevLevelUpgrades: 12 },
+        unlock: { coins: unlockCoins(1.4, 25), prevLevelUpgrades: 12 },
       },
       {
         name: 'Shore break',
@@ -175,7 +173,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 3,
         baseSeconds: 9,
         look: 'shorebreak',
-        unlock: { coins: unlockCoins(2.6, 70), reputation: 21 },
+        unlock: { coins: unlockCoins(2.6, 70), prevLevelUpgrades: 30 },
       },
       {
         name: 'Big shore break',
@@ -187,7 +185,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 2,
         baseSeconds: 11,
         look: 'bigbreak',
-        unlock: { coins: unlockCoins(4.0, 150), reputation: 160 },
+        unlock: { coins: unlockCoins(4.0, 150), prevLevelUpgrades: 60 },
       },
     ],
   },
@@ -200,7 +198,7 @@ export const SPORTS: SportDef[] = [
     color: '#1fb6c9',
     guestKind: 'windsurfer',
     guestColors: ['#26c6da', '#ffd54f', '#ff8a65', '#9ccc65', '#ba68c8'],
-    unlock: { after: 'skimboarding', level: 2, reputation: 51, coins: unlockCoins(4.4, 60) },
+    unlock: { after: 'skimboarding', level: 2, coins: unlockCoins(4.4, 60) },
     terms: {
       capacity: 'More sails',
       price: 'Level up',
@@ -230,7 +228,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 4,
         baseSeconds: 8,
         look: 'ripple',
-        unlock: { coins: unlockCoins(5.4, 25), reputation: 0, prevLevelUpgrades: 12 },
+        unlock: { coins: unlockCoins(5.4, 25), prevLevelUpgrades: 12 },
       },
       {
         name: 'Speed and freestyle',
@@ -242,7 +240,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 3,
         baseSeconds: 9,
         look: 'chop',
-        unlock: { coins: unlockCoins(6.6, 70), reputation: 280 },
+        unlock: { coins: unlockCoins(6.6, 70), prevLevelUpgrades: 30 },
       },
       {
         name: 'Wave zone',
@@ -254,7 +252,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 2,
         baseSeconds: 11,
         look: 'big',
-        unlock: { coins: unlockCoins(7.8, 150), reputation: 1800 },
+        unlock: { coins: unlockCoins(7.8, 150), prevLevelUpgrades: 60 },
       },
     ],
   },
@@ -267,7 +265,7 @@ export const SPORTS: SportDef[] = [
     color: '#ff5c8a',
     guestKind: 'kiter',
     guestColors: ['#ff7043', '#ffca28', '#29b6f6', '#ec407a', '#66bb6a'],
-    unlock: { after: 'windsurfing', level: 2, reputation: 74, coins: unlockCoins(5.0, 60) },
+    unlock: { after: 'windsurfing', level: 2, coins: unlockCoins(5.0, 60) },
     beachSite: { id: 'kite-launch', name: 'Kite launch area', rect: { x: 5.5, y: 0.9, w: 4, h: 0.6 } },
     terms: {
       capacity: 'More kite spots',
@@ -298,7 +296,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 4,
         baseSeconds: 8,
         look: 'ripple',
-        unlock: { coins: unlockCoins(6.0, 25), reputation: 0, prevLevelUpgrades: 12 },
+        unlock: { coins: unlockCoins(6.0, 25), prevLevelUpgrades: 12 },
       },
       {
         name: 'Freestyle and big air',
@@ -310,7 +308,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 3,
         baseSeconds: 10,
         look: 'chop',
-        unlock: { coins: unlockCoins(7.2, 70), reputation: 410 },
+        unlock: { coins: unlockCoins(7.2, 70), prevLevelUpgrades: 30 },
       },
       {
         name: 'Big air and waves',
@@ -322,7 +320,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 2,
         baseSeconds: 12,
         look: 'big',
-        unlock: { coins: unlockCoins(8.4, 150), reputation: 2600 },
+        unlock: { coins: unlockCoins(8.4, 150), prevLevelUpgrades: 60 },
       },
     ],
   },
@@ -335,7 +333,7 @@ export const SPORTS: SportDef[] = [
     color: '#8e6bd8',
     guestKind: 'foiler',
     guestColors: ['#7e57c2', '#26c6da', '#ffa726', '#ec407a', '#9ccc65'],
-    unlock: { after: 'kitesurfing', level: 2, reputation: 110, coins: unlockCoins(5.6, 60) },
+    unlock: { after: 'kitesurfing', level: 2, coins: unlockCoins(5.6, 60) },
     terms: {
       capacity: 'More foil boards',
       price: 'Level up',
@@ -365,7 +363,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 4,
         baseSeconds: 9,
         look: 'flat',
-        unlock: { coins: unlockCoins(6.6, 25), reputation: 0, prevLevelUpgrades: 12 },
+        unlock: { coins: unlockCoins(6.6, 25), prevLevelUpgrades: 12 },
       },
       {
         name: 'Downwind',
@@ -377,7 +375,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 3,
         baseSeconds: 11,
         look: 'swell',
-        unlock: { coins: unlockCoins(7.8, 70), reputation: 600 },
+        unlock: { coins: unlockCoins(7.8, 70), prevLevelUpgrades: 30 },
       },
       {
         name: 'Pro arena',
@@ -389,7 +387,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 2,
         baseSeconds: 13,
         look: 'big',
-        unlock: { coins: unlockCoins(9.0, 150), reputation: 3900 },
+        unlock: { coins: unlockCoins(9.0, 150), prevLevelUpgrades: 60 },
       },
     ],
   },
@@ -402,7 +400,7 @@ export const SPORTS: SportDef[] = [
     color: '#3f51b5',
     guestKind: 'sailor',
     guestColors: ['#ff7043', '#ffd54f', '#4fc3f7', '#f06292', '#aed581'],
-    unlock: { after: 'foil', level: 2, reputation: 580, coins: unlockCoins(8.2, 60) },
+    unlock: { after: 'foil', level: 2, coins: unlockCoins(8.2, 60) },
     beachSite: { id: 'jetty', name: 'Jetty', rect: { x: 4.9, y: 0.9, w: 0.55, h: 2.2 } },
     terms: {
       capacity: 'More boats',
@@ -433,7 +431,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 4,
         baseSeconds: 10,
         look: 'ripple',
-        unlock: { coins: unlockCoins(9.4, 25), reputation: 0, prevLevelUpgrades: 12 },
+        unlock: { coins: unlockCoins(9.4, 25), prevLevelUpgrades: 12 },
       },
       {
         name: 'Club racing',
@@ -445,7 +443,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 3,
         baseSeconds: 12,
         look: 'chop',
-        unlock: { coins: unlockCoins(10.6, 70), reputation: 3600 },
+        unlock: { coins: unlockCoins(10.6, 70), prevLevelUpgrades: 30 },
       },
       {
         name: 'Offshore regatta',
@@ -457,7 +455,7 @@ export const SPORTS: SportDef[] = [
         baseGuests: 2,
         baseSeconds: 14,
         look: 'swell',
-        unlock: { coins: unlockCoins(11.8, 150), reputation: 23000 },
+        unlock: { coins: unlockCoins(11.8, 150), prevLevelUpgrades: 60 },
       },
     ],
   },

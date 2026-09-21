@@ -113,6 +113,8 @@ export class MapScene extends Phaser.Scene {
   }
 
   private onMapTap(sx: number, sy: number) {
+    // while a sheet (upgrades, beach, sports, expand) is open, tapping the map outside of it closes it
+    if (this.ui.isSheetOpen) return this.ui.closeSheet();
     const w = this.view.screenToWorld(sx, sy);
     const f = this.beach.hit(w.x, w.y);
     if (f) return this.ui.openBeach();

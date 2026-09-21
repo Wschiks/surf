@@ -14,9 +14,8 @@ export interface ZoneState {
   phase: Phase;
   /** Seconds into the current session. */
   elapsed: number;
-  /** Coins and reputation waiting to be collected (zones without a manager). */
+  /** Coins waiting to be collected (zones without a manager). */
   pending: number;
-  pendingRep: number;
   /** Finished sessions and guests served in this zone (for quests). */
   sessions: number;
   served: number;
@@ -25,7 +24,6 @@ export interface ZoneState {
 export interface GameState {
   version: number;
   coins: number;
-  reputation: number;
   totalCoins: number;
   sports: Record<string, boolean>;
   zones: Record<string, ZoneState>;
@@ -50,14 +48,13 @@ export interface GameState {
 export const SAVE_VERSION = 3;
 
 export function newZone(owned = false): ZoneState {
-  return { owned, capacity: 0, price: 0, speed: 0, manager: false, phase: 'idle', elapsed: 0, pending: 0, pendingRep: 0, sessions: 0, served: 0 };
+  return { owned, capacity: 0, price: 0, speed: 0, manager: false, phase: 'idle', elapsed: 0, pending: 0, sessions: 0, served: 0 };
 }
 
 export function newGame(now: number): GameState {
   const state: GameState = {
     version: SAVE_VERSION,
     coins: 0,
-    reputation: 0,
     totalCoins: 0,
     sports: {},
     zones: {},
