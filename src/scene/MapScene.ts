@@ -90,8 +90,8 @@ export class MapScene extends Phaser.Scene {
     }
 
     const holder = document.getElementById('game')!;
-    this.scale.on('resize', (s: Phaser.Structs.Size) => this.view.resize(s.width, s.height));
-    this.view.resize(this.scale.width, this.scale.height);
+    this.scale.on('resize', () => this.syncSize());
+    this.syncSize();
     this.view.jumpTo(6 * UNIT, 2.5 * UNIT, this.view.defaultPpu());
     const input = new MapInput(holder, this.view);
     input.onTap = (sx, sy) => this.onMapTap(sx, sy);
@@ -101,6 +101,15 @@ export class MapScene extends Phaser.Scene {
     });
     window.addEventListener('pagehide', () => this.game_.save());
     (window as unknown as { __surf: unknown }).__surf = { scene: this, view: this.view, game: this.game_, ui: this.ui };
+  }
+
+  /** Pixel ratio of the canvas compared to the page (the view works in page pixels). */
+  private dpr = 1;
+
+  private syncSize() {
+    const holder = document.getElementById('game')!;
+    this.dpr = this.scale.width / Math.max(1, holder.clientWidth);
+    this.view.resize(holder.clientWidth, holder.clientHeight);
   }
 
   private onMapTap(sx: number, sy: number) {
@@ -128,6 +137,7 @@ export class MapScene extends Phaser.Scene {
 
   private onUnlocked(id: string, kind: 'sport' | 'level') {
     const ref = ZONES.find((z) => z.id === id)!;
+    this.ui.confetti();
     this.ui.toast(kind === 'sport' ? `${ref.sport.icon} ${ref.sport.name} unlocked!` : `🎉 ${ref.def.name} unlocked!`);
     this.onSelect(id);
   }
@@ -168,13 +178,15 @@ export class MapScene extends Phaser.Scene {
     this.syncAreas(true);
     this.view.update(Math.min(delta, 100) / 1000);
     const cam = this.cameras.main;
-    cam.setZoom(this.view.zoom);
+    cam.setZoom(this.view.zoom * this.dpr);
     cam.setRotation(this.view.rotation);
     cam.centerOn(this.view.cx, this.view.cy);
 
     this.bg.sparkle.tilePositionX = time * 0.01;
     this.bg.sparkle.tilePositionY = -time * 0.006;
     this.bg.foam.tilePositionX = time * 0.012;
+    this.bg.swell.tilePositionY = -time * 0.008;
+    this.bg.swell.tilePositionX = time * 0.004;
     for (const h of this.hazes.values()) h.update(time);
     for (const z of this.zones) z.update(time, this.game_.state, this.view);
     this.beach.update(this.game_.state);

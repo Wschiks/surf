@@ -21,6 +21,8 @@ export class MapView {
   height = 800;
   rotation = ROT;
   private target: { cx: number; cy: number; ppu: number } | null = null;
+  /** Speed of a swipe that keeps gliding after the finger lifts (screen px per second). */
+  private vel: Pt | null = null;
 
   resize(w: number, h: number) {
     const first = this.width === 400 && this.height === 800 && this.ppu === 400;
@@ -64,6 +66,15 @@ export class MapView {
       x: this.width / 2 + rx * COS - ry * SIN,
       y: this.height / 2 + rx * SIN + ry * COS,
     };
+  }
+
+  /** Keep gliding after a swipe. */
+  fling(vx: number, vy: number) {
+    this.vel = Math.hypot(vx, vy) > 60 ? { x: vx, y: vy } : null;
+  }
+
+  stopFling() {
+    this.vel = null;
   }
 
   panBy(dxScreen: number, dyScreen: number) {
@@ -117,6 +128,19 @@ export class MapView {
   }
 
   update(dt: number) {
+    if (this.vel) {
+      const v = this.vel;
+      const z = this.zoom;
+      const rx = (v.x * dt) * COS + (v.y * dt) * SIN;
+      const ry = -(v.x * dt) * SIN + (v.y * dt) * COS;
+      this.cx -= rx / z;
+      this.cy -= ry / z;
+      this.clamp();
+      const k = Math.exp(-dt * 3.5);
+      v.x *= k;
+      v.y *= k;
+      if (Math.hypot(v.x, v.y) < 25) this.vel = null;
+    }
     if (!this.target) return;
     const k = 1 - Math.exp(-dt * 8);
     const t = this.target;
@@ -149,6 +173,8 @@ export class MapInput {
   private downAt = new Map<number, { x: number; y: number; t: number; moved: number }>();
   private lastMid: Pt | null = null;
   private lastDist = 0;
+  private speed: Pt = { x: 0, y: 0 };
+  private lastMoveT = 0;
   /** Fired when the user drags or zooms, so the UI can react (for example close hints). */
   onGesture: () => void = () => {};
   onTap: (sx: number, sy: number) => void = () => {};
@@ -172,6 +198,8 @@ export class MapInput {
 
   private down = (e: PointerEvent) => {
     const p = this.local(e);
+    this.view.stopFling();
+    this.speed = { x: 0, y: 0 };
     this.el.setPointerCapture?.(e.pointerId);
     this.pointers.set(e.pointerId, p);
     this.downAt.set(e.pointerId, { x: p.x, y: p.y, t: performance.now(), moved: 0 });
@@ -208,6 +236,11 @@ export class MapInput {
       this.onGesture();
     } else if (d && d.moved > 6) {
       this.view.panBy(p.x - prev.x, p.y - prev.y);
+      const now = performance.now();
+      const dt = Math.max(1, now - this.lastMoveT) / 1000;
+      this.lastMoveT = now;
+      const k = 0.5;
+      this.speed = { x: this.speed.x * (1 - k) + ((p.x - prev.x) / dt) * k, y: this.speed.y * (1 - k) + ((p.y - prev.y) / dt) * k };
       this.onGesture();
     }
   };
@@ -215,6 +248,7 @@ export class MapInput {
   private up = (e: PointerEvent) => {
     const d = this.downAt.get(e.pointerId);
     const wasSingle = this.pointers.size === 1;
+    if (wasSingle && d && d.moved > 12 && performance.now() - this.lastMoveT < 80) this.view.fling(this.speed.x, this.speed.y);
     this.pointers.delete(e.pointerId);
     this.downAt.delete(e.pointerId);
     this.resetPinch();

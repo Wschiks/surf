@@ -12,7 +12,7 @@ html, body { margin: 0; height: 100%; background: #062033; overflow: hidden; ove
 body { font-family: ui-rounded, 'SF Pro Rounded', 'Nunito', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif; color: var(--ink); user-select: none; -webkit-user-select: none; }
 #app { position: fixed; top: 0; bottom: 0; left: 50%; transform: translateX(-50%); width: 100vw; overflow: hidden; background: #0b5d8a; }
 @media (min-aspect-ratio: 3/5) { #app { width: 50vh; } }
-#game, #game canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#game, #game canvas { position: absolute; inset: 0; width: 100% !important; height: 100% !important; display: block; }
 #ui { position: absolute; inset: 0; pointer-events: none; }
 #ui button, #ui .panel, #ui .chip, #ui .minimap { pointer-events: auto; }
 #ui .label { pointer-events: none; }
@@ -39,7 +39,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 .pill.gear { margin-left: auto; padding: 0; width: 40px; justify-content: center; font-size: 18px; }
 .dock { position: absolute; left: 12px; right: 12px; bottom: max(14px, env(safe-area-inset-bottom)); display: flex; gap: 10px; transition: transform 0.25s, opacity 0.25s; }
 .dock.hidden { transform: translateY(120px); opacity: 0; pointer-events: none; }
-.dock-btn { pointer-events: auto; flex: 1; background: var(--paper); border-radius: 18px; min-height: 58px; font-weight: 800; font-size: 15px; box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; gap: 8px; position: relative; }
+.dock-btn { pointer-events: auto; flex: 1; min-width: 0; background: var(--paper); border-radius: 18px; min-height: 58px; font-weight: 800; font-size: 15px; box-shadow: var(--shadow); display: flex; align-items: center; justify-content: center; gap: 8px; position: relative; }
 .dock-btn span { font-size: 22px; }
 .dock-btn.collect { background: linear-gradient(#ffd75e, #ffb62e); }
 .dock-btn.collect[data-empty] { background: var(--paper); opacity: 0.8; }
@@ -138,3 +138,18 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; }
 
 .label.site { background: rgba(255, 250, 235, 0.85); border: 2px dashed #b98543; border-radius: 12px; padding: 4px 10px; text-align: center; font-weight: 800; font-size: 12px; color: #6b4a1e; }
 .label.site small { display: block; font-size: 10px; font-weight: 700; opacity: 0.85; }
+
+.sports { display: flex; flex-direction: column; gap: 8px; margin-top: 10px; }
+.sport-row { display: flex; gap: 10px; align-items: center; background: #f3f8fa; border-radius: 16px; padding: 10px; }
+.sport-row.locked { opacity: 0.85; background: #eceff1; }
+.sport-ico { width: 44px; height: 44px; border-radius: 13px; display: grid; place-items: center; font-size: 24px; flex: none; }
+.sport-mid { flex: 1; min-width: 0; }
+.sport-mid b { font-size: 15px; display: block; }
+.sport-mid small { font-size: 12px; color: #4b6b7d; display: block; margin-bottom: 4px; }
+.pips { display: flex; gap: 8px; }
+.pip { width: 44px; height: 38px; border-radius: 12px; background: #d5e0e6; color: #6f8794; font-weight: 800; font-size: 15px; }
+.pip.owned { background: linear-gradient(#4fc3f7, #2d9be0); color: #fff; box-shadow: 0 2px 0 #1e78b4; }
+
+.confetti { position: absolute; left: 50%; top: 42%; width: 0; height: 0; pointer-events: none; z-index: 20; }
+.confetti i { position: absolute; width: 9px; height: 14px; border-radius: 2px; animation: confetti 1.3s cubic-bezier(.2,.7,.3,1) forwards; }
+@keyframes confetti { from { transform: translate(0, 0) rotate(0); opacity: 1; } to { transform: translate(var(--dx), calc(var(--dy) + 140px)) rotate(var(--rot)); opacity: 0; } }

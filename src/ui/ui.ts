@@ -1,11 +1,11 @@
 import { STATS, STAT_IDS, type StatId } from '../config/balance';
 import { FACILITIES } from '../config/facilities';
-import { zoneById } from '../config/sports';
+import { SPORTS, zoneById, zoneId } from '../config/sports';
 import { autoIncomePerSecond, buyFacility, buyManager, buyStat, collectAll, facilityCost, managerCost, statCost, tapZone, waitingZones, zoneStats } from '../core/economy';
 import type { Game } from '../core/game';
 import type { OfflineReport } from '../core/economy';
 import { resetSave } from '../core/save';
-import { nextGoal, unlockZone, zoneUnlockStatus } from '../core/unlocks';
+import { nextGoal, previousSport, sportStatus, unlockZone, zoneUnlockStatus } from '../core/unlocks';
 import { COIN, fmt, fmtSeconds, fmtTime } from './format';
 
 export interface UICallbacks {
@@ -18,7 +18,7 @@ export interface UICallbacks {
   onUnlocked: (zoneId: string, kind: 'sport' | 'level') => void;
 }
 
-type Sheet = { kind: 'zone'; id: string } | { kind: 'beach' } | null;
+type Sheet = { kind: 'zone'; id: string } | { kind: 'beach' } | { kind: 'sports' } | null;
 
 /** The HTML user interface on top of the map: top bar, bottom dock, bottom sheets and pop-ups. */
 export class GameUI {
@@ -47,7 +47,8 @@ export class GameUI {
       <button class="goal" data-ref="goal" hidden><span class="goal-t"></span><i class="goal-bar"><b></b></i></button>
       <div class="dock">
         <button class="dock-btn" data-ref="beach"><span>🏖️</span>Beach</button>
-        <button class="dock-btn collect" data-ref="collect"><span>💰</span>Collect all<i data-ref="waiting">0</i></button>
+        <button class="dock-btn" data-ref="sports"><span>🏄</span>Sports</button>
+        <button class="dock-btn collect" data-ref="collect"><span>💰</span>Collect<i data-ref="waiting">0</i></button>
       </div>
       <div class="sheet" data-ref="sheet"></div>
       <div class="toasts" data-ref="toasts"></div>
@@ -57,6 +58,7 @@ export class GameUI {
     this.sheetEl = this.refs.sheet;
     this.dockEl = this.root.querySelector('.dock')!;
     this.refs.beach.addEventListener('click', () => this.openBeach());
+    this.refs.sports.addEventListener('click', () => this.openSports());
     this.refs.goal.addEventListener('click', () => {
       const g = nextGoal(this.game.state);
       if (g) this.openZone(g.zoneId);
@@ -88,6 +90,12 @@ export class GameUI {
     this.cb.onSelect(null);
   }
 
+  openSports() {
+    this.sheet = { kind: 'sports' };
+    this.buildSheet();
+    this.cb.onSelect(null);
+  }
+
   closeSheet() {
     if (!this.sheet) return;
     this.sheet = null;
@@ -100,6 +108,7 @@ export class GameUI {
     if (!this.sheet) return;
     this.dockEl.classList.add('hidden');
     if (this.sheet.kind === 'zone') this.buildZoneSheet(this.sheet.id);
+    else if (this.sheet.kind === 'sports') this.buildSportsSheet();
     else this.buildBeachSheet();
     this.sheetEl.classList.add('open');
     this.sheetEl.scrollTop = 0;
@@ -219,6 +228,49 @@ export class GameUI {
     btn.innerHTML = `${need.kind === 'sport' ? 'Start it' : 'Unlock'} · ${COIN} ${fmt(st.coins)}${st.ready && !enoughCoins ? ' (need more coins)' : ''}`;
   }
 
+  private buildSportsSheet() {
+    const rows = [...SPORTS]
+      .sort((a, b) => a.order - b.order)
+      .map((sp) => {
+        const pips = sp.levels.map((_, i) => `<button class="pip" data-zone="${zoneId(sp.id, i + 1)}" aria-label="Level ${i + 1}">${i + 1}</button>`).join('');
+        return `
+        <div class="sport-row" data-sport="${sp.id}">
+          <div class="sport-ico" style="background:${sp.color}">${sp.icon}</div>
+          <div class="sport-mid"><b>${sp.name}</b><small data-info></small><div class="pips">${pips}</div></div>
+        </div>`;
+      })
+      .join('');
+    this.sheetEl.innerHTML = `
+      <div class="sheet-head">
+        <div class="sheet-icon" style="background:#5fd0e6">🏄</div>
+        <div class="sheet-title"><h2>Water sports</h2><p>Tap a level to go there</p></div>
+        <button class="x" data-close aria-label="Close">✕</button>
+      </div>
+      <div class="sports">${rows}</div>`;
+    this.sheetEl.querySelector('[data-close]')!.addEventListener('click', () => this.closeSheet());
+    this.sheetEl.querySelectorAll<HTMLElement>('[data-zone]').forEach((b) => b.addEventListener('click', () => this.openZone(b.dataset.zone!)));
+  }
+
+  private refreshSports() {
+    const s = this.game.state;
+    for (const sp of SPORTS) {
+      const row = this.sheetEl.querySelector<HTMLElement>(`[data-sport="${sp.id}"]`);
+      if (!row) continue;
+      const unlocked = s.sports[sp.id];
+      const owned = sp.levels.filter((_, i) => s.zones[zoneId(sp.id, i + 1)].owned).length;
+      let info: string;
+      if (unlocked) info = `${sp.area[0].toUpperCase()}${sp.area.slice(1)} area · ${owned} of ${sp.levels.length} levels`;
+      else {
+        const st = sportStatus(s, sp);
+        const prev = previousSport(sp);
+        info = `Locked · needs ${prev ? `Level 2 of ${prev.name}` : ''} ${st.requirements.length ? '⭐ ' + Math.floor(s.reputation) + ' / ' + (sp.unlock?.reputation ?? 0) : ''}`;
+      }
+      row.classList.toggle('locked', !unlocked);
+      row.querySelector('[data-info]')!.textContent = info;
+      row.querySelectorAll<HTMLElement>('.pip').forEach((pip, i) => pip.classList.toggle('owned', s.zones[zoneId(sp.id, i + 1)].owned));
+    }
+  }
+
   private buildBeachSheet() {
     const rows = FACILITIES.map(
       (f) => `
@@ -258,6 +310,7 @@ export class GameUI {
   private refreshSheet() {
     if (!this.sheet) return;
     const s = this.game.state;
+    if (this.sheet.kind === 'sports') return this.refreshSports();
     if (this.sheet.kind === 'beach') {
       for (const f of FACILITIES) {
         const row = this.sheetEl.querySelector<HTMLElement>(`[data-fac="${f.id}"]`)!;
@@ -354,6 +407,26 @@ export class GameUI {
   }
 
   // ------------------------------------------------------------ pop-ups
+
+  /** A burst of confetti from the middle of the screen (fixed pattern, nothing random). */
+  confetti() {
+    const box = document.createElement('div');
+    box.className = 'confetti';
+    const colors = ['#ff5a45', '#ffcf3f', '#4fc3f7', '#5be08f', '#ff7ab8', '#ffffff'];
+    for (let i = 0; i < 30; i++) {
+      const a = (i * 137.5 * Math.PI) / 180;
+      const d = 90 + ((i * 53) % 130);
+      const p = document.createElement('i');
+      p.style.setProperty('--dx', `${Math.cos(a) * d}px`);
+      p.style.setProperty('--dy', `${Math.sin(a) * d - 60}px`);
+      p.style.setProperty('--rot', `${(i * 47) % 360}deg`);
+      p.style.background = colors[i % colors.length];
+      p.style.animationDelay = `${(i % 5) * 20}ms`;
+      box.appendChild(p);
+    }
+    this.root.appendChild(box);
+    setTimeout(() => box.remove(), 1600);
+  }
 
   toast(text: string) {
     const t = document.createElement('div');

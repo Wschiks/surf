@@ -16,7 +16,7 @@ const scriptPath = opt('script', null);
 
 fs.mkdirSync('screenshots', { recursive: true });
 const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist', '--enable-webgl'] });
-const context = await browser.newContext({ viewport: { width: 400, height: 800 }, deviceScaleFactor: 1, hasTouch: true });
+const context = await browser.newContext({ viewport: { width: 400, height: 800 }, deviceScaleFactor: Number(process.env.DPR ?? 1), hasTouch: true });
 const page = await context.newPage();
 const errors = [];
 page.on('console', (m) => {

@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { AREAS, areaById, rgbToHex, seaColorAt, type AreaId } from '../config/areas';
 import { MAP_UNITS, UNIT, WORLD_MARGIN } from '../config/layout';
-import { placeImage, placeTile, bakeCloudTile, bakeFort, bakeCove, COVE_SIZE, bakeLighthouse, placeUpright, bakeReef, bakeRocks, bakeSandTile, bakeShoreFoam, bakeSparkleTile, FORT_SIZE, REEF_SIZE, ROCKS_SIZE } from './art';
+import { placeImage, placeTile, bakeCloudTile, bakeFort, bakeDecor, bakeCove, COVE_SIZE, bakeLighthouse, placeUpright, bakeReef, bakeRocks, bakeSandTile, bakeShoreFoam, bakeSparkleTile, FORT_SIZE, REEF_SIZE, ROCKS_SIZE } from './art';
 
 const M = WORLD_MARGIN * UNIT;
 const MAP = MAP_UNITS * UNIT;
@@ -18,6 +18,7 @@ export function buildBackground(scene: Phaser.Scene) {
   bakeCove(scene);
   bakeReef(scene);
   bakeFort(scene);
+  bakeDecor(scene);
   bakeLighthouse(scene);
 
   const g = scene.add.graphics().setDepth(DEPTH.base);
@@ -83,7 +84,34 @@ export function buildBackground(scene: Phaser.Scene) {
   void COVE_SIZE;
   void REEF_SIZE;
 
-  return { sparkle, foam };
+  // big slow swells over the whole sea
+  const swell = placeTile(scene, 'tile-swell', left, 2 * UNIT, width, 12 * UNIT + M, 1.5).setDepth(DEPTH.sparkle - 0.5);
+  swell.setAlpha(0.9);
+
+  addDecor(scene);
+  return { sparkle, foam, swell };
+}
+
+/** Palms, umbrellas, towels and trees. Fixed positions: nothing is random. */
+function addDecor(scene: Phaser.Scene) {
+  const up = (key: string, x: number, y: number, w: number, h: number, depth = DEPTH.things - 0.5) =>
+    placeUpright(scene, key, x * UNIT, y * UNIT).setDisplaySize(w, h).setDepth(depth);
+  // palms along the back of the beach
+  [0.35, 2.1, 4.0, 6.1, 8.05, 9.7, -1.4, 11.4].forEach((x, i) => up('deco-palm', x, 0.16 + (i % 2) * 0.04, 52 + (i % 3) * 6, 84 + (i % 3) * 8));
+  // umbrellas and towels on the front beach
+  [[7.1, 1.55, 'a'], [8.0, 1.75, 'b'], [8.7, 1.4, 'c']].forEach(([x, y, k]) => {
+    up('deco-umbrella-' + k, x as number, y as number, 44, 51);
+    placeImage(scene, 'deco-towel-' + k, (x as number) * UNIT - 28, (y as number) * UNIT + 4).setDepth(DEPTH.things - 1.5);
+  });
+  [[2.6, 0.95], [6.9, 1.05], [9.1, 0.95], [0.9, 1.05]].forEach(([x, y]) => placeImage(scene, 'deco-star', x * UNIT, y * UNIT).setDepth(DEPTH.things - 1.5));
+  // grass, trees and bushes behind the beach (visible when the view reaches past the back of the map)
+  for (let i = 0; i < 46; i++) {
+    const x = -5 + i * 0.32 + ((i * 7) % 5) * 0.06;
+    const row = i % 3;
+    const y = -1.55 - row * 0.55 - ((i * 13) % 4) * 0.12;
+    if (i % 4 === 0) up('deco-bush', x, y, 40, 32);
+    else up('deco-tree', x, y - 0.1, 54 + (i % 3) * 8, 70 + (i % 3) * 8);
+  }
 }
 
 /** Light haze over an area the player has not unlocked. Clears with a fade when the area opens. */

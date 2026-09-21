@@ -1,0 +1,26 @@
+export default async ({ page, shot, base }) => {
+  await page.goto(base);
+  await page.waitForTimeout(1500);
+  const ev = (fn, a) => page.evaluate(fn, a);
+  await shot('start');
+  await ev(() => { const s = window.__surf.game.state; s.coins = 2e6; s.reputation = 40; const z = s.zones['wave-1']; z.capacity = 5; z.price = 5; z.speed = 3; z.manager = true; s.zones['wave-2'].owned = true; });
+  await ev(() => window.__surf.ui.openSports());
+  await page.waitForTimeout(1000);
+  await shot('sports');
+  await page.click('[data-zone="skimboarding-1"]', { force: true });
+  await page.waitForTimeout(1000);
+  await page.click('[data-unlock]', { force: true });
+  await page.waitForTimeout(600);
+  await shot('confetti');
+  await page.waitForTimeout(1500);
+  await ev(() => window.__surf.ui.closeSheet());
+  await ev(() => { const v = window.__surf.view; v.jumpTo(300, 60, v.width / 2.4); });
+  await page.waitForTimeout(1500);
+  await shot('beach-decor');
+  await ev(() => { const s = window.__surf.game.state; s.facilities.shop = 2; s.facilities.cafe = 1; s.facilities.showers = 1; s.facilities.lifeguard = 1; });
+  await ev(() => { const v = window.__surf.view; v.jumpTo(500, 60, v.width / 3); });
+  await page.waitForTimeout(1500);
+  await shot('beach-buildings');
+  const fps = await ev(() => new Promise((res) => { const g = window.__surf.scene.game; setTimeout(() => res(g.loop.actualFps), 1500); }));
+  console.log('fps (software GL)', fps);
+};

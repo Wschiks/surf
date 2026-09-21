@@ -1335,3 +1335,169 @@ export function bakeBoats(scene: Phaser.Scene) {
     ctx.fill();
   });
 }
+
+// ---------------------------------------------------------------- beach decoration (upright billboards)
+
+export function bakeDecor(scene: Phaser.Scene) {
+  // palm tree 80 x 130
+  bake(scene, 'deco-palm', 80, 130, 3, (ctx) => {
+    ctx.fillStyle = 'rgba(80,50,10,0.22)';
+    ctx.beginPath();
+    ctx.ellipse(46, 124, 24, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    // trunk
+    const tg = ctx.createLinearGradient(30, 0, 50, 0);
+    tg.addColorStop(0, '#a4703a');
+    tg.addColorStop(1, '#7a4f25');
+    ctx.fillStyle = tg;
+    ctx.beginPath();
+    ctx.moveTo(36, 124);
+    ctx.quadraticCurveTo(44, 80, 38, 40);
+    ctx.lineTo(45, 40);
+    ctx.quadraticCurveTo(52, 80, 46, 124);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(60,35,10,0.35)';
+    ctx.lineWidth = 1;
+    for (let y = 50; y < 120; y += 9) {
+      ctx.beginPath();
+      ctx.moveTo(38 + (y - 50) * 0.02, y);
+      ctx.lineTo(48, y + 2);
+      ctx.stroke();
+    }
+    // fronds
+    const fronds = [-2.6, -2.0, -1.3, -0.5, 0.2, 0.9, 1.6, 2.3];
+    fronds.forEach((a, i) => {
+      ctx.save();
+      ctx.translate(42, 40);
+      ctx.rotate(a);
+      const g = ctx.createLinearGradient(0, 0, 0, -34);
+      g.addColorStop(0, '#2f8f3f');
+      g.addColorStop(1, i % 2 ? '#6cc04a' : '#4aa83e');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.quadraticCurveTo(-9, -22, 0, -38);
+      ctx.quadraticCurveTo(9, -22, 0, 0);
+      ctx.fill();
+      ctx.restore();
+    });
+    ctx.fillStyle = '#6b4423';
+    ctx.beginPath();
+    ctx.arc(40, 44, 3, 0, Math.PI * 2);
+    ctx.arc(46, 45, 3, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  // beach umbrella 60 x 70 (colour variants)
+  const umb = [['a', '#ff5a45'], ['b', '#2f8fd6'], ['c', '#ffcf3f']] as const;
+  for (const [k, c] of umb) {
+    bake(scene, 'deco-umbrella-' + k, 60, 70, 3, (ctx) => {
+      ctx.fillStyle = 'rgba(80,50,10,0.2)';
+      ctx.beginPath();
+      ctx.ellipse(34, 66, 22, 4, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = '#6b4a2a';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(30, 66);
+      ctx.lineTo(30, 18);
+      ctx.stroke();
+      ctx.fillStyle = c;
+      ctx.beginPath();
+      ctx.moveTo(4, 30);
+      ctx.quadraticCurveTo(30, -8, 56, 30);
+      ctx.quadraticCurveTo(30, 24, 4, 30);
+      ctx.fill();
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.beginPath();
+      ctx.moveTo(18, 27);
+      ctx.quadraticCurveTo(30, 0, 42, 27);
+      ctx.quadraticCurveTo(30, 22, 18, 27);
+      ctx.fill();
+    });
+  }
+  // round tree 70 x 90 and bush 50 x 40
+  bake(scene, 'deco-tree', 70, 90, 3, (ctx) => {
+    ctx.fillStyle = 'rgba(30,60,10,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(36, 84, 24, 5, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = '#7a4f25';
+    ctx.fillRect(32, 50, 7, 34);
+    for (const [x, y, r, c] of [[24, 38, 20, '#3f9a3a'], [46, 36, 22, '#4aa83e'], [35, 22, 22, '#5cbb47'], [36, 40, 18, '#3a8f38']] as const) {
+      ctx.fillStyle = c;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.fillStyle = 'rgba(255,255,255,0.18)';
+    ctx.beginPath();
+    ctx.arc(30, 16, 9, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  bake(scene, 'deco-bush', 50, 40, 3, (ctx) => {
+    ctx.fillStyle = 'rgba(30,60,10,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(26, 36, 20, 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    for (const [x, y, r, c] of [[16, 24, 12, '#3f9a3a'], [32, 22, 13, '#4aa83e'], [24, 16, 12, '#5cbb47']] as const) {
+      ctx.fillStyle = c;
+      ctx.beginPath();
+      ctx.arc(x, y, r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  });
+  // towel, flat 46 x 26
+  const towels = [['a', '#ff6b8b', '#ffffff'], ['b', '#4fc3f7', '#ffee58'], ['c', '#81c784', '#ffffff']] as const;
+  for (const [k, c1, c2] of towels) {
+    bake(scene, 'deco-towel-' + k, 46, 26, 3, (ctx) => {
+      ctx.fillStyle = 'rgba(80,50,10,0.15)';
+      ctx.fillRect(3, 3, 42, 22);
+      ctx.fillStyle = c1;
+      ctx.fillRect(1, 1, 42, 22);
+      ctx.fillStyle = c2;
+      for (let x = 6; x < 42; x += 12) ctx.fillRect(x, 1, 5, 22);
+    });
+  }
+  // shell / starfish, flat 14 x 14
+  bake(scene, 'deco-star', 14, 14, 4, (ctx) => {
+    ctx.fillStyle = '#ff8a65';
+    ctx.beginPath();
+    for (let i = 0; i < 10; i++) {
+      const a = (i / 10) * Math.PI * 2 - Math.PI / 2;
+      const r = i % 2 ? 2.6 : 6;
+      ctx.lineTo(7 + Math.cos(a) * r, 7 + Math.sin(a) * r);
+    }
+    ctx.closePath();
+    ctx.fill();
+  });
+  // wake behind a rider, flat 40 x 22
+  bake(scene, 'fx-wake', 44, 22, 3, (ctx) => {
+    const g = ctx.createRadialGradient(22, 11, 1, 22, 11, 20);
+    g.addColorStop(0, 'rgba(255,255,255,0.85)');
+    g.addColorStop(0.6, 'rgba(255,255,255,0.35)');
+    g.addColorStop(1, 'rgba(255,255,255,0)');
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.ellipse(22, 11, 21, 9, 0, 0, Math.PI * 2);
+    ctx.fill();
+  });
+  // big soft swell bands for the open sea, 400 x 300
+  bake(scene, 'tile-swell', 400, 300, 1, (ctx, w, h) => {
+    for (let k = 0; k < 3; k++) {
+      const y = 40 + k * 100;
+      const g = ctx.createLinearGradient(0, y - 30, 0, y + 30);
+      g.addColorStop(0, 'rgba(255,255,255,0)');
+      g.addColorStop(0.5, 'rgba(255,255,255,0.10)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = g;
+      ctx.beginPath();
+      ctx.moveTo(0, y - 30);
+      for (let x = 0; x <= w; x += 10) ctx.lineTo(x, y - 30 + Math.sin(((x + k * 90) / w) * Math.PI * 2) * 12);
+      for (let x = w; x >= 0; x -= 10) ctx.lineTo(x, y + 30 + Math.sin(((x + k * 90) / w) * Math.PI * 2) * 12);
+      ctx.closePath();
+      ctx.fill();
+    }
+    void h;
+  });
+}

@@ -5,6 +5,7 @@ import type { GameState } from '../core/state';
 import type { LabelLayer } from '../ui/labels';
 import { bakeJetty, bakeKiteLaunch, JETTY_SIZE, KITE_LAUNCH_SIZE, placeImage, placeUpright } from './art';
 import { DEPTH } from './background';
+import { dashedRect } from './draw';
 
 interface Site {
   sport: SportDef;
@@ -28,21 +29,7 @@ export class SiteView {
       const r = toWorld(sport.beachSite.rect);
       const plot = scene.add.graphics().setDepth(DEPTH.things - 2);
       plot.lineStyle(3, 0xb98543, 0.75);
-      const dash = 14;
-      const segs: [number, number, number, number][] = [
-        [r.x, r.y, r.x + r.w, r.y],
-        [r.x + r.w, r.y, r.x + r.w, r.y + r.h],
-        [r.x + r.w, r.y + r.h, r.x, r.y + r.h],
-        [r.x, r.y + r.h, r.x, r.y],
-      ];
-      for (const [x1, y1, x2, y2] of segs) {
-        const len = Math.hypot(x2 - x1, y2 - y1);
-        for (let d = 0; d < len; d += dash * 2) {
-          const a = d / len;
-          const b = Math.min(len, d + dash) / len;
-          plot.lineBetween(x1 + (x2 - x1) * a, y1 + (y2 - y1) * a, x1 + (x2 - x1) * b, y1 + (y2 - y1) * b);
-        }
-      }
+      dashedRect(plot, r, 14);
       plot.fillStyle(0xb98543, 0.12);
       plot.fillRect(r.x, r.y, r.w, r.h);
       this.sites.push({ sport, plot, objects: [], built: false });
