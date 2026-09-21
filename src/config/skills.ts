@@ -112,7 +112,7 @@ function build(id: TreeId, shape: Shape[], names: Record<string, string>, rootNa
     if (s.key === 'master' || s.key === 'grand') title = masterName;
     // the second and third skill of the same kind get a number
     const before = shape.slice(0, i).filter((o) => o.kind === s.kind && o.key !== 'root').length;
-    if (i !== 0 && s.key !== 'master' && s.key !== 'grand' && before > 0) title += ' ' + 'I'.repeat(before + 1);
+    if (i !== 0 && s.key !== 'master' && s.key !== 'grand' && before > 0) title += ' ' + ['I', 'II', 'III', 'IV', 'V'][before];
     return { id: `${id}:${s.key}`, tree: id, name: title, kind: s.kind, value: s.value, cost: s.cost, parent: s.parent === null ? null : `${id}:${shape[s.parent].key}`, x: s.x, y: s.y, root: i === 0 || undefined };
   });
 }
