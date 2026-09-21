@@ -1,18 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { AREAS, areaById } from '../src/config/areas';
 import { FACILITIES } from '../src/config/facilities';
-import { MAP_UNITS, type Rect } from '../src/config/layout';
+import { MAP_H, MAP_W, type Rect } from '../src/config/layout';
 import { SPORTS, ZONES } from '../src/config/sports';
 
 const overlap = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
 describe('map layout data', () => {
-  it('areas cover the 10 rows: beach 20%, then Wave, Sea and Ocean', () => {
+  it('the map is 15 wide and 8 deep; the areas fill it: beach 20%, then Wave, Sea and Ocean', () => {
+    expect(MAP_W).toBe(15);
+    expect(MAP_H).toBe(8);
     expect(AREAS.map((a) => a.id)).toEqual(['beach', 'wave', 'sea', 'ocean']);
     expect(AREAS[0].from).toBe(0);
-    expect(AREAS[0].to / MAP_UNITS).toBeCloseTo(0.2);
+    expect(AREAS[0].to / MAP_H).toBeCloseTo(0.2);
     for (let i = 1; i < AREAS.length; i++) expect(AREAS[i].from).toBe(AREAS[i - 1].to);
-    expect(AREAS[AREAS.length - 1].to).toBe(MAP_UNITS);
+    expect(AREAS[AREAS.length - 1].to).toBe(MAP_H);
+    expect(AREAS.map((a) => a.expansion)).toEqual([0, 0, 1, 2]);
   });
 
   it('every zone lies inside the map and inside the area of its sport', () => {
@@ -20,7 +23,7 @@ describe('map layout data', () => {
       const r = z.def.rect;
       const area = areaById(z.sport.area);
       expect(r.x).toBeGreaterThanOrEqual(0);
-      expect(r.x + r.w).toBeLessThanOrEqual(MAP_UNITS);
+      expect(r.x + r.w).toBeLessThanOrEqual(MAP_W);
       expect(r.y).toBeGreaterThanOrEqual(area.from);
       expect(r.y + r.h).toBeLessThanOrEqual(area.to);
     }
@@ -31,10 +34,11 @@ describe('map layout data', () => {
       for (let j = i + 1; j < ZONES.length; j++) expect(overlap(ZONES[i].def.rect, ZONES[j].def.rect), `${ZONES[i].id} and ${ZONES[j].id}`).toBe(false);
   });
 
-  it('the wave surfing levels move away from the beach', () => {
-    const wave = SPORTS.find((s) => s.id === 'wave')!;
-    const depth = wave.levels.map((l) => l.rect.y);
-    for (let i = 1; i < depth.length; i++) expect(depth[i]).toBeGreaterThanOrEqual(depth[i - 1]);
+  it('the levels of a sport move away from the beach', () => {
+    for (const sport of SPORTS) {
+      const depth = sport.levels.map((l) => l.rect.y);
+      for (let i = 1; i < depth.length; i++) expect(depth[i]).toBeGreaterThanOrEqual(depth[i - 1]);
+    }
   });
 
   it('the Sea sports are side by side, the Ocean has sailing, beach sites are on the beach', () => {
@@ -44,7 +48,7 @@ describe('map layout data', () => {
     expect(xs[0]).toBeLessThan(xs[1]);
     expect(xs[1]).toBeLessThan(xs[2]);
     expect(SPORTS.filter((s) => s.area === 'ocean').map((s) => s.id)).toEqual(['sailing']);
-    for (const s of SPORTS) if (s.beachSite) expect(s.beachSite.rect.y).toBeLessThan(2); // starts on the beach (a jetty reaches into the water)
+    for (const s of SPORTS) if (s.beachSite) expect(s.beachSite.rect.y).toBeLessThan(1.6); // starts on the beach (a jetty reaches into the water)
     expect(SPORTS.find((s) => s.id === 'kitesurfing')?.beachSite?.id).toBe('kite-launch');
     expect(SPORTS.find((s) => s.id === 'sailing')?.beachSite?.id).toBe('jetty');
   });
@@ -60,7 +64,4 @@ describe('map layout data', () => {
     }
   });
 
-  it('the map is 10 by 10 units', () => {
-    expect(MAP_UNITS).toBe(10);
-  });
 });

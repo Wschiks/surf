@@ -1,8 +1,10 @@
-import { MAP_ROTATION_DEG, MAP_UNITS, MIN_UNITS_ACROSS, START_UNITS_ACROSS, UNIT } from '../config/layout';
+import { MAP_H, MAP_ROTATION_DEG, MAP_W, MIN_UNITS_ACROSS, START_UNITS_ACROSS, UNIT } from '../config/layout';
 
 const ROT = (MAP_ROTATION_DEG * Math.PI) / 180;
 const COS = Math.cos(ROT);
 const SIN = Math.sin(ROT);
+const ACOS = Math.abs(COS);
+const ASIN = Math.abs(SIN);
 /** How far the view may hang over the map edge, as a fraction of its half size. */
 const OVERHANG = 0.5;
 
@@ -16,7 +18,7 @@ export interface Pt {
  * and the screen size. All pan, zoom, clamping and projection maths lives here so it can be tested.
  */
 export class MapView {
-  cx = 5 * UNIT;
+  cx = (MAP_W / 2) * UNIT;
   cy = 1 * UNIT;
   ppu = 400;
   width = 400;
@@ -47,8 +49,9 @@ export class MapView {
   }
   /** Zoomed all the way out: the whole rotated map fits on the screen. */
   minPpu(): number {
-    const span = MAP_UNITS * (COS + SIN) + 0.4;
-    return Math.min(this.width, this.height) / span;
+    const boxW = MAP_W * ACOS + MAP_H * ASIN + 0.4;
+    const boxH = MAP_W * ASIN + MAP_H * ACOS + 0.4;
+    return Math.min(this.width / boxW, this.height / boxH);
   }
   get zoom(): number {
     return this.ppu / UNIT;
@@ -108,8 +111,8 @@ export class MapView {
   private halfExtents(ppu = this.ppu): Pt {
     const z = ppu / UNIT;
     return {
-      x: (this.width / 2 * COS + this.height / 2 * SIN) / z,
-      y: (this.width / 2 * SIN + this.height / 2 * COS) / z,
+      x: ((this.width / 2) * ACOS + (this.height / 2) * ASIN) / z,
+      y: ((this.width / 2) * ASIN + (this.height / 2) * ACOS) / z,
     };
   }
 
@@ -124,13 +127,14 @@ export class MapView {
   }
 
   private clampPoint(x: number, y: number, ppu: number): Pt {
-    const max = MAP_UNITS * UNIT;
+    const maxX = MAP_W * UNIT;
+    const maxY = MAP_H * UNIT;
     const h = this.halfExtents(ppu);
     const lx = h.x * (1 - OVERHANG);
     const ly = h.y * (1 - OVERHANG);
     return {
-      x: h.x * 2 >= max ? max / 2 : Math.min(Math.max(x, lx), max - lx),
-      y: h.y * 2 >= max ? max / 2 : Math.min(Math.max(y, ly), max - ly),
+      x: h.x * 2 >= maxX ? maxX / 2 : Math.min(Math.max(x, lx), maxX - lx),
+      y: h.y * 2 >= maxY ? maxY / 2 : Math.min(Math.max(y, ly), maxY - ly),
     };
   }
 

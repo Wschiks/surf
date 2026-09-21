@@ -4,7 +4,8 @@ import { toWorld } from '../config/layout';
 import type { ZoneRef } from '../config/sports';
 import { zoneStats } from '../core/economy';
 import type { GameState } from '../core/state';
-import { bakeWaveTile, guestTexture, GUEST_LOOK, WAVE_STYLES } from './art';
+import { pose, presence } from './motion';
+import { bakeWaveTile, LOOK_TINT, guestTexture, GUEST_LOOK, WAVE_STYLES } from './art';
 import { DEPTH } from './background';
 import type { MapView } from './MapView';
 
@@ -18,6 +19,7 @@ export class ZoneView {
   private waves: Phaser.GameObjects.TileSprite;
   private guests: Phaser.GameObjects.Image[] = [];
   private wakes: Phaser.GameObjects.Image[] = [];
+  private baseScale: number[] = [];
   private lockedShown = true;
   private lastElapsed = 0;
   private selected = false;
@@ -47,7 +49,10 @@ export class ZoneView {
     g.clear();
     const col = Phaser.Display.Color.HexStringToColor(this.ref.sport.color).color;
     const inner = { x: r.x + 4, y: r.y + 4, w: r.w - 8, h: r.h - 8 };
-    g.fillStyle(this.selected ? 0xffffff : col, this.selected ? 0.16 : 0.09);
+    const [tint, tintAlpha] = LOOK_TINT[this.ref.def.look];
+    g.fillStyle(tint, tintAlpha);
+    g.fillRoundedRect(inner.x, inner.y, inner.w, inner.h, 12);
+    g.fillStyle(this.selected ? 0xffffff : col, this.selected ? 0.16 : 0.07);
     g.fillRoundedRect(inner.x, inner.y, inner.w, inner.h, 12);
     g.lineStyle(this.selected ? 4 : 2, 0xffffff, this.selected ? 0.95 : 0.3);
     g.strokeRoundedRect(inner.x, inner.y, inner.w, inner.h, 12);
@@ -65,10 +70,11 @@ export class ZoneView {
     const look = GUEST_LOOK[kind];
     while (this.guests.length < n) {
       const i = this.guests.length;
-      const colors = this.ref.def.guestColors;
+      const colors = this.ref.sport.guestColors;
       const key = guestTexture(this.scene, kind, colors[i % colors.length], i);
       const img = this.scene.add.image(0, 0, key).setOrigin(look.ox, look.oy).setDepth(DEPTH.things);
       img.setDisplaySize(look.w, look.h);
+      this.baseScale.push(img.scaleX);
       this.guests.push(img);
       const wake = this.scene.add.image(0, 0, 'fx-wake').setOrigin(0.5, 0).setDepth(DEPTH.things - 0.2).setDisplaySize(11, 26);
       this.wakes.push(wake);
@@ -106,7 +112,6 @@ export class ZoneView {
     const running = z.phase === 'running';
     const progress = running ? z.elapsed / st.duration : 0;
     const kind = this.ref.sport.guestKind;
-    const cruise = kind === 'windsurfer' || kind === 'kiter' || kind === 'foiler' || kind === 'sailor';
     for (let i = 0; i < this.guests.length; i++) {
       const g = this.guests[i];
       const wake = this.wakes[i];
@@ -118,32 +123,25 @@ export class ZoneView {
         // waiting for the player: guests stand in a row at the beach side of the zone
         const x = r.x + r.w * (0.1 + (0.8 * (i + 0.5)) / n);
         g.setPosition(x, r.y + r.h * 0.2 + Math.sin(time / 500 + i) * 1.2);
-        g.setRotation(0);
+        g.setRotation(0).setScale(this.baseScale[i]);
         g.setAlpha(1);
         continue;
       }
       // a manager runs the zone all the time: use the clock, a cycle is one session
       const p = z.manager ? frac(z.elapsed / st.duration) : progress;
       const t = frac(p + i / n);
-      let rot: number;
-      let gx: number;
-      let gy: number;
-      if (cruise) {
-        const a = (t + slot) * Math.PI * 2;
-        gx = r.x + r.w * (0.5 + 0.4 * Math.sin(a));
-        gy = r.y + r.h * (0.3 + 0.5 * frac(slot * 3.1)) + Math.sin(time / 400 + i) * 1;
-        rot = (Math.cos(a) >= 0 ? Math.PI / 2 : -Math.PI / 2) + Math.sin(time / 500 + i) * 0.05;
-        g.setAlpha(1);
-      } else {
-        // ride toward the beach (up), start again from the outside
-        gx = r.x + r.w * (0.08 + 0.84 * slot) + Math.sin(t * Math.PI * 2) * 6;
-        gy = r.y + r.h * (0.95 - 0.8 * t);
-        rot = Math.cos(t * Math.PI * 2) * 0.16;
-        // guests arrive at the start of a ride and leave at the end
-        g.setAlpha(Math.min(1, t * 10, (1 - t) * 10));
-      }
-      g.setPosition(gx, gy).setRotation(rot);
-      wake.setPosition(gx, gy).setRotation(rot).setVisible(true).setAlpha(0.6 * g.alpha);
+      const here = pose(kind, t, slot);
+      const ahead = pose(kind, t + 0.006, slot);
+      const gx = r.x + r.w * here.x;
+      const gy = r.y + r.h * here.y - here.lift * 7;
+      const dx = (ahead.x - here.x) * r.w;
+      const dy = (ahead.y - here.y) * r.h;
+      // the picture points up; the heading is the direction of travel
+      const heading = Math.abs(dx) + Math.abs(dy) > 1e-6 ? Math.atan2(dx, -dy) : g.rotation;
+      g.setPosition(gx, gy).setRotation(heading + here.tilt);
+      g.setScale(this.baseScale[i] * (1 + here.lift * 0.6));
+      g.setAlpha(presence(kind, t));
+      wake.setPosition(gx, gy + here.lift * 7).setRotation(heading).setVisible(here.wake).setAlpha(0.6 * g.alpha);
     }
   }
 }

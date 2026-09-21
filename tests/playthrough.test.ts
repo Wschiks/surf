@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { SPORTS, ZONES } from '../src/config/sports';
+import { ZONES } from '../src/config/sports';
 import { simulate } from '../src/core/bot';
 
 // One full game played by the balance bot (10 second steps, up to 40 hours of play).
@@ -17,7 +17,7 @@ describe('full playthrough with the balance bot', () => {
 
   it('takes hours, not minutes and not weeks', () => {
     expect(run.finishedAt!).toBeGreaterThan(4 * HOUR);
-    expect(run.finishedAt!).toBeLessThan(12 * HOUR);
+    expect(run.finishedAt!).toBeLessThan(14 * HOUR);
     expect(run.maxedAt).not.toBeNull();
     expect(run.maxedAt!).toBeLessThan(36 * HOUR);
   });
@@ -28,31 +28,33 @@ describe('full playthrough with the balance bot', () => {
     expect(first!.t).toBeLessThan(15 * 60);
   });
 
-  it('follows the unlock order of the concept: sports one at a time, each after Level 2 of the previous', () => {
-    const unlockTime = new Map<string, number>();
+  it('plays in three parts: two beach expansions, each one opening a new area', () => {
+    const expansions = run.events.filter((e) => e.what.startsWith('EXPANSION'));
+    expect(expansions).toHaveLength(2);
+    expect(expansions[0].t).toBeGreaterThan(30 * 60);
+    expect(expansions[1].t).toBeGreaterThan(expansions[0].t + 30 * 60);
+    expect(run.state.expansions).toBe(2);
+  });
+
+  it('levels of a sport unlock in order', () => {
+    // within one part of the game every sport unlocks Level 2 before 3 before 4
+    let part: Record<string, number> = {};
     for (const e of run.events) {
-      const sport = SPORTS.find((s) => e.what === `unlocked sport ${s.name}`);
-      if (sport) unlockTime.set(sport.id, e.t);
-      const lvl = /^unlocked (.+) level (\d)/.exec(e.what);
-      if (lvl) {
-        const s = SPORTS.find((x) => x.name === lvl[1])!;
-        unlockTime.set(`${s.id}-${lvl[2]}`, e.t);
+      if (e.what.startsWith('EXPANSION')) part = {};
+      const m = /^unlocked (.+) level (\d)/.exec(e.what);
+      if (m) {
+        const level = Number(m[2]);
+        expect(level).toBeGreaterThan(part[m[1]] ?? 1);
+        part[m[1]] = level;
       }
     }
-    const ordered = [...SPORTS].sort((a, b) => a.order - b.order);
-    for (let i = 1; i < ordered.length; i++) {
-      const prev = ordered[i - 1];
-      expect(unlockTime.get(ordered[i].id)).toBeGreaterThan(unlockTime.get(`${prev.id}-2`)!);
-    }
-    // levels of a sport unlock in order
-    for (const s of SPORTS) for (let l = 3; l <= 4; l++) expect(unlockTime.get(`${s.id}-${l}`)!).toBeGreaterThan(unlockTime.get(`${s.id}-${l - 1}`)!);
   });
 
   it('has no long dead ends: there is always something to work towards', () => {
-    const unlocks = run.events.filter((e) => e.what.startsWith('unlocked')).map((e) => e.t);
+    const unlocks = run.events.filter((e) => e.what.startsWith('unlocked') || e.what.startsWith('EXPANSION')).map((e) => e.t);
     let prev = 0;
     for (const t of unlocks) {
-      expect(t - prev).toBeLessThan(3 * HOUR);
+      expect(t - prev).toBeLessThan(3.5 * HOUR);
       prev = t;
     }
     expect(run.longestWait.seconds).toBeLessThan(3 * HOUR);

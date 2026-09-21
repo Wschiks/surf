@@ -37,3 +37,6 @@ Nothing was blocked.
 
 ## Tags
 `v0.1-map`, `v0.2-idle-loop`, `v0.3-wave-levels`, `v0.4-unlocks`, `v0.5-sea`, `v0.6-ocean`, `v0.7-polish` (the last one is the final commit).
+
+## Second round (review changes)
+Done: 15 x 8 map with the beach bottom left, start with surfers and skimboarders, beach expansions (x3 income, start over, big wave, next area opens) replacing the sport chain, per-sport motion, coloured buttons, 100B coins test button. Tests updated (58 passing). Old screenshots (`final-`, `redesign-`) show earlier designs; `redesign2-` shows the new one.

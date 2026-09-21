@@ -5,7 +5,8 @@ import { autoIncomePerSecond, buyFacility, buyManager, buyStat, collectAll, faci
 import type { Game } from '../core/game';
 import type { OfflineReport } from '../core/economy';
 import { resetSave } from '../core/save';
-import { nextGoal, previousSport, sportStatus, unlockZone, zoneUnlockStatus } from '../core/unlocks';
+import { expand, expansionNeededFor, expansionStatus, nextGoal, unlockZone, zoneUnlockStatus } from '../core/unlocks';
+import { EXPANSION_MULT } from '../config/expansions';
 import { COIN, fmt, fmtSeconds, fmtTime } from './format';
 import { icon, tile } from './icons';
 import { isMuted, setMuted, sound } from './sound';
@@ -19,7 +20,9 @@ export interface UICallbacks {
   /** Coins were collected from a zone, for a floating number on the map. */
   onCollected: (zoneId: string | null, coins: number) => void;
   /** A level or a whole sport was unlocked. */
-  onUnlocked: (zoneId: string, kind: 'sport' | 'level') => void;
+  onUnlocked: (zoneId: string, kind: 'level') => void;
+  /** A beach expansion was bought at the height of the big wave: the beach starts over. */
+  onExpanded: () => void;
 }
 
 function soundLabel(): string {
@@ -56,7 +59,7 @@ export class GameUI {
     this.root.className = 'gameui';
     this.root.innerHTML = `
       <div class="hud">
-        <div class="pill coins"><span class="ico">${COIN}</span><b data-ref="coins">0</b><small data-ref="rate">+0/s</small></div>
+        <div class="pill coins"><span class="ico">${COIN}</span><b data-ref="coins">0</b><small data-ref="rate">+0/s</small><em class="mult" data-ref="mult" hidden></em></div>
         <div class="pill rep" title="Reputation"><span class="ico">${icon('star')}</span><b data-ref="rep">0</b></div>
         <button class="pill gear" data-ref="gear" aria-label="Menu">${icon('gear')}</button>
       </div>
@@ -77,7 +80,8 @@ export class GameUI {
     this.refs.sports.addEventListener('click', () => this.openSports());
     this.refs.goal.addEventListener('click', () => {
       const g = nextGoal(this.game.state);
-      if (g) this.openZone(g.zoneId);
+      if (g?.zoneId) this.openZone(g.zoneId);
+      else if (g) this.openBeach();
     });
     this.refs.gear.addEventListener('click', () => this.openMenu());
     this.refs.collect.addEventListener('click', () => {
@@ -139,9 +143,8 @@ export class GameUI {
     const ref = zoneById(id);
     const owned = this.game.state.zones[id].owned;
     this.sheetOwned = owned;
-    const need = zoneUnlockStatus(this.game.state, ref);
-    const title = owned || need?.kind !== 'sport' ? ref.def.name : ref.sport.name;
-    const sub = owned || need?.kind !== 'sport' ? `${ref.sport.name} · Level ${ref.level}` : 'New sport to unlock';
+    const title = ref.def.name;
+    const sub = `${ref.sport.name} · Level ${ref.level}`;
     const head = `
       <div class="sheet-head">
         ${tile(owned ? ref.sport.icon : 'lock', owned ? ref.sport.color : '#7d92a3', 48)}
@@ -152,6 +155,7 @@ export class GameUI {
     this.sheetEl.innerHTML = head + (owned ? this.ownedBody(id) : this.lockedBody(id));
     this.sheetEl.querySelector('[data-close]')!.addEventListener('click', () => this.closeSheet());
     if (!owned) {
+      this.sheetEl.querySelector('[data-tobeach]')?.addEventListener('click', () => this.openBeach());
       this.sheetEl.querySelector('[data-unlock]')?.addEventListener('click', () => {
         const kind = unlockZone(this.game.state, id);
         if (kind) {
@@ -218,11 +222,18 @@ export class GameUI {
   private lockedBody(id: string): string {
     const ref = zoneById(id);
     const need = zoneUnlockStatus(this.game.state, ref)!;
-    const what = need.kind === 'sport' ? `Start ${ref.sport.name}` : `Unlock ${ref.def.name}`;
+    if (need.kind === 'closed') {
+      return `
+      <div class="unlock-card">
+        <h3>Not open yet</h3>
+        <p class="get">${need.status.blockedBy}. You start over on a bigger beach and all income is ${EXPANSION_MULT} times higher.</p>
+        <button class="go" data-tobeach>${icon('beach')} Go to the beach</button>
+      </div>`;
+    }
     const reqs = need.status.requirements.map((r, i) => `<li data-req="${i}"><span class="tick"></span><span class="rt">${r.text}</span><em></em></li>`).join('');
     return `
       <div class="unlock-card">
-        <h3>${what}</h3>
+        <h3>Unlock ${ref.def.name}</h3>
         <p class="get">You get: ${ref.def.starterBuys.join(', ')}</p>
         <p class="blocked" data-blocked hidden></p>
         <ul class="reqs">${reqs}</ul>
@@ -233,7 +244,7 @@ export class GameUI {
   private refreshLocked(id: string) {
     const ref = zoneById(id);
     const need = zoneUnlockStatus(this.game.state, ref);
-    if (!need) return;
+    if (!need || need.kind === 'closed') return;
     const st = need.status;
     const blocked = this.sheetEl.querySelector<HTMLElement>('[data-blocked]')!;
     blocked.hidden = !st.blockedBy;
@@ -249,21 +260,18 @@ export class GameUI {
     const enoughCoins = this.game.state.coins >= st.coins;
     btn.disabled = !st.canBuy;
     btn.className = 'go' + (st.canBuy ? ' ready' : '');
-    setHtml(btn, `${need.kind === 'sport' ? 'Start it' : 'Unlock'} · ${COIN} ${fmt(st.coins)}${st.ready && !enoughCoins ? ' (need more coins)' : ''}`);
+    setHtml(btn, `Unlock · ${COIN} ${fmt(st.coins)}${st.ready && !enoughCoins ? ' (need more coins)' : ''}`);
   }
 
   private buildSportsSheet() {
-    const rows = [...SPORTS]
-      .sort((a, b) => a.order - b.order)
-      .map((sp) => {
+    const rows = SPORTS.map((sp) => {
         const pips = sp.levels.map((_, i) => `<button class="pip" data-zone="${zoneId(sp.id, i + 1)}" aria-label="Level ${i + 1}">${i + 1}</button>`).join('');
         return `
         <div class="sport-row" data-sport="${sp.id}">
           ${tile(sp.icon, sp.color, 46)}
           <div class="sport-mid"><b>${sp.name}</b><small data-info></small><div class="pips">${pips}</div></div>
         </div>`;
-      })
-      .join('');
+      }).join('');
     this.sheetEl.innerHTML = `
       <div class="sheet-head">
         ${tile('sports', '#1497b5', 48)}
@@ -285,10 +293,7 @@ export class GameUI {
       let info: string;
       if (unlocked) info = `${sp.area[0].toUpperCase()}${sp.area.slice(1)} area · ${owned} of ${sp.levels.length} levels`;
       else {
-        const st = sportStatus(s, sp);
-        const prev = previousSport(sp);
-        info = `Locked · needs ${prev ? `Level 2 of ${prev.name} and ` : ''}reputation ${Math.floor(s.reputation)} / ${sp.unlock?.reputation ?? 0}`;
-        void st;
+        info = `Locked · opens with beach expansion ${expansionNeededFor(s, sp.id)}`;
       }
       row.classList.toggle('locked', !unlocked);
       row.querySelector('[data-info]')!.textContent = info;
@@ -311,6 +316,7 @@ export class GameUI {
         <div class="sheet-title"><h2>Beach facilities</h2><p>Shared buildings that boost every sport</p></div>
         <button class="x" data-close aria-label="Close">${icon('close')}</button>
       </div>
+      <div class="expand-card" data-expand></div>
       <div class="ups">${rows}</div>`;
     this.sheetEl.querySelector('[data-close]')!.addEventListener('click', () => this.closeSheet());
     this.sheetEl.querySelectorAll<HTMLElement>('[data-buyfac]').forEach((b) =>
@@ -321,6 +327,70 @@ export class GameUI {
         this.refreshSheet();
       }),
     );
+  }
+
+  /** The beach expansion card at the top of the beach sheet. */
+  private refreshExpansion() {
+    const card = this.sheetEl.querySelector<HTMLElement>('[data-expand]');
+    if (!card) return;
+    const s = this.game.state;
+    const st = expansionStatus(s);
+    if (!st) {
+      const html = `<h3>${icon('trophy')} Fully expanded</h3><p class="get">The whole map is open. All income is x${Math.pow(EXPANSION_MULT, s.expansions)}.</p>`;
+      if (card.dataset.h !== html) {
+        card.innerHTML = html;
+        card.dataset.h = html;
+      }
+      return;
+    }
+    if (!card.querySelector('[data-xbtn]')) {
+      card.innerHTML = `
+        <h3>${icon('beach')} ${st.def.name} ${st.def.n}</h3>
+        <p class="get">${st.def.blurb}</p>
+        <p class="get">All income x${EXPANSION_MULT}. A big wave washes over the beach and you start over, faster than before. Reputation stays.</p>
+        <ul class="reqs">${st.requirements.map((r, i) => `<li data-xreq="${i}"><span class="tick"></span><span class="rt">${r.text}</span><em></em></li>`).join('')}</ul>
+        <button class="go" data-xbtn></button>`;
+      card.querySelector('[data-xbtn]')!.addEventListener('click', () => this.startExpansion());
+    }
+    st.requirements.forEach((r, i) => {
+      const li = card.querySelector<HTMLElement>(`[data-xreq="${i}"]`);
+      if (!li) return;
+      li.classList.toggle('met', r.met);
+      setHtml(li.querySelector('.tick') as HTMLElement, r.met ? icon('check') : '');
+      li.querySelector('em')!.textContent = r.progress;
+    });
+    const btn = card.querySelector<HTMLButtonElement>('[data-xbtn]')!;
+    btn.disabled = !st.canBuy;
+    btn.className = 'go' + (st.canBuy ? ' ready' : '');
+    setHtml(btn, `Expand · ${COIN} ${fmt(st.coins)}`);
+  }
+
+  /** Buy the expansion: the big wave sweeps over the screen and, while everything is hidden, the beach starts over. */
+  private startExpansion() {
+    if (!expansionStatus(this.game.state)?.canBuy || document.querySelector('.tsunami')) return;
+    sound.unlock();
+    const box = document.createElement('div');
+    box.className = 'tsunami';
+    box.innerHTML = `
+      <div class="ts-body">
+        <svg class="ts-top" viewBox="0 0 400 80" preserveAspectRatio="none"><path d="M0 80V40c30-30 60-30 100-10s70 30 100 0 70-30 100-5 70 25 100-5v60z" fill="#e9fbff"/><path d="M0 80V52c30-20 60-20 100-4s70 22 100 2 70-22 100-3 70 18 100-3v36z" fill="#3fc3df"/></svg>
+        <div class="ts-fill"></div>
+        <svg class="ts-crest" viewBox="0 0 400 120" preserveAspectRatio="none"><path d="M0 0v50c25 30 50 55 80 45 20-8 10-30 30-30s25 40 55 45 50-45 80-45 40 40 70 40 60-30 85-55V0z" fill="#3fc3df"/><path d="M0 0v34c25 24 50 44 80 34 20-7 10-24 30-24s25 32 55 36 50-36 80-36 40 32 70 32 60-24 85-44V0z" fill="#e9fbff"/></svg>
+      </div>
+      <div class="ts-title">${icon('beach')}<b>${expansionStatus(this.game.state)!.def.name} ${expansionStatus(this.game.state)!.def.n}</b></div>`;
+    this.root.appendChild(box);
+    this.closeSheet();
+    setTimeout(() => {
+      expand(this.game.state);
+      this.game.save();
+      this.cb.onExpanded();
+      this.refreshTop();
+    }, 1500);
+    setTimeout(() => {
+      this.confetti();
+      this.toast(`Income x${Math.pow(EXPANSION_MULT, this.game.state.expansions)}. New area open!`);
+    }, 2500);
+    setTimeout(() => box.remove(), 3400);
   }
 
   private setBuy(btn: HTMLElement, cost: number, label = '') {
@@ -337,6 +407,7 @@ export class GameUI {
     const s = this.game.state;
     if (this.sheet.kind === 'sports') return this.refreshSports();
     if (this.sheet.kind === 'beach') {
+      this.refreshExpansion();
       for (const f of FACILITIES) {
         const row = this.sheetEl.querySelector<HTMLElement>(`[data-fac="${f.id}"]`)!;
         const lvl = s.facilities[f.id] ?? 0;
@@ -408,6 +479,9 @@ export class GameUI {
     this.refs.coins.textContent = fmt(s.coins);
     this.refs.rate.textContent = `+${fmt(autoIncomePerSecond(s))}/s`;
     this.refs.rep.textContent = fmt(Math.floor(s.reputation));
+    this.refs.mult.hidden = s.expansions === 0;
+    this.refs.mult.textContent = `x${Math.pow(EXPANSION_MULT, s.expansions)}`;
+    this.refs.beach.classList.toggle('pulse', !!expansionStatus(s)?.canBuy);
     const goal = nextGoal(s);
     const allOwned = ZONES.every((z) => s.zones[z.id].owned);
     this.refs.goal.hidden = (!goal && !allOwned) || !!this.sheet;

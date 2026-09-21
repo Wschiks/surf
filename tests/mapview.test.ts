@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { MapView } from '../src/scene/MapView';
-import { UNIT } from '../src/config/layout';
+import { MAP_H, MAP_W, UNIT } from '../src/config/layout';
+const MAPW = MAP_W * UNIT;
+const MAPH = MAP_H * UNIT;
+const MAP_MID = { x: MAPW / 2, y: MAPH / 2 };
 
 function makeView() {
   const v = new MapView();
@@ -57,12 +60,12 @@ describe('MapView', () => {
     for (const [dx, dy] of [[-100000, -100000], [100000, 100000], [-100000, 100000], [100000, -100000]]) {
       v.panBy(dx, dy);
       expect(v.cx).toBeGreaterThan(0);
-      expect(v.cx).toBeLessThan(10 * UNIT);
+      expect(v.cx).toBeLessThan(MAPW);
       for (const p of v.viewCorners()) {
         expect(p.x).toBeGreaterThanOrEqual(-size / 4);
-        expect(p.x).toBeLessThanOrEqual(10 * UNIT + size / 4);
+        expect(p.x).toBeLessThanOrEqual(MAPW + size / 4);
         expect(p.y).toBeGreaterThanOrEqual(-size / 4);
-        expect(p.y).toBeLessThanOrEqual(10 * UNIT + size / 4);
+        expect(p.y).toBeLessThanOrEqual(MAPH + size / 4);
       }
     }
   });
@@ -71,8 +74,9 @@ describe('MapView', () => {
     const v = makeView();
     v.jumpTo(0, 0);
     expect(v.cx).toBeLessThan(200);
-    v.jumpTo(10 * UNIT, 10 * UNIT);
-    expect(v.cx).toBeGreaterThan(800);
+    v.jumpTo(MAPW, MAPH);
+    expect(v.cx).toBeGreaterThan(MAPW - 300);
+    expect(v.cy).toBeGreaterThan(MAPH - 300);
   });
 
   it('keeps the view inside the map at every zoom level', () => {
@@ -84,7 +88,7 @@ describe('MapView', () => {
       const ys = c.map((p) => p.y);
       const w = Math.max(...xs) - Math.min(...xs);
       const h = Math.max(...ys) - Math.min(...ys);
-      if (w <= 10 * UNIT && h <= 10 * UNIT) {
+      if (w <= MAPW && h <= MAPH) {
         expect(Math.min(...xs)).toBeGreaterThanOrEqual(-w / 4 - 0.001);
         expect(Math.min(...ys)).toBeGreaterThanOrEqual(-h / 4 - 0.001);
       }
@@ -93,8 +97,8 @@ describe('MapView', () => {
 
   it('shows the whole map when zoomed out', () => {
     const v = makeView();
-    v.jumpTo(500, 500, v.minPpu());
-    for (const [x, y] of [[0, 0], [1000, 0], [0, 1000], [1000, 1000]]) {
+    v.jumpTo(MAP_MID.x, MAP_MID.y, v.minPpu());
+    for (const [x, y] of [[0, 0], [MAPW, 0], [0, MAPH], [MAPW, MAPH]]) {
       const s = v.worldToScreen(x, y);
       expect(s.x).toBeGreaterThanOrEqual(0);
       expect(s.x).toBeLessThanOrEqual(400);

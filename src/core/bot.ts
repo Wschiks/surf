@@ -3,7 +3,8 @@ import { FACILITIES } from '../config/facilities';
 import { SPORTS, ZONES } from '../config/sports';
 import { buyFacility, buyManager, buyStat, collectAll, facilityCost, managerCost, multipliers, statCost, tick, zoneStats } from './economy';
 import { newGame, type GameState } from './state';
-import { levelStatus, sportStatus, unlockLevel, unlockSport } from './unlocks';
+import { EXPANSIONS } from '../config/expansions';
+import { expand, expansionStatus, levelStatus, unlockLevel } from './unlocks';
 
 // A simple, patient player used to test and balance the game. It taps every waiting zone at once,
 // buys upgrades with the best payback, and saves up when a level or sport is about to unlock.
@@ -68,16 +69,14 @@ function candidates(state: GameState): Candidate[] {
   return out;
 }
 
-/** Next unlock (level or sport) whose only missing piece is coins. */
+/** Next unlock (level or expansion) whose only missing piece is coins. */
 function savingFor(state: GameState): { name: string; cost: number } | null {
   let best: { name: string; cost: number } | null = null;
+  const exp = expansionStatus(state);
+  if (exp && exp.ready) best = { name: 'expansion', cost: exp.coins };
   for (const s of SPORTS) {
-    if (!state.sports[s.id]) {
-      const st = sportStatus(state, s);
-      if (st.ready && (!best || st.coins < best.cost)) best = { name: `sport ${s.id}`, cost: st.coins };
-      continue;
-    }
-    for (let l = 2; l <= s.levels.length; l++) {
+    if (!state.sports[s.id]) continue;
+    for (let l = 2; l <= (exp ? exp.def.level : s.levels.length); l++) {
       const ref = ZONES.find((z) => z.sport.id === s.id && z.level === l)!;
       if (state.zones[ref.id].owned) continue;
       const st = levelStatus(state, ref);
@@ -89,7 +88,7 @@ function savingFor(state: GameState): { name: string; cost: number } | null {
 }
 
 function allDone(state: GameState): boolean {
-  return ZONES.every((r) => state.zones[r.id].owned && state.zones[r.id].manager);
+  return state.expansions === EXPANSIONS.length && ZONES.every((r) => state.zones[r.id].owned && state.zones[r.id].manager);
 }
 
 function allMaxed(state: GameState): boolean {
@@ -106,8 +105,6 @@ export function simulate(opts: { maxSeconds: number; step?: number; state?: Game
   let purchases = 0;
   let finishedAt: number | null = null;
   let maxedAt: number | null = null;
-  const owned = new Set<string>(ZONES.filter((r) => state.zones[r.id].owned).map((r) => r.id));
-  const managed = new Set<string>();
 
   const noteBuy = () => {
     purchases++;
@@ -122,15 +119,16 @@ export function simulate(opts: { maxSeconds: number; step?: number; state?: Game
     // buy, as many times as the money allows this step
     for (let guard = 0; guard < 50; guard++) {
       let bought = false;
-      // 1. unlocks come first
-      for (const s of SPORTS) {
-        if (!state.sports[s.id] && unlockSport(state, s.id)) {
-          events.push({ t, what: `unlocked sport ${s.name}` });
-          noteBuy();
-          bought = true;
-        }
+      // 1. expansions and level unlocks come first
+      if (expansionStatus(state)?.canBuy && expand(state)) {
+        events.push({ t, what: `EXPANSION ${state.expansions}: the big wave. Area opened, everything starts over` });
+        noteBuy();
+        bought = true;
+        continue;
       }
+      const wanted = expansionStatus(state)?.def.level ?? 99; // save for the expansion first, the top levels come after it
       for (const r of ZONES) {
+        if (r.level > wanted) continue;
         if (r.level > 1 && state.sports[r.sport.id] && !state.zones[r.id].owned && unlockLevel(state, r.id)) {
           events.push({ t, what: `unlocked ${r.sport.name} level ${r.level} (${r.def.name})` });
           noteBuy();
@@ -155,10 +153,6 @@ export function simulate(opts: { maxSeconds: number; step?: number; state?: Game
         }
       }
       if (!bought) break;
-    }
-    for (const r of ZONES) {
-      if (!owned.has(r.id) && state.zones[r.id].owned) owned.add(r.id);
-      if (!managed.has(r.id) && state.zones[r.id].manager) managed.add(r.id);
     }
     if (finishedAt === null && allDone(state)) {
       finishedAt = t;

@@ -1,6 +1,6 @@
 import Phaser from 'phaser';
 import { AREAS, areaById, areaRect, type AreaDef, type AreaId } from '../config/areas';
-import { UNIT, rectCenter, rectContains, toWorld } from '../config/layout';
+import { MAP_W, UNIT, rectCenter, rectContains, toWorld } from '../config/layout';
 import { ZONES } from '../config/sports';
 import { tapZone } from '../core/economy';
 import { Game } from '../core/game';
@@ -50,13 +50,14 @@ export class MapScene extends Phaser.Scene {
     });
     this.ui = new GameUI(ui, this.game_, {
       onSelect: (id) => this.onSelect(id),
-      onFocusBeach: () => this.view.animateTo(5 * UNIT, 0.8 * UNIT, this.view.width / 3.6, this.view.height * 0.2),
+      onFocusBeach: () => this.view.animateTo((MAP_W / 2) * UNIT, 0.8 * UNIT, this.view.width / 3.6, this.view.height * 0.2),
       onReset: () => {
         this.game_.stopSaving();
         location.reload();
       },
       onCollected: (id, coins) => this.pop(id, coins),
       onUnlocked: (id, kind) => this.onUnlocked(id, kind),
+      onExpanded: () => this.onExpanded(),
     });
     this.chips = new ZoneChips(this.labels, {
       onOpen: (id) => this.ui.openZone(id),
@@ -78,11 +79,11 @@ export class MapScene extends Phaser.Scene {
     for (const ref of ZONES) this.zones.push(new ZoneView(this, ref, (id, coins) => this.pop(id, coins)));
 
     for (const a of AREAS) {
-      if (a.clearedBySport) this.hazes.set(a.id, new Haze(this, a.id));
+      if (a.expansion > 0) this.hazes.set(a.id, new Haze(this, a.id));
       const c = rectCenter(areaRect(a));
       this.labels.set({
         id: 'area-' + a.id,
-        x: 5 * UNIT,
+        x: (MAP_W / 2) * UNIT,
         y: c.y * UNIT,
         maxPpu: 70,
         className: 'area',
@@ -91,16 +92,10 @@ export class MapScene extends Phaser.Scene {
     }
     this.syncAreas(false);
 
-    const params = new URLSearchParams(location.search);
-    for (const id of (params.get('unlock') ?? '').split(',')) {
-      if (id === 'sea' || id === 'ocean') this.setAreaCleared(id, false);
-      if (id === 'all') (['sea', 'ocean'] as AreaId[]).forEach((x) => this.setAreaCleared(x, false));
-    }
-
     const holder = document.getElementById('game')!;
     this.scale.on('resize', () => this.syncSize());
     this.syncSize();
-    this.view.jumpTo(6 * UNIT, 2.5 * UNIT, this.view.defaultPpu());
+    this.view.jumpTo(7.9 * UNIT, 2.2 * UNIT, this.view.defaultPpu());
     const input = new MapInput(holder, this.view);
     input.onTap = (sx, sy) => this.onMapTap(sx, sy);
 
@@ -144,10 +139,10 @@ export class MapScene extends Phaser.Scene {
     }
   }
 
-  private onUnlocked(id: string, kind: 'sport' | 'level') {
+  private onUnlocked(id: string, _kind: 'level') {
     const ref = ZONES.find((z) => z.id === id)!;
     this.ui.confetti();
-    this.ui.toast(kind === 'sport' ? `${ref.sport.name} unlocked!` : `${ref.def.name} unlocked!`);
+    this.ui.toast(`${ref.def.name} unlocked!`);
     this.onSelect(id);
   }
 
@@ -165,16 +160,23 @@ export class MapScene extends Phaser.Scene {
   }
 
   jumpToArea(a: AreaDef) {
-    const c = { x: 5 * UNIT, y: rectCenter(areaRect(a)).y * UNIT };
+    const c = { x: (MAP_W / 2) * UNIT, y: rectCenter(areaRect(a)).y * UNIT };
     // the view must stay inside the map, so the beach and the ocean are shown a bit closer than the middle areas
-    const across = { beach: 2.4, wave: 3.2, sea: 3.4, ocean: 3.0 }[a.id];
+    const across = { beach: 2.2, wave: 2.4, sea: 2.4, ocean: 2.4 }[a.id];
     this.view.animateTo(c.x, c.y, this.view.width / across);
   }
 
-  /** Clear the haze on every area whose sport is unlocked in the saved game. */
+  /** The big wave has passed and the beach started over: clear the old buildings and boats and look at the start again. */
+  onExpanded() {
+    this.beach.reset();
+    this.ocean.reset();
+    this.view.jumpTo(7.9 * UNIT, 2.2 * UNIT, this.view.defaultPpu());
+  }
+
+  /** Clear the haze on every area that the bought beach expansions have opened. */
   private syncAreas(animate: boolean) {
     for (const a of AREAS) {
-      if (a.clearedBySport && this.game_.state.sports[a.clearedBySport]) this.setAreaCleared(a.id, animate);
+      if (a.expansion > 0 && this.game_.state.expansions >= a.expansion) this.setAreaCleared(a.id, animate);
     }
   }
 
@@ -184,7 +186,7 @@ export class MapScene extends Phaser.Scene {
   }
 
   isAreaCleared(id: AreaId) {
-    return this.clearedAreas.has(id) || !areaById(id).clearedBySport;
+    return this.clearedAreas.has(id) || areaById(id).expansion === 0;
   }
 
   update(time: number, delta: number) {

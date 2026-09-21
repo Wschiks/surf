@@ -1,4 +1,7 @@
-import type { Rect } from './layout';
+import { MAP_W, type Rect } from './layout';
+
+/** Depth of the water line: where the beach ends and the sea begins. */
+export const SHORE = 1.6;
 
 export type AreaId = 'beach' | 'wave' | 'sea' | 'ocean';
 
@@ -8,18 +11,18 @@ export interface AreaDef {
   /** Depth range in map units (rows 1-2 = depth 0-2, and so on). */
   from: number;
   to: number;
-  /** The sport whose unlock clears the haze on this area. null = clear from the start. */
-  clearedBySport: string | null;
+  /** Number of beach expansions needed to open this area (0 = open from the start). */
+  expansion: number;
   /** Colour used on the overview map. */
   color: string;
   blurb: string;
 }
 
 export const AREAS: AreaDef[] = [
-  { id: 'beach', name: 'Beach', from: 0, to: 2, clearedBySport: null, color: '#f2dca4', blurb: 'The shared hangout' },
-  { id: 'wave', name: 'Wave', from: 2, to: 5, clearedBySport: null, color: '#5fd0e6', blurb: 'Wave surfing and skimboarding' },
-  { id: 'sea', name: 'Sea', from: 5, to: 8, clearedBySport: 'windsurfing', color: '#2b8fd0', blurb: 'Windsurfing, kitesurfing, foil and wing' },
-  { id: 'ocean', name: 'Ocean', from: 8, to: 10, clearedBySport: 'sailing', color: '#12468f', blurb: 'Sailing and boats' },
+  { id: 'beach', name: 'Beach', from: 0, to: 1.6, expansion: 0, color: '#f2dca4', blurb: 'The shared hangout' },
+  { id: 'wave', name: 'Wave', from: 1.6, to: 4, expansion: 0, color: '#5fd0e6', blurb: 'Wave surfing and skimboarding' },
+  { id: 'sea', name: 'Sea', from: 4, to: 6.4, expansion: 1, color: '#2b8fd0', blurb: 'Windsurfing, kitesurfing, foil and wing' },
+  { id: 'ocean', name: 'Ocean', from: 6.4, to: 8, expansion: 2, color: '#12468f', blurb: 'Sailing and boats' },
 ];
 
 export function areaById(id: AreaId): AreaDef {
@@ -28,18 +31,18 @@ export function areaById(id: AreaId): AreaDef {
 
 /** Full-width rectangle of an area in map units. */
 export function areaRect(a: AreaDef): Rect {
-  return { x: 0, y: a.from, w: 10, h: a.to - a.from };
+  return { x: 0, y: a.from, w: MAP_W, h: a.to - a.from };
 }
 
 /** Sea colour by depth, light turquoise near the beach to dark blue far out. Stops are [depth, r, g, b]. */
 export const SEA_STOPS: [number, number, number, number][] = [
-  [2, 150, 234, 232],
-  [3.5, 88, 205, 228],
-  [5, 46, 158, 214],
-  [6.5, 31, 122, 194],
-  [8, 22, 86, 160],
-  [10, 11, 47, 107],
-  [14, 6, 30, 78],
+  [1.6, 150, 234, 232],
+  [2.8, 88, 205, 228],
+  [4, 46, 158, 214],
+  [5.2, 31, 122, 194],
+  [6.4, 22, 86, 160],
+  [8, 11, 47, 107],
+  [11, 6, 30, 78],
 ];
 
 export function seaColorAt(depth: number): [number, number, number] {

@@ -558,6 +558,20 @@ export function bakeShoreFoam(scene: Phaser.Scene) {
 
 import type { GuestKind, WaterLook } from '../config/sports';
 
+/** Colour wash over the water of a zone, so each level has its own background. */
+export const LOOK_TINT: Record<WaterLook, [number, number]> = {
+  flat: [0x7fe8d8, 0.28],
+  ripple: [0x4db8e0, 0.2],
+  shallows: [0xd8fff2, 0.4],
+  rolling: [0x2aa5c9, 0.2],
+  reef: [0x22d3c5, 0.32],
+  big: [0x0a3a80, 0.4],
+  shorebreak: [0x9be3ff, 0.25],
+  bigbreak: [0x0a4a90, 0.36],
+  chop: [0x1a6fb0, 0.3],
+  swell: [0x123f8c, 0.34],
+};
+
 export interface WaveStyle {
   /** How fast the pattern rolls toward the beach (world px per second). */
   speed: number;

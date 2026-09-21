@@ -1,5 +1,5 @@
 import { AREAS, areaRect, type AreaDef } from '../config/areas';
-import { MAP_ROTATION_DEG, MAP_UNITS, UNIT, rectCenter } from '../config/layout';
+import { MAP_H, MAP_ROTATION_DEG, MAP_W, UNIT, rectCenter } from '../config/layout';
 import type { MapView } from '../scene/MapView';
 
 const ROT = (MAP_ROTATION_DEG * Math.PI) / 180;
@@ -36,7 +36,9 @@ export class Minimap {
     this.canvas.style.height = SIZE + 'px';
     this.ctx = this.canvas.getContext('2d')!;
     this.ctx.scale(dpr, dpr);
-    this.scale = (SIZE - 6) / (MAP_UNITS * UNIT * (COS + SIN));
+    const boxW = MAP_W * Math.abs(COS) + MAP_H * Math.abs(SIN);
+    const boxH = MAP_W * Math.abs(SIN) + MAP_H * Math.abs(COS);
+    this.scale = (SIZE - 6) / (Math.max(boxW, boxH) * UNIT);
 
     const jumps = box.querySelector('.jumps')!;
     for (const a of AREAS) {
@@ -61,8 +63,8 @@ export class Minimap {
   }
 
   private toMini(wx: number, wy: number) {
-    const dx = (wx - (MAP_UNITS * UNIT) / 2) * this.scale;
-    const dy = (wy - (MAP_UNITS * UNIT) / 2) * this.scale;
+    const dx = (wx - (MAP_W * UNIT) / 2) * this.scale;
+    const dy = (wy - (MAP_H * UNIT) / 2) * this.scale;
     return { x: SIZE / 2 + dx * COS - dy * SIN, y: SIZE / 2 + dx * SIN + dy * COS };
   }
 
@@ -71,7 +73,7 @@ export class Minimap {
     const dy = my - SIZE / 2;
     const rx = dx * COS + dy * SIN;
     const ry = -dx * SIN + dy * COS;
-    return { x: (MAP_UNITS * UNIT) / 2 + rx / this.scale, y: (MAP_UNITS * UNIT) / 2 + ry / this.scale };
+    return { x: (MAP_W * UNIT) / 2 + rx / this.scale, y: (MAP_H * UNIT) / 2 + ry / this.scale };
   }
 
   draw() {

@@ -58,6 +58,13 @@ export class BeachView {
     }
   }
 
+  /** Take all buildings away again (the beach started over). */
+  reset() {
+    for (const img of this.buildings.values()) img.destroy();
+    this.buildings.clear();
+    for (const g of this.plots.values()) g.setVisible(true);
+  }
+
   /** People strolling along the water line. More of them come as the spot gets a better reputation. */
   animateWalkers(state: GameState, time: number) {
     const want = Math.min(WALKER_COLORS.length, 3 + Math.floor(Math.log10(state.reputation + 1) * 2));
@@ -73,8 +80,8 @@ export class BeachView {
       const t = (time / 1000) * speed + i * 0.37;
       const phase = ((t % 2) + 2) % 2; // 0..2
       const ping = phase < 1 ? phase : 2 - phase; // 0..1..0
-      const x = 0.4 * UNIT + ping * 9.2 * UNIT;
-      const y = (1.72 + 0.1 * (i % 3)) * UNIT + Math.sin(time / 300 + i) * 1.2;
+      const x = 0.4 * UNIT + ping * 14.2 * UNIT;
+      const y = (1.38 + 0.05 * (i % 3)) * UNIT + Math.sin(time / 300 + i) * 1.2;
       w.setPosition(x, y).setRotation(phase >= 1 ? -Math.PI / 2 : Math.PI / 2);
     });
   }

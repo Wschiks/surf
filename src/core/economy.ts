@@ -1,4 +1,5 @@
 import { BALANCE, costFactor, STATS, STAT_IDS, tierFactor, type StatId } from '../config/balance';
+import { EXPANSION_MULT } from '../config/expansions';
 import { FACILITIES, facilityById } from '../config/facilities';
 import { ZONES, zoneById, type ZoneRef } from '../config/sports';
 import type { GameState, ZoneState } from './state';
@@ -10,7 +11,7 @@ export interface Multipliers {
 }
 
 export function multipliers(state: GameState): Multipliers {
-  const m: Multipliers = { coins: 1, speed: 1, reputation: 1 };
+  const m: Multipliers = { coins: Math.pow(EXPANSION_MULT, state.expansions), speed: 1, reputation: 1 };
   for (const f of FACILITIES) {
     const lvl = state.facilities[f.id] ?? 0;
     m[f.effect] *= 1 + f.perLevel * lvl;

@@ -1,4 +1,5 @@
 import { FACILITIES } from '../config/facilities';
+import { areaById } from '../config/areas';
 import { SPORTS, ZONES, zoneId, type SportId } from '../config/sports';
 
 export type Phase = 'idle' | 'running' | 'ready';
@@ -25,12 +26,14 @@ export interface GameState {
   sports: Record<string, boolean>;
   zones: Record<string, ZoneState>;
   facilities: Record<string, number>;
+  /** Beach expansions bought so far. Each one opens an area, multiplies income and restarts the beach. */
+  expansions: number;
   /** Real time (ms since 1970) when the game was last saved or updated. */
   savedAt: number;
   startedAt: number;
 }
 
-export const SAVE_VERSION = 1;
+export const SAVE_VERSION = 2;
 
 export function newZone(owned = false): ZoneState {
   return { owned, capacity: 0, price: 0, speed: 0, manager: false, phase: 'idle', elapsed: 0, pending: 0, pendingRep: 0 };
@@ -45,15 +48,26 @@ export function newGame(now: number): GameState {
     sports: {},
     zones: {},
     facilities: {},
+    expansions: 0,
     savedAt: now,
     startedAt: now,
   };
   ensureState(state);
-  // The player starts with the first level of the first sport.
-  const first = SPORTS.find((s) => s.order === 1)!;
-  state.sports[first.id] = true;
-  state.zones[zoneId(first.id, 1)].owned = true;
+  openAreas(state);
   return state;
+}
+
+/** Every sport in an open area is unlocked and has its first level, free. */
+export function openAreas(state: GameState) {
+  for (const sport of SPORTS) {
+    if (areaById(sport.area).expansion > state.expansions) continue;
+    state.sports[sport.id] = true;
+    const z = state.zones[zoneId(sport.id, 1)];
+    if (!z.owned) {
+      z.owned = true;
+      z.phase = 'idle';
+    }
+  }
 }
 
 /** Fill in anything missing (new sports, zones or facilities added since the save was made). */
@@ -61,6 +75,7 @@ export function ensureState(state: GameState): GameState {
   for (const s of SPORTS) state.sports[s.id] ??= false;
   for (const z of ZONES) state.zones[z.id] ??= newZone();
   for (const f of FACILITIES) state.facilities[f.id] ??= 0;
+  state.expansions ??= 0;
   return state;
 }
 
