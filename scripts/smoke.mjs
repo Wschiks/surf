@@ -5,7 +5,7 @@ import { spawn } from 'node:child_process';
 
 const port = 4179;
 const server = spawn('npx', ['vite', 'preview', '--port', String(port), '--strictPort'], { stdio: 'ignore' });
-const base = `http://localhost:${port}`;
+const base = `http://localhost:${port}/?debug=1`;
 const fail = [];
 const check = (name, ok, extra = '') => {
   console.log(ok ? 'ok  ' : 'FAIL', name, extra);

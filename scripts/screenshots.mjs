@@ -11,7 +11,7 @@ const opt = (name, def) => {
   const i = args.indexOf('--' + name);
   return i >= 0 ? args[i + 1] : def;
 };
-const base = opt('url', 'http://localhost:5173');
+const base = opt('url', 'http://localhost:5173').replace(/\/?$/, '/') + '?debug=1';
 const scriptPath = opt('script', null);
 
 fs.mkdirSync('screenshots', { recursive: true });

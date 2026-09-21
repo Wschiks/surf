@@ -1,5 +1,4 @@
 import { areaById } from '../config/areas';
-import { BALANCE } from '../config/balance';
 import { EXPANSIONS, expansionAfter, type ExpansionDef } from '../config/expansions';
 import { SPORTS, sportById, zoneById, zoneId, type SportDef, type SportId, type ZoneRef } from '../config/sports';
 import { fmt } from '../ui/format';
@@ -145,7 +144,8 @@ export function expansionStatus(state: GameState): ExpansionStatus | null {
 export function expand(state: GameState): boolean {
   const st = expansionStatus(state);
   if (!canExpand(state)) return false;
-  if (st) state.expansions += 1; // (with the test aid on, the wave can also be replayed after the last expansion)
+  if (!st) return false;
+  state.expansions += 1;
   state.coins = 0;
   state.quests = [];
   for (const id of Object.keys(state.zones)) state.zones[id] = newZone();
@@ -155,9 +155,9 @@ export function expand(state: GameState): boolean {
   return true;
 }
 
-/** Can the player expand right now? Always yes while the test aid is on. */
+/** Can the player expand right now? */
 export function canExpand(state: GameState): boolean {
-  return BALANCE.testAlwaysExpand || !!expansionStatus(state)?.canBuy;
+  return !!expansionStatus(state)?.canBuy;
 }
 
 export interface Goal {

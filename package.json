@@ -1,6 +1,6 @@
 {
   "name": "surf-tycoon",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "private": true,
   "type": "module",
   "scripts": {
@@ -13,7 +13,12 @@
     "phone:sync": "npm run build && cap sync",
     "phone:open:ios": "cap open ios",
     "phone:open:android": "cap open android",
-    "smoke": "node scripts/smoke.mjs"
+    "smoke": "node scripts/smoke.mjs",
+    "prebuild": "tsx scripts/build-legal-pages.ts",
+    "icons": "node scripts/make-icons.mjs",
+    "store:screenshots": "node scripts/store-screenshots.mjs",
+    "store:check": "tsx scripts/store-check.ts",
+    "phone:id": "node scripts/set-app-id.mjs && cap sync"
   },
   "dependencies": {
     "@capacitor/core": "^8.5.2",

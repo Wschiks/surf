@@ -1,11 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { BALANCE } from '../src/config/balance';
+import { ZONES } from '../src/config/sports';
 import { buyManager, buyStat, tapZone, tick } from '../src/core/economy';
 import { claimQuest, QUEST_SLOTS, questReward, questView, refreshQuests } from '../src/core/quests';
 import { newGame } from '../src/core/state';
 import { expand } from '../src/core/unlocks';
-
-BALANCE.testAlwaysExpand = false;
 
 function game() {
   const s = newGame(0);
@@ -130,13 +128,17 @@ describe('quests', () => {
   });
 
   it('start again after the beach was expanded (old quests would ask for zones that are gone)', () => {
-    BALANCE.testAlwaysExpand = true;
     const s = game();
     s.zones['wave-2'].owned = true;
     s.quests[0] = { kind: 'level', zone: 'wave-2', target: 25 };
-    expand(s);
+    // (the player has met the requirements for the first expansion)
+    for (const z of ZONES) if (s.sports[z.sport.id]) s.zones[z.id].owned = true;
+    s.sports.skimboarding = true;
+    for (const z of ZONES) if (z.sport.id === 'skimboarding') s.zones[z.id].owned = true;
+    s.reputation = 1e6;
+    s.coins = 1e15;
+    expect(expand(s)).toBe(true);
     refreshQuests(s);
-    BALANCE.testAlwaysExpand = false;
     expect(s.quests.length).toBeGreaterThanOrEqual(QUEST_SLOTS - 1);
     for (const q of s.quests) if (q.zone && q.kind !== 'unlock') expect(s.zones[q.zone].owned).toBe(true);
   });

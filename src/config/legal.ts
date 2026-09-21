@@ -10,6 +10,24 @@ export interface LegalSection {
 
 export const LEGAL_UPDATED = '21 September 2026';
 
+/**
+ * Who publishes the game. FILL THIS IN before a store release: the stores (and the law in many countries) want a
+ * real name and a working contact address, and they are printed in the Terms and the Privacy Policy.
+ * `npm run store:check` fails while `email` is empty.
+ */
+export const PUBLISHER = {
+  name: '',
+  email: '',
+  website: '',
+};
+
+/** The contact sentence used at the end of the legal texts. */
+export function contactText(): string {
+  const who = PUBLISHER.name || 'the publisher of the game';
+  if (!PUBLISHER.email) return `Contact ${who} with questions. (The contact address is added when the game is released.)`;
+  return `Contact ${who} at ${PUBLISHER.email}${PUBLISHER.website ? ` (${PUBLISHER.website})` : ''} with questions.`;
+}
+
 export const TERMS: LegalSection[] = [
   { title: '1. About this game', body: 'Surf Tycoon is a free idle game about running a water-sports spot. By playing it you agree to these terms. If you do not agree, please do not play.' },
   { title: '2. Free to play', body: 'The game is free. There are no in-app purchases, no ads and no real-money items. Coins, reputation and everything else in the game have no value outside the game and cannot be exchanged for money.' },
@@ -17,7 +35,7 @@ export const TERMS: LegalSection[] = [
   { title: '4. Fair play', body: 'You may play the game for your own enjoyment. Please do not copy, sell or pass off the game as your own, and do not try to break or misuse it. Options marked as test options in the menu are there to try the game out.' },
   { title: '5. No promises', body: 'The game is provided "as is". It is still being built, so things can change, get rebalanced or contain mistakes. We do not promise that it will always work or be available, and we are not responsible for any loss that comes from playing it, as far as the law allows.' },
   { title: '6. Changes', body: 'We may change the game or these terms. When we do, the date below changes. If you keep playing after a change, you accept the new terms.' },
-  { title: '7. Contact', body: 'Questions about these terms? Contact the publisher of the game. (Contact details are added when the game is released.)' },
+  { title: '7. Contact', get body() { return `Questions about these terms? ${contactText()}`; } },
 ];
 
 export const PRIVACY: LegalSection[] = [
@@ -27,7 +45,7 @@ export const PRIVACY: LegalSection[] = [
   { title: 'Third parties', body: 'There are no ads and no third-party services in the game. If you play in a web browser, the website that hosts the game can see normal technical information (like your IP address) in its own logs, as with any website.' },
   { title: 'Your choices', body: 'You can delete all data the game stores at any time with "Start over" in the menu, or by clearing the site or app data. A save code you copy is yours: keep it somewhere safe, because anyone with the code can load your progress.' },
   { title: 'Children', body: 'The game is suitable for all ages and does not ask for any personal information.' },
-  { title: 'Changes and contact', body: 'If this ever changes (for example when online features are added), this policy will be updated before it does. Contact the publisher of the game with questions. (Contact details are added when the game is released.)' },
+  { title: 'Changes and contact', get body() { return `If this ever changes (for example when online features are added), this policy will be updated before it does. ${contactText()}`; } },
 ];
 
 export const CREDITS = [

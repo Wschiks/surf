@@ -99,7 +99,8 @@ export class MapScene extends Phaser.Scene {
     const splash = document.getElementById('splash');
     splash?.classList.add('gone');
     setTimeout(() => splash?.remove(), 700);
-    (window as unknown as { __surf: unknown }).__surf = { scene: this, view: this.view, game: this.game_, ui: this.ui };
+    // The debug hook (used by the test and screenshot scripts) only exists in development or with ?debug in the address.
+    if (import.meta.env.DEV || location.search.includes('debug')) (window as unknown as { __surf: unknown }).__surf = { scene: this, view: this.view, game: this.game_, ui: this.ui };
   }
 
   /** Pixel ratio of the canvas compared to the page (the view works in page pixels). */

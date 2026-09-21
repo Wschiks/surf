@@ -7,7 +7,6 @@ import type { Game } from '../core/game';
 import type { OfflineReport } from '../core/economy';
 import { canExpand, expand, expansionNeededFor, expansionStatus, unlockZone, zoneUnlockStatus } from '../core/unlocks';
 import { EXPANSION_MULT } from '../config/expansions';
-import { BALANCE } from '../config/balance';
 import { claimQuest, questView, QUEST_SLOTS } from '../core/quests';
 import { COIN, fmt, fmtSeconds, fmtTime } from './format';
 import { icon, tile } from './icons';
@@ -414,12 +413,10 @@ export class GameUI {
     const s = this.game.state;
     const st = expansionStatus(s);
     if (!st) {
-      const test = BALANCE.testAlwaysExpand;
-      const html = `<h3>${icon('trophy')} Fully expanded</h3><p class="get">The whole map is open. All income is x${Math.pow(EXPANSION_MULT, s.expansions)}.</p>${test ? `<button class="go ready" data-xbtn>Replay the big wave (test)</button>` : ''}`;
+      const html = `<h3>${icon('trophy')} Fully expanded</h3><p class="get">The whole map is open. All income is x${Math.pow(EXPANSION_MULT, s.expansions)}.</p>`;
       if (card.dataset.h !== html) {
         card.innerHTML = html;
         card.dataset.h = html;
-        card.querySelector('[data-xbtn]')?.addEventListener('click', () => this.startExpansion());
       }
       return;
     }
@@ -443,7 +440,7 @@ export class GameUI {
     const can = canExpand(s);
     btn.disabled = !can;
     btn.className = 'go' + (can ? ' ready' : '');
-    setHtml(btn, can && !st.canBuy ? 'Expand (test: no requirements)' : `Expand · ${COIN} ${fmt(st.coins)}`);
+    setHtml(btn, `Expand · ${COIN} ${fmt(st.coins)}`);
   }
 
   /** Buy the expansion: the big wave sweeps over the screen and, while everything is hidden, the beach starts over. */

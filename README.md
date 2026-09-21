@@ -60,8 +60,19 @@ npm run phone:open:ios      # open in Xcode (needs a Mac with Xcode)
 npm run phone:open:android  # open in Android Studio
 ```
 
-The app id in `capacitor.config.ts` is a placeholder (`com.example.surftycoon`); change it before you make a store build.
+The app id in `capacitor.config.ts` (`com.wschiks.surftycoon`) is derived from the GitHub name: change it before the first store upload, then run `npm run phone:id`.
 Nothing has been published and no store accounts were created.
+
+### App stores
+
+See [docs/STORE-READINESS.md](docs/STORE-READINESS.md) for what is ready and the steps only you can do, and [store/listing.md](store/listing.md) for the store texts and questionnaire answers. Useful commands:
+
+```bash
+npm run store:check        # what is ready, what is not
+npm run icons              # draw the app icon and splash screens again
+npm run store:screenshots  # make the store screenshots (dev server must run)
+npm run phone:id           # copy the app id from capacitor.config.ts into the native projects
+```
 
 ## Design documents
 

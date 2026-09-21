@@ -40,3 +40,6 @@ Nothing was blocked.
 
 ## Second round (review changes)
 Done: 15 x 8 map with the beach bottom left, start with surfers and skimboarders, beach expansions (x3 income, start over, big wave, next area opens) replacing the sport chain, per-sport motion, coloured buttons, 100B coins test button. Tests updated (58 passing). Old screenshots (`final-`, `redesign-`) show earlier designs; `redesign2-` shows the new one.
+
+## App store readiness
+Done: cheat button removed, version 1.0.0, icons/splash, native settings, privacy manifest, legal pages, store texts and screenshots, `npm run store:check`. To do (owner): publisher contact details, app id, accounts, hosting the privacy page, signing and builds, real-device tests. See docs/STORE-READINESS.md.

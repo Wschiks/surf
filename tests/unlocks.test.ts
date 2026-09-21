@@ -1,13 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { BALANCE } from '../src/config/balance';
 import { EXPANSIONS, EXPANSION_MULT } from '../src/config/expansions';
 import { SPORTS, ZONES, zoneById } from '../src/config/sports';
 import { buyStat, multipliers, upgradeCount, zoneStats } from '../src/core/economy';
 import { expansionNeededFor, sportStatus, unlockSport } from '../src/core/unlocks';
 import { newGame, type GameState } from '../src/core/state';
-import { canExpand, expand, expansionStatus, levelStatus, nextGoal, unlockLevel, zoneUnlockStatus } from '../src/core/unlocks';
-
-BALANCE.testAlwaysExpand = false; // these tests check the real expansion rules
+import { expand, expansionStatus, levelStatus, nextGoal, unlockLevel, zoneUnlockStatus } from '../src/core/unlocks';
 
 const fresh = () => newGame(0);
 
@@ -102,19 +99,6 @@ describe('levels of a sport', () => {
 });
 
 describe('beach expansions', () => {
-  it('the test aid lets the player expand at any time', () => {
-    BALANCE.testAlwaysExpand = true;
-    const s = fresh();
-    expect(canExpand(s)).toBe(true);
-    expect(expand(s)).toBe(true);
-    expect(s.expansions).toBe(1);
-    expect(expand(s)).toBe(true);
-    expect(expand(s)).toBe(true); // the wave can be replayed after the last expansion
-    expect(s.expansions).toBe(2);
-    BALANCE.testAlwaysExpand = false;
-    expect(canExpand(fresh())).toBe(false);
-  });
-
   it('there are two: the Sea and then the Ocean', () => {
     expect(EXPANSIONS.map((e) => e.opens)).toEqual(['sea', 'ocean']);
     expect(EXPANSION_MULT).toBe(3);

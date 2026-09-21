@@ -51,11 +51,6 @@ export function nextMilestone(level: number): { level: number; mult: number } {
 }
 
 export const BALANCE = {
-  /**
-   * TEST AID: while true the Expand button always works (no requirements, no coins), so the big wave can be watched.
-   * Set to false for the real rules. Tests and the balance bot turn it off themselves.
-   */
-  testAlwaysExpand: false,
   /** Every tier step multiplies the income of a zone by this factor. */
   tierScale: 5,
   /** Every tier step multiplies costs by this factor. Bigger than tierScale, so later tiers take longer to reach. */

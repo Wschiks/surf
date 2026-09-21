@@ -1,4 +1,4 @@
-package com.example.surftycoon;
+package com.wschiks.surftycoon;
 
 import com.getcapacitor.BridgeActivity;
 

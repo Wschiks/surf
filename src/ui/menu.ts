@@ -113,10 +113,6 @@ export class Menu {
         ${this.row('heart', '#ff5c8a', 'About and credits', `Version ${pkg.version}`, 'data-go="about"')}
       </div>
 
-      <h4>Testing</h4>
-      <div class="set-group">
-        ${this.row('coins', '#ff9f43', 'Add 100B coins', 'Test option to try the late game', 'data-cheat', icon('plus'))}
-      </div>
 
       <button class="danger" data-reset>Start over (erases your save)</button>
       <button class="go big" data-close2>Back to the beach</button>`;
@@ -126,13 +122,6 @@ export class Menu {
       setMuted(!isMuted());
       sound.tap();
       this.main();
-    });
-    this.root.querySelector('[data-cheat]')!.addEventListener('click', () => {
-      this.ctx.game.state.coins += 100e9;
-      this.ctx.game.save();
-      this.ctx.refreshTop();
-      sound.coin();
-      this.ctx.toast('Added 100B coins');
     });
     this.root.querySelector('[data-reset]')!.addEventListener('click', () => this.ctx.askReset());
   }

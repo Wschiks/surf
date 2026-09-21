@@ -1,4 +1,4 @@
-import { BALANCE, STAT_IDS, type StatId } from '../config/balance';
+import { STAT_IDS, type StatId } from '../config/balance';
 import { FACILITIES } from '../config/facilities';
 import { SPORTS, ZONES, type ZoneRef } from '../config/sports';
 import { buyFacility, buyManager, buyStat, collectAll, facilityCost, managerCost, multipliers, planBuy, statCost, tick, zoneStats } from './economy';
@@ -109,7 +109,6 @@ function allMaxed(state: GameState): boolean {
 }
 
 export function simulate(opts: { maxSeconds: number; step?: number; state?: GameState } = { maxSeconds: 3600 * 24 }): SimResult {
-  BALANCE.testAlwaysExpand = false; // the bot plays by the real rules
   const state = opts.state ?? newGame(0);
   const step = opts.step ?? 1;
   const events: SimEvent[] = [];

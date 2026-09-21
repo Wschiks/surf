@@ -1,0 +1,14 @@
+{
+  "name": "Surf Tycoon",
+  "short_name": "Surf Tycoon",
+  "description": "An idle game about running a water-sports spot.",
+  "start_url": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b5d8a",
+  "theme_color": "#0b5d8a",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}
