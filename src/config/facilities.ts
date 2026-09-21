@@ -18,10 +18,10 @@ export interface FacilityDef {
 }
 
 export const FACILITIES: FacilityDef[] = [
-  { id: 'shop', name: 'Rental shop', icon: '🏄', blurb: 'Board and wetsuit rental. Every guest pays more.', effect: 'coins', perLevel: 0.1, max: 8, baseCost: 250, growth: 4.2, at: { x: 1.0, y: 0.55 } },
-  { id: 'cafe', name: 'Beach café', icon: '☕', blurb: 'Guests stay for a drink and spend more.', effect: 'coins', perLevel: 0.1, max: 8, baseCost: 600, growth: 4.6, at: { x: 3.0, y: 0.55 } },
-  { id: 'showers', name: 'Showers', icon: '🚿', blurb: 'Quicker changeovers, so sessions finish faster.', effect: 'speed', perLevel: 0.06, max: 8, baseCost: 1200, growth: 4.4, at: { x: 5.0, y: 0.55 } },
-  { id: 'lifeguard', name: 'Lifeguard tower', icon: '🛟', blurb: 'Safe beaches make happy guests: more reputation.', effect: 'reputation', perLevel: 0.15, max: 8, baseCost: 900, growth: 4.5, at: { x: 7.0, y: 0.55 } },
+  { id: 'shop', name: 'Rental shop', icon: 'shop', blurb: 'Board and wetsuit rental. Every guest pays more.', effect: 'coins', perLevel: 0.1, max: 8, baseCost: 250, growth: 4.2, at: { x: 1.0, y: 0.55 } },
+  { id: 'cafe', name: 'Beach café', icon: 'cafe', blurb: 'Guests stay for a drink and spend more.', effect: 'coins', perLevel: 0.1, max: 8, baseCost: 600, growth: 4.6, at: { x: 3.0, y: 0.55 } },
+  { id: 'showers', name: 'Showers', icon: 'shower', blurb: 'Quicker changeovers, so sessions finish faster.', effect: 'speed', perLevel: 0.06, max: 8, baseCost: 1200, growth: 4.4, at: { x: 5.0, y: 0.55 } },
+  { id: 'lifeguard', name: 'Lifeguard tower', icon: 'lifeguard', blurb: 'Safe beaches make happy guests: more reputation.', effect: 'reputation', perLevel: 0.15, max: 8, baseCost: 900, growth: 4.5, at: { x: 7.0, y: 0.55 } },
 ];
 
 export function facilityById(id: string): FacilityDef {

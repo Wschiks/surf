@@ -1,0 +1,21 @@
+export default async ({ page, shot, base }) => {
+  const ev = (fn, a) => page.evaluate(fn, a);
+  await page.goto(base);
+  await page.waitForTimeout(1500);
+  await page.click('[data-ref=gear]', { force: true });
+  await page.waitForTimeout(500);
+  await shot('menu');
+  await page.click('[data-cheat]', { force: true });
+  await page.waitForTimeout(500);
+  console.log('coins after cheat', await ev(() => window.__surf.game.state.coins));
+  await page.click('[data-ok]', { force: true });
+  await ev(() => window.__surf.ui.openSports());
+  await page.waitForTimeout(900);
+  await shot('sports');
+  await ev(() => window.__surf.ui.openZone('wave-2'));
+  await page.waitForTimeout(1200);
+  await shot('locked');
+  await ev(() => window.__surf.ui.openBeach());
+  await page.waitForTimeout(1000);
+  await shot('beach');
+};

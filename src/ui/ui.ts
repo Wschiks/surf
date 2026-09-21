@@ -7,6 +7,7 @@ import type { OfflineReport } from '../core/economy';
 import { resetSave } from '../core/save';
 import { nextGoal, previousSport, sportStatus, unlockZone, zoneUnlockStatus } from '../core/unlocks';
 import { COIN, fmt, fmtSeconds, fmtTime } from './format';
+import { icon, tile } from './icons';
 import { isMuted, setMuted, sound } from './sound';
 
 export interface UICallbacks {
@@ -19,6 +20,10 @@ export interface UICallbacks {
   onCollected: (zoneId: string | null, coins: number) => void;
   /** A level or a whole sport was unlocked. */
   onUnlocked: (zoneId: string, kind: 'sport' | 'level') => void;
+}
+
+function soundLabel(): string {
+  return isMuted() ? `${icon('mute')} Sound is off` : `${icon('sound')} Sound is on`;
 }
 
 /** Set the HTML of an element only when it changed, so a button is not rebuilt while it is being pressed. */
@@ -52,14 +57,14 @@ export class GameUI {
     this.root.innerHTML = `
       <div class="hud">
         <div class="pill coins"><span class="ico">${COIN}</span><b data-ref="coins">0</b><small data-ref="rate">+0/s</small></div>
-        <div class="pill rep" title="Reputation"><span class="ico">⭐</span><b data-ref="rep">0</b></div>
-        <button class="pill gear" data-ref="gear" aria-label="Menu">⚙️</button>
+        <div class="pill rep" title="Reputation"><span class="ico">${icon('star')}</span><b data-ref="rep">0</b></div>
+        <button class="pill gear" data-ref="gear" aria-label="Menu">${icon('gear')}</button>
       </div>
-      <button class="goal" data-ref="goal" hidden><span class="goal-t"></span><i class="goal-bar"><b></b></i></button>
+      <button class="goal" data-ref="goal" hidden><span class="goal-ic">${icon('flag')}</span><span class="goal-body"><span class="goal-t"></span><i class="goal-bar"><b></b></i></span></button>
       <div class="dock">
-        <button class="dock-btn" data-ref="beach"><span>🏖️</span>Beach</button>
-        <button class="dock-btn" data-ref="sports"><span>🏄</span>Sports</button>
-        <button class="dock-btn collect" data-ref="collect"><span>💰</span>Collect<i data-ref="waiting">0</i></button>
+        <button class="dock-btn" data-ref="beach">${icon('beach')}<em>Beach</em></button>
+        <button class="dock-btn" data-ref="sports">${icon('sports')}<em>Sports</em></button>
+        <button class="dock-btn collect" data-ref="collect">${icon('coins')}<em>Collect</em><i data-ref="waiting">0</i></button>
       </div>
       <div class="sheet" data-ref="sheet"></div>
       <div class="toasts" data-ref="toasts"></div>
@@ -139,11 +144,11 @@ export class GameUI {
     const sub = owned || need?.kind !== 'sport' ? `${ref.sport.name} · Level ${ref.level}` : 'New sport to unlock';
     const head = `
       <div class="sheet-head">
-        <div class="sheet-icon" style="background:${ref.sport.color}">${owned ? ref.sport.icon : '🔒'}</div>
+        ${tile(owned ? ref.sport.icon : 'lock', owned ? ref.sport.color : '#7d92a3', 48)}
         <div class="sheet-title"><h2>${title}</h2><p>${sub}</p></div>
-        <button class="x" data-close aria-label="Close">✕</button>
+        <button class="x" data-close aria-label="Close">${icon('close')}</button>
       </div>
-      <div class="facts"><span>👤 ${ref.def.guests}</span><span>🌊 ${ref.def.conditions}</span>${owned ? `<span>🎒 Comes with: ${ref.def.starterBuys.join(', ').toLowerCase()}</span>` : ''}</div>`;
+      <div class="facts"><div><b>Guests</b><span>${ref.def.guests}</span></div><div><b>Water</b><span>${ref.def.conditions}</span></div>${owned ? `<div><b>Includes</b><span>${ref.def.starterBuys.join(', ')}</span></div>` : ''}</div>`;
     this.sheetEl.innerHTML = head + (owned ? this.ownedBody(id) : this.lockedBody(id));
     this.sheetEl.querySelector('[data-close]')!.addEventListener('click', () => this.closeSheet());
     if (!owned) {
@@ -187,7 +192,7 @@ export class GameUI {
     const rows = STAT_IDS.map(
       (s) => `
       <div class="up" data-stat="${s}">
-        <div class="up-ico">${STATS[s].icon}</div>
+        <div class="up-ico">${icon(STATS[s].icon)}</div>
         <div class="up-txt"><b>${terms[s]}</b><small data-eff></small></div>
         <button class="buy" data-buy="${s}"></button>
       </div>`,
@@ -203,7 +208,7 @@ export class GameUI {
         <div class="session"><div class="bar"><i data-bar></i></div><button class="go" data-go></button></div>
         <div class="ups">${rows}</div>
         <div class="up mgr" data-mgr>
-          <div class="up-ico">🧑‍🏫</div>
+          <div class="up-ico">${icon('manager')}</div>
           <div class="up-txt"><b>${terms.manager}</b><small>${terms.managerBlurb}</small></div>
           <button class="buy" data-buy="manager"></button>
         </div>
@@ -237,7 +242,7 @@ export class GameUI {
       const li = this.sheetEl.querySelector<HTMLElement>(`[data-req="${i}"]`);
       if (!li) return;
       li.classList.toggle('met', r.met);
-      li.querySelector('.tick')!.textContent = r.met ? '✓' : '○';
+      setHtml(li.querySelector('.tick') as HTMLElement, r.met ? icon('check') : '');
       li.querySelector('em')!.textContent = r.progress;
     });
     const btn = this.sheetEl.querySelector<HTMLButtonElement>('[data-unlock]')!;
@@ -254,16 +259,16 @@ export class GameUI {
         const pips = sp.levels.map((_, i) => `<button class="pip" data-zone="${zoneId(sp.id, i + 1)}" aria-label="Level ${i + 1}">${i + 1}</button>`).join('');
         return `
         <div class="sport-row" data-sport="${sp.id}">
-          <div class="sport-ico" style="background:${sp.color}">${sp.icon}</div>
+          ${tile(sp.icon, sp.color, 46)}
           <div class="sport-mid"><b>${sp.name}</b><small data-info></small><div class="pips">${pips}</div></div>
         </div>`;
       })
       .join('');
     this.sheetEl.innerHTML = `
       <div class="sheet-head">
-        <div class="sheet-icon" style="background:#5fd0e6">🏄</div>
+        ${tile('sports', '#1497b5', 48)}
         <div class="sheet-title"><h2>Water sports</h2><p>Tap a level to go there</p></div>
-        <button class="x" data-close aria-label="Close">✕</button>
+        <button class="x" data-close aria-label="Close">${icon('close')}</button>
       </div>
       <div class="sports">${rows}</div>`;
     this.sheetEl.querySelector('[data-close]')!.addEventListener('click', () => this.closeSheet());
@@ -282,7 +287,8 @@ export class GameUI {
       else {
         const st = sportStatus(s, sp);
         const prev = previousSport(sp);
-        info = `Locked · needs ${prev ? `Level 2 of ${prev.name}` : ''} ${st.requirements.length ? '⭐ ' + Math.floor(s.reputation) + ' / ' + (sp.unlock?.reputation ?? 0) : ''}`;
+        info = `Locked · needs ${prev ? `Level 2 of ${prev.name} and ` : ''}reputation ${Math.floor(s.reputation)} / ${sp.unlock?.reputation ?? 0}`;
+        void st;
       }
       row.classList.toggle('locked', !unlocked);
       row.querySelector('[data-info]')!.textContent = info;
@@ -294,16 +300,16 @@ export class GameUI {
     const rows = FACILITIES.map(
       (f) => `
       <div class="up" data-fac="${f.id}">
-        <div class="up-ico">${f.icon}</div>
+        <div class="up-ico">${icon(f.icon)}</div>
         <div class="up-txt"><b>${f.name} <em data-lvl></em></b><small>${f.blurb}</small><small data-eff class="eff"></small></div>
         <button class="buy" data-buyfac="${f.id}"></button>
       </div>`,
     ).join('');
     this.sheetEl.innerHTML = `
       <div class="sheet-head">
-        <div class="sheet-icon" style="background:#f2c46b">🏖️</div>
+        ${tile('beach', '#e9a13a', 48)}
         <div class="sheet-title"><h2>Beach facilities</h2><p>Shared buildings that boost every sport</p></div>
-        <button class="x" data-close aria-label="Close">✕</button>
+        <button class="x" data-close aria-label="Close">${icon('close')}</button>
       </div>
       <div class="ups">${rows}</div>`;
     this.sheetEl.querySelector('[data-close]')!.addEventListener('click', () => this.closeSheet());
@@ -357,7 +363,7 @@ export class GameUI {
     if (z.phase === 'running') bar.style.width = Math.min(100, (z.elapsed / st.duration) * 100) + '%';
     else bar.style.width = z.phase === 'ready' ? '100%' : '0%';
     if (z.manager) {
-      setHtml(go, 'Running by itself ✓');
+      setHtml(go, `${icon('check')} Runs by itself`);
       go.disabled = true;
       go.className = 'go auto';
     } else if (z.phase === 'ready') {
@@ -365,7 +371,7 @@ export class GameUI {
       go.disabled = false;
       go.className = 'go ready';
     } else if (z.phase === 'idle') {
-      setHtml(go, '▶ Start a session');
+      setHtml(go, `${icon('play')} Start a session`);
       go.disabled = false;
       go.className = 'go';
     } else {
@@ -389,7 +395,7 @@ export class GameUI {
     if (z.manager) {
       mgrBtn.classList.add('maxed');
       (mgrBtn as HTMLButtonElement).disabled = true;
-      setHtml(mgrBtn, 'Hired ✓');
+      setHtml(mgrBtn, `${icon('check')} Hired`);
     } else {
       this.setBuy(mgrBtn, managerCost(ref), 'Hire ');
     }
@@ -477,7 +483,7 @@ export class GameUI {
   showOffline(rep: OfflineReport) {
     this.game.offlineReport = null;
     const lines = [`You were away for <b>${fmtTime(rep.away)}</b>.`];
-    if (rep.coins > 0) lines.push(`Your managers earned <b>${COIN} ${fmt(rep.coins)}</b>${rep.reputation >= 1 ? ` and <b>⭐ ${fmt(Math.floor(rep.reputation))}</b>` : ''}.`);
+    if (rep.coins > 0) lines.push(`Your managers earned <b>${COIN} ${fmt(rep.coins)}</b>${rep.reputation >= 1 ? ` and <b>${icon('star')} ${fmt(Math.floor(rep.reputation))}</b>` : ''}.`);
     if (rep.capped) lines.push(`<small>Offline earnings stop after ${fmtTime(rep.seconds)}.</small>`);
     if (rep.waiting > 0) lines.push(`${rep.waiting} zone${rep.waiting > 1 ? 's are' : ' is'} waiting for you. Hire a manager to keep them running while you are away.`);
     const m = this.modal(`<h2>Welcome back!</h2><p>${lines.join('</p><p>')}</p><button class="go big" data-ok>Nice</button>`);
@@ -492,19 +498,27 @@ export class GameUI {
         <li>Tap a zone to start a session. When it is done, tap it again to collect the coins.</li>
         <li>Hire a manager to keep a zone running by itself, even while the game is closed.</li>
         <li>Swipe to move around, pinch to zoom. The small map in the corner jumps to an area.</li>
-        <li>New levels and sports need coins and reputation ⭐. The goal bar shows what is next.</li>
+        <li>New levels and sports need coins and reputation. The goal bar shows what is next.</li>
       </ul>
       <p>Zones unlocked: <b>${ZONES.filter((z) => s.zones[z.id].owned).length} / ${ZONES.length}</b> · Managers hired: <b>${ZONES.filter((z) => s.zones[z.id].manager).length}</b></p>
       <p>Coins earned in total: <b>${COIN} ${fmt(s.totalCoins)}</b></p>
       <p>Playing since <b>${new Date(s.startedAt).toLocaleDateString()}</b></p>
-      <button class="danger soft" data-sound>${isMuted() ? '🔇 Sound is off' : '🔊 Sound is on'}</button>
+      <button class="btn soft" data-sound>${soundLabel()}</button>
+      <button class="btn soft" data-cheat>${icon('coins')} Add 100B coins (test)</button>
       <button class="go big" data-ok>Back to the beach</button>
       <button class="danger" data-reset>Start over (erases your save)</button>`);
     m.querySelector('[data-ok]')!.addEventListener('click', () => this.closeModal());
     m.querySelector('[data-sound]')!.addEventListener('click', (e) => {
       setMuted(!isMuted());
-      (e.currentTarget as HTMLElement).textContent = isMuted() ? '🔇 Sound is off' : '🔊 Sound is on';
+      (e.currentTarget as HTMLElement).innerHTML = soundLabel();
       sound.tap();
+    });
+    m.querySelector('[data-cheat]')!.addEventListener('click', () => {
+      this.game.state.coins += 100e9;
+      this.game.save();
+      this.refreshTop();
+      sound.coin();
+      this.toast('Added 100B coins');
     });
     m.querySelector('[data-reset]')!.addEventListener('click', () => {
       if (confirm('Erase your progress and start over?')) {

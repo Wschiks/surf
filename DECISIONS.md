@@ -86,3 +86,11 @@ Every choice made while building, and why. The concept document (`docs/concept.m
 8. Prestige system? Not built, as instructed.
 9. Build route? Web (Phaser 4 + TypeScript + Vite), phone-first but it also plays in a desktop browser (shown as a 1:2 column), with a Capacitor wrapper for phones.
 10. Where does the art come from? Simple vector art drawn in code, no downloads.
+
+## Simpler look (after review feedback)
+- Feedback: too much detail, tags floating over the map, riders did not look like surfers, emoji and default-looking buttons.
+- Riders are now flat top-down pictures (board or boat with a rider on it, seen from above like the map), rotated to the direction they move. Sails, kites and wings are simple flat shapes.
+- The text tags on the map are gone. Every zone has one small round badge (sport icon, level number, ring for the session progress). Waiting zones show a play or coin badge; tapping it starts or collects. Names only appear in the sheet. Area names only show when zoomed far out; the kite launch area and jetty plots only show a small lock badge.
+- All icons are custom inline SVG (`src/ui/icons.ts`): sports, upgrades, beach buildings, buttons, close, lock, star, gear. No emoji anywhere in the game. Buttons use one flat, chunky style: yellow for buying, teal for actions, sand for secondary.
+- Less noise in the water and sand (fewer sparkles, fainter waves, no dashed zone borders, fewer corals).
+- Menu (gear): new "Add 100B coins (test)" button for trying the late game. It only adds to the coin balance.

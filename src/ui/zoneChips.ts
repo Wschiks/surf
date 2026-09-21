@@ -3,7 +3,8 @@ import { ZONES, type ZoneRef } from '../config/sports';
 import { zoneStats } from '../core/economy';
 import type { GameState } from '../core/state';
 import type { LabelLayer } from './labels';
-import { COIN, fmt } from './format';
+import { fmt } from './format';
+import { icon } from './icons';
 
 export interface ChipHandlers {
   onOpen: (id: string) => void;
@@ -11,7 +12,7 @@ export interface ChipHandlers {
   onQuick: (id: string) => void;
 }
 
-/** The little tag that floats over every zone on the map. */
+/** A small round badge on every zone: the sport, the level, and what the zone is doing. No text floats over the map. */
 export class ZoneChips {
   constructor(
     private labels: LabelLayer,
@@ -25,32 +26,37 @@ export class ZoneChips {
   private set(ref: ZoneRef, state: GameState, ppu: number, selected: boolean) {
     const z = state.zones[ref.id];
     const c = rectCenter(toWorld(ref.def.rect));
-    const compact = ppu < 120;
-    const sportUnlocked = state.sports[ref.sport.id];
+    const small = ppu < 120;
     let cls = 'zone-chip';
-    let html: string;
     let quick = false;
+    let glyph = ref.sport.icon;
+    let color = ref.sport.color;
+    let ring = 0;
+    let amount = '';
     if (!z.owned) {
       cls += ' locked';
-      html = compact ? `<span class="ci">🔒</span><span class="cl">${ref.level}</span>` : `<span class="ci">🔒</span><span class="cn">${sportUnlocked || ref.level === 1 ? ref.def.name : ref.sport.name}</span><small>${ref.level === 1 && !sportUnlocked ? 'Locked sport' : 'Level ' + ref.level}</small>`;
+      glyph = 'lock';
+      color = '#7d92a3';
+    } else if (!z.manager && z.phase !== 'running') {
+      quick = true;
+      if (z.phase === 'ready') {
+        cls += ' ready';
+        glyph = 'coins';
+        color = '#ffc233';
+        amount = fmt(z.pending);
+      } else {
+        cls += ' idle';
+        glyph = 'play';
+        color = '#ff6a3d';
+      }
     } else {
       const st = zoneStats(state, ref, z);
-      const pct = z.phase === 'running' ? Math.min(100, Math.floor((z.elapsed / st.duration) * 20) * 5) : z.phase === 'ready' ? 100 : 0;
-      if (!z.manager && z.phase !== 'running') {
-        quick = true;
-        cls += z.phase === 'ready' ? ' ready' : ' idle';
-        const msg = z.phase === 'ready' ? `Collect ${COIN} ${fmt(z.pending)}` : '▶ Tap to start';
-        html = compact ? `<span class="ci">${z.phase === 'ready' ? '💰' : '▶'}</span>` : `<span class="cn">${ref.def.name}</span><small class="act">${msg}</small>`;
-      } else {
-        cls += z.manager ? ' auto' : ' run';
-        html = compact
-          ? `<span class="ci">${ref.sport.icon}</span><span class="cl">${ref.level}</span>`
-          : `<span class="cn">${ref.def.name}</span><small>${z.manager ? '🧑‍🏫 ' : ''}${COIN} ${fmt(st.perSecond)}/s</small><i class="pb"><b style="width:${pct}%"></b></i>`;
-      }
+      ring = z.phase === 'running' ? Math.min(1, Math.floor((z.elapsed / st.duration) * 20) / 20) : 1;
+      cls += z.manager ? ' auto' : ' run';
     }
-    if (compact) cls += ' compact';
+    if (small) cls += ' small';
     if (selected) cls += ' selected';
-    html = `<div class="chip-in">${html}</div>`;
+    const html = `<div class="mk" style="--c:${color};--p:${ring}"><i class="mk-ring"></i><span class="mk-ic">${icon(glyph)}</span>${small ? '' : `<b class="mk-lv">${ref.level}</b>`}${amount && !small ? `<b class="mk-amt">${amount}</b>` : ''}</div>`;
     this.labels.set({
       id: 'zone-' + ref.id,
       x: c.x,

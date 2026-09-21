@@ -136,7 +136,7 @@ export function bakeSandTile(scene: Phaser.Scene) {
     const r = rng(11);
     ctx.fillStyle = '#f3deaa';
     ctx.fillRect(0, 0, w, h);
-    for (let i = 0; i < 700; i++) {
+    for (let i = 0; i < 160; i++) {
       const x = r() * w,
         y = r() * h;
       ctx.fillStyle = r() > 0.5 ? 'rgba(200,160,90,0.22)' : 'rgba(255,250,225,0.35)';
@@ -160,7 +160,7 @@ export function bakeSparkleTile(scene: Phaser.Scene) {
   bake(scene, 'tile-sparkle', 240, 240, 1.5, (ctx, w, h) => {
     const r = rng(23);
     ctx.lineCap = 'round';
-    for (let i = 0; i < 46; i++) {
+    for (let i = 0; i < 18; i++) {
       const x = r() * w,
         y = r() * h,
         len = 8 + r() * 18;
@@ -328,7 +328,7 @@ export function bakeReef(scene: Phaser.Scene) {
 
     // coral heads
     const colors = ['#ff6f91', '#ff9f45', '#b36bff', '#ffd23f', '#5ee27a', '#ff5a5a', '#4dd0ff'];
-    for (let i = 0; i < 46; i++) {
+    for (let i = 0; i < 24; i++) {
       const x = 22 + r() * (w - 44);
       const y = 14 + r() * (h * 0.52);
       const c = colors[Math.floor(r() * colors.length)];
@@ -696,176 +696,148 @@ export function bakeWaveTile(scene: Phaser.Scene, look: WaterLook) {
 }
 
 // ---------------------------------------------------------------- guests
+// Guests are seen from above, like the map: a board (or boat) with a rider on it, nose pointing up.
+// Flat shapes only, so they read clearly even when small.
 
 const SKIN = ['#f2c9a0', '#d9a06f', '#a86b43', '#7a4a2c'];
 const HAIR = ['#3b2a1a', '#e2b04a', '#1c1c1c', '#8a3b1a', '#c9c9c9'];
 
-/** Guests are small upright figures. 26 x 40 world px, feet at the bottom centre. */
-export const GUEST_SIZE = { w: 30, h: 44 };
+/** Size (world px) of each guest picture and where the rider stands in it (fractions). */
+export const GUEST_LOOK: Record<GuestKind, { w: number; h: number; ox: number; oy: number }> = {
+  surfer: { w: 14, h: 34, ox: 0.5, oy: 0.55 },
+  skimmer: { w: 18, h: 22, ox: 0.5, oy: 0.5 },
+  windsurfer: { w: 36, h: 40, ox: 0.45, oy: 0.52 },
+  kiter: { w: 30, h: 80, ox: 0.5, oy: 0.78 },
+  foiler: { w: 34, h: 40, ox: 0.5, oy: 0.6 },
+  sailor: { w: 28, h: 44, ox: 0.5, oy: 0.5 },
+  walker: { w: 14, h: 14, ox: 0.5, oy: 0.5 },
+};
+
 export function guestTexture(scene: Phaser.Scene, kind: GuestKind, color: string, idx: number): string {
   const key = `guest-${kind}-${color}-${idx % 4}`;
   if (scene.textures.exists(key)) return key;
-  bake(scene, key, GUEST_SIZE.w, GUEST_SIZE.h, 3, (ctx, w, h) => {
-    const cx = w / 2;
+  const look = GUEST_LOOK[kind];
+  bake(scene, key, look.w, look.h, 4, (ctx, w, h) => {
+    const cx = w * look.ox;
+    const cy = h * look.oy;
     const skin = SKIN[idx % SKIN.length];
     const hair = HAIR[(idx * 3) % HAIR.length];
-    const foot = h - 5;
-    // shadow / water ring
-    ctx.fillStyle = 'rgba(0,40,70,0.25)';
-    ctx.beginPath();
-    ctx.ellipse(cx, foot + 1, 12, 3.2, 0, 0, Math.PI * 2);
-    ctx.fill();
-
-    const person = (px: number, py: number, s: number, vest: string, wet = '#22303a') => {
+    const rider = (x: number, y: number, s: number, shirt: string) => {
       ctx.save();
-      ctx.translate(px, py);
+      ctx.translate(x, y);
       ctx.scale(s, s);
-      ctx.fillStyle = wet; // legs
-      ctx.fillRect(-3.4, -9, 2.8, 9);
-      ctx.fillRect(0.6, -9, 2.8, 9);
-      ctx.fillStyle = vest; // torso
-      ctx.beginPath();
-      ctx.roundRect(-5, -20, 10, 12, 2.4);
-      ctx.fill();
-      ctx.fillStyle = 'rgba(255,255,255,0.35)';
-      ctx.fillRect(-5, -14, 10, 1.6);
       ctx.fillStyle = skin; // arms
-      ctx.fillRect(-7.4, -19, 2.4, 8);
-      ctx.fillRect(5, -19, 2.4, 8);
-      ctx.beginPath(); // head
-      ctx.arc(0, -24, 4.4, 0, Math.PI * 2);
+      ctx.beginPath();
+      ctx.ellipse(-6.4, 0.4, 1.7, 3, 0, 0, Math.PI * 2);
+      ctx.ellipse(6.4, 0.4, 1.7, 3, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = shirt; // shoulders
+      ctx.beginPath();
+      ctx.ellipse(0, 0.6, 6, 3.6, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = skin; // head
+      ctx.beginPath();
+      ctx.arc(0, -0.4, 3.1, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = hair;
       ctx.beginPath();
-      ctx.arc(0, -25.2, 4.5, Math.PI, Math.PI * 2);
+      ctx.arc(0, -0.4, 3.15, Math.PI * 0.9, Math.PI * 2.1);
       ctx.fill();
       ctx.restore();
     };
-
+    const board = (x: number, y: number, rx: number, ry: number, fill = '#fdfdfd') => {
+      ctx.fillStyle = 'rgba(0,50,80,0.18)';
+      ctx.beginPath();
+      ctx.ellipse(x + 0.8, y + 1, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = fill;
+      ctx.beginPath();
+      ctx.ellipse(x, y, rx, ry, 0, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 1.3;
+      ctx.beginPath();
+      ctx.moveTo(x, y - ry * 0.85);
+      ctx.lineTo(x, y + ry * 0.85);
+      ctx.stroke();
+    };
     switch (kind) {
-      case 'walker': {
-        person(cx, foot - 1, 1, color, '#3a4a5a');
+      case 'surfer':
+        board(cx, h * 0.5, 5.6, 15.5);
+        rider(cx, cy, 0.62, color);
         break;
-      }
-      case 'surfer': {
-        ctx.fillStyle = '#fdfdfd';
-        ctx.beginPath();
-        ctx.ellipse(cx, foot, 12.5, 2.8, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.fillStyle = color;
-        ctx.fillRect(cx - 10, foot - 0.6, 20, 1.2);
-        person(cx, foot - 1, 1, color);
+      case 'skimmer':
+        board(cx, cy, 7.5, 9.2, '#f3cf94');
+        rider(cx, cy, 0.55, color);
         break;
-      }
-      case 'skimmer': {
-        ctx.fillStyle = '#ffd9a1';
-        ctx.beginPath();
-        ctx.ellipse(cx, foot, 9, 2.6, 0, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.strokeStyle = '#a56a2c';
-        ctx.lineWidth = 0.8;
-        ctx.stroke();
-        person(cx, foot - 1, 1, color, '#2b3a55');
-        break;
-      }
       case 'windsurfer': {
-        ctx.fillStyle = '#fdfdfd';
-        ctx.beginPath();
-        ctx.ellipse(cx, foot, 13, 2.6, 0, 0, Math.PI * 2);
-        ctx.fill();
-        // sail
+        board(cx, cy, 4.6, 15);
         ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.moveTo(cx + 2, foot - 2);
-        ctx.lineTo(cx + 2, foot - 36);
-        ctx.quadraticCurveTo(cx + 14, foot - 22, cx + 12, foot - 6);
-        ctx.closePath();
+        ctx.moveTo(cx, cy - 13);
+        ctx.quadraticCurveTo(w - 1, cy, cx, cy + 13);
+        ctx.quadraticCurveTo(cx + 12, cy, cx, cy - 13);
         ctx.fill();
-        ctx.fillStyle = 'rgba(255,255,255,0.4)';
-        ctx.fillRect(cx + 2, foot - 24, 10, 2.4);
-        ctx.strokeStyle = '#333';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(cx + 2, foot - 2);
-        ctx.lineTo(cx + 2, foot - 36);
-        ctx.stroke();
-        person(cx - 3, foot - 1, 0.85, '#2a3a4a');
+        rider(cx - 1, cy + 2, 0.5, '#2a3a4a');
         break;
       }
       case 'kiter': {
-        ctx.fillStyle = '#fdfdfd';
+        board(cx, cy, 3.8, 10);
+        ctx.strokeStyle = 'rgba(30,40,50,0.55)';
+        ctx.lineWidth = 0.7;
         ctx.beginPath();
-        ctx.ellipse(cx, foot, 10, 2.2, 0, 0, Math.PI * 2);
-        ctx.fill();
-        person(cx, foot - 1, 0.8, '#2a3a4a');
-        // lines and kite
-        ctx.strokeStyle = 'rgba(30,30,30,0.6)';
-        ctx.lineWidth = 0.5;
-        ctx.beginPath();
-        ctx.moveTo(cx, foot - 14);
-        ctx.lineTo(cx + 4, 8);
+        ctx.moveTo(cx, cy - 4);
+        ctx.lineTo(cx, 12);
         ctx.stroke();
         ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.moveTo(cx - 9, 8);
-        ctx.quadraticCurveTo(cx + 4, -2, cx + 17, 8);
-        ctx.quadraticCurveTo(cx + 4, 5, cx - 9, 8);
+        ctx.moveTo(2, 14);
+        ctx.quadraticCurveTo(cx, -3, w - 2, 14);
+        ctx.quadraticCurveTo(cx, 8, 2, 14);
         ctx.fill();
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.fillRect(cx - 1, 2.4, 2.4, 3);
+        rider(cx, cy, 0.5, '#2a3a4a');
         break;
       }
       case 'foiler': {
-        // wing
+        board(cx, cy + 1, 4, 11);
         ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.moveTo(cx - 13, 12);
-        ctx.quadraticCurveTo(cx, -2, cx + 13, 12);
-        ctx.quadraticCurveTo(cx, 8, cx - 13, 12);
+        ctx.ellipse(cx, cy - 15, 15, 2.8, 0, 0, Math.PI * 2);
         ctx.fill();
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.fillRect(cx - 1, 4, 2.4, 3);
-        // foil under the board
-        ctx.strokeStyle = '#8b95a1';
-        ctx.lineWidth = 1.4;
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)';
+        ctx.lineWidth = 0.8;
         ctx.beginPath();
-        ctx.moveTo(cx, foot);
-        ctx.lineTo(cx, foot + 0.5);
+        ctx.moveTo(cx - 12, cy - 15);
+        ctx.lineTo(cx + 12, cy - 15);
         ctx.stroke();
-        ctx.fillStyle = '#fdfdfd';
-        ctx.beginPath();
-        ctx.ellipse(cx, foot - 3, 9, 2, 0, 0, Math.PI * 2);
-        ctx.fill();
-        person(cx, foot - 4, 0.85, '#2a3a4a');
+        rider(cx, cy + 1, 0.5, '#2a3a4a');
         break;
       }
       case 'sailor': {
-        // small dinghy with a sail
+        ctx.fillStyle = 'rgba(0,50,80,0.18)';
+        ctx.beginPath();
+        ctx.ellipse(cx + 1, cy + 1, 8.5, 19.5, 0, 0, Math.PI * 2);
+        ctx.fill();
         ctx.fillStyle = '#fdfdfd';
         ctx.beginPath();
-        ctx.moveTo(cx - 14, foot - 4);
-        ctx.quadraticCurveTo(cx, foot + 4, cx + 14, foot - 4);
-        ctx.lineTo(cx + 12, foot - 2);
-        ctx.quadraticCurveTo(cx, foot + 3, cx - 12, foot - 2);
-        ctx.closePath();
+        ctx.moveTo(cx, 1);
+        ctx.quadraticCurveTo(cx + 10, cy - 4, cx + 7, h - 2);
+        ctx.lineTo(cx - 7, h - 2);
+        ctx.quadraticCurveTo(cx - 10, cy - 4, cx, 1);
         ctx.fill();
         ctx.fillStyle = color;
         ctx.beginPath();
-        ctx.moveTo(cx, foot - 4);
-        ctx.lineTo(cx, foot - 38);
-        ctx.quadraticCurveTo(cx + 13, foot - 20, cx + 12, foot - 5);
+        ctx.moveTo(cx, cy - 12);
+        ctx.quadraticCurveTo(cx + 11, cy + 2, cx + 3, cy + 16);
+        ctx.lineTo(cx, cy + 16);
         ctx.closePath();
         ctx.fill();
-        ctx.fillStyle = '#f5f5f5';
-        ctx.beginPath();
-        ctx.moveTo(cx - 1, foot - 6);
-        ctx.lineTo(cx - 1, foot - 32);
-        ctx.lineTo(cx - 10, foot - 7);
-        ctx.closePath();
-        ctx.fill();
-        person(cx - 8, foot - 2, 0.55, color);
+        rider(cx - 4, cy + 12, 0.36, '#2a3a4a');
         break;
       }
+      case 'walker':
+        rider(cx, cy, 0.85, color);
+        break;
     }
   });
   return key;
@@ -1096,7 +1068,7 @@ export function bakeCove(scene: Phaser.Scene) {
     // ripples in the shallows
     ctx.strokeStyle = 'rgba(255,255,255,0.5)';
     ctx.lineWidth = 1.3;
-    for (let i = 0; i < 18; i++) {
+    for (let i = 0; i < 5; i++) {
       const x = 20 + r() * 150,
         y = 30 + r() * 140;
       ctx.beginPath();
@@ -1488,15 +1460,17 @@ export function bakeDecor(scene: Phaser.Scene) {
     ctx.closePath();
     ctx.fill();
   });
-  // wake behind a rider, flat 40 x 22
-  bake(scene, 'fx-wake', 44, 22, 3, (ctx) => {
-    const g = ctx.createRadialGradient(22, 11, 1, 22, 11, 20);
-    g.addColorStop(0, 'rgba(255,255,255,0.85)');
-    g.addColorStop(0.6, 'rgba(255,255,255,0.35)');
+  // wake behind a rider (vertical, the rider is at the top)
+  bake(scene, 'fx-wake', 14, 34, 3, (ctx) => {
+    const g = ctx.createLinearGradient(0, 0, 0, 34);
+    g.addColorStop(0, 'rgba(255,255,255,0.75)');
     g.addColorStop(1, 'rgba(255,255,255,0)');
     ctx.fillStyle = g;
     ctx.beginPath();
-    ctx.ellipse(22, 11, 21, 9, 0, 0, Math.PI * 2);
+    ctx.moveTo(7, 0);
+    ctx.lineTo(14, 34);
+    ctx.lineTo(0, 34);
+    ctx.closePath();
     ctx.fill();
   });
   // big soft swell bands for the open sea, 400 x 300

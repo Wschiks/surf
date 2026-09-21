@@ -4,6 +4,7 @@ import { SPORTS, type SportDef } from '../config/sports';
 import type { GameState } from '../core/state';
 import type { LabelLayer } from '../ui/labels';
 import { bakeJetty, bakeKiteLaunch, JETTY_SIZE, KITE_LAUNCH_SIZE, placeImage, placeUpright } from './art';
+import { icon } from '../ui/icons';
 import { DEPTH } from './background';
 import { dashedRect } from './draw';
 
@@ -49,7 +50,7 @@ export class SiteView {
       }
       // label above the plot while it is still empty
       if (!unlocked) {
-        this.labels.set({ id, x: r.x + r.w / 2, y: r.y + r.h / 2, minPpu: 130, className: 'site', html: `<span>${site.sport.icon} ${spec.name}</span><small>Unlocks with ${site.sport.name}</small>` });
+        this.labels.set({ id, x: r.x + r.w / 2, y: r.y + r.h / 2, minPpu: 130, className: 'site', html: `<div class="mk" style="--c:#7d92a3;--p:0"><span class="mk-ic">${icon(site.sport.icon)}</span></div>` });
       } else {
         this.labels.remove(id);
       }

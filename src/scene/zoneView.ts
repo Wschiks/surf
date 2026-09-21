@@ -4,10 +4,8 @@ import { toWorld } from '../config/layout';
 import type { ZoneRef } from '../config/sports';
 import { zoneStats } from '../core/economy';
 import type { GameState } from '../core/state';
-import { bakeWaveTile, guestTexture, WAVE_STYLES } from './art';
+import { bakeWaveTile, guestTexture, GUEST_LOOK, WAVE_STYLES } from './art';
 import { DEPTH } from './background';
-import { dashedRect } from './draw';
-import { UPRIGHT } from './upright';
 import type { MapView } from './MapView';
 
 const frac = (x: number) => x - Math.floor(x);
@@ -35,7 +33,7 @@ export class ZoneView {
     const key = bakeWaveTile(scene, ref.def.look);
     this.waves = scene.add.tileSprite(r.x, r.y, r.w, r.h, key).setOrigin(0, 0).setDepth(DEPTH.zone);
     this.waves.setTileScale((1 / 1.5) * style.scale, (1 / 1.5) * style.scale);
-    this.waves.setAlpha(style.alpha);
+    this.waves.setAlpha(style.alpha * 0.6);
     this.plate = scene.add.graphics().setDepth(DEPTH.zone + 0.1);
     this.shade = scene.add.graphics().setDepth(DEPTH.zone + 0.2);
     this.drawPlate();
@@ -49,26 +47,10 @@ export class ZoneView {
     g.clear();
     const col = Phaser.Display.Color.HexStringToColor(this.ref.sport.color).color;
     const inner = { x: r.x + 4, y: r.y + 4, w: r.w - 8, h: r.h - 8 };
-    g.fillStyle(this.selected ? 0xffffff : col, this.selected ? 0.16 : 0.06);
+    g.fillStyle(this.selected ? 0xffffff : col, this.selected ? 0.16 : 0.09);
     g.fillRoundedRect(inner.x, inner.y, inner.w, inner.h, 12);
-    if (this.selected) {
-      g.lineStyle(4, 0xffffff, 0.95);
-      g.strokeRoundedRect(inner.x, inner.y, inner.w, inner.h, 12);
-    } else {
-      g.lineStyle(2, 0xffffff, 0.55);
-      dashedRect(g, inner, 10, 8);
-      // a coloured corner mark shows which sport the zone belongs to
-      g.lineStyle(4, col, 0.9);
-      const L = Math.min(26, inner.w / 3, inner.h / 3);
-      g.lineBetween(inner.x, inner.y + L, inner.x, inner.y);
-      g.lineBetween(inner.x, inner.y, inner.x + L, inner.y);
-      g.lineBetween(inner.x + inner.w - L, inner.y, inner.x + inner.w, inner.y);
-      g.lineBetween(inner.x + inner.w, inner.y, inner.x + inner.w, inner.y + L);
-      g.lineBetween(inner.x, inner.y + inner.h - L, inner.x, inner.y + inner.h);
-      g.lineBetween(inner.x, inner.y + inner.h, inner.x + L, inner.y + inner.h);
-      g.lineBetween(inner.x + inner.w - L, inner.y + inner.h, inner.x + inner.w, inner.y + inner.h);
-      g.lineBetween(inner.x + inner.w, inner.y + inner.h - L, inner.x + inner.w, inner.y + inner.h);
-    }
+    g.lineStyle(this.selected ? 4 : 2, 0xffffff, this.selected ? 0.95 : 0.3);
+    g.strokeRoundedRect(inner.x, inner.y, inner.w, inner.h, 12);
   }
 
   setSelected(v: boolean) {
@@ -79,14 +61,16 @@ export class ZoneView {
   }
 
   private ensureGuests(n: number) {
+    const kind = this.ref.sport.guestKind;
+    const look = GUEST_LOOK[kind];
     while (this.guests.length < n) {
       const i = this.guests.length;
       const colors = this.ref.def.guestColors;
-      const key = guestTexture(this.scene, this.ref.sport.guestKind, colors[i % colors.length], i);
-      const img = this.scene.add.image(0, 0, key).setOrigin(0.5, 0.92).setDepth(DEPTH.things);
-      img.setDisplaySize(30 * 0.6, 44 * 0.6).setRotation(-UPRIGHT);
+      const key = guestTexture(this.scene, kind, colors[i % colors.length], i);
+      const img = this.scene.add.image(0, 0, key).setOrigin(look.ox, look.oy).setDepth(DEPTH.things);
+      img.setDisplaySize(look.w, look.h);
       this.guests.push(img);
-      const wake = this.scene.add.image(0, 0, 'fx-wake').setDepth(DEPTH.things - 0.2).setDisplaySize(30, 15);
+      const wake = this.scene.add.image(0, 0, 'fx-wake').setOrigin(0.5, 0).setDepth(DEPTH.things - 0.2).setDisplaySize(11, 26);
       this.wakes.push(wake);
     }
   }
@@ -131,37 +115,35 @@ export class ZoneView {
       if (i >= n || !near) continue;
       const slot = frac(0.618 * (i + 1));
       if (!running && !z.manager) {
-        // waiting for the player: guests queue at the beach side of the zone
+        // waiting for the player: guests stand in a row at the beach side of the zone
         const x = r.x + r.w * (0.1 + (0.8 * (i + 0.5)) / n);
-        g.setPosition(x, r.y + r.h * 0.2 + Math.sin(time / 500 + i) * 1.5);
-        g.setFlipX(false);
-        g.setRotation(-UPRIGHT);
+        g.setPosition(x, r.y + r.h * 0.2 + Math.sin(time / 500 + i) * 1.2);
+        g.setRotation(0);
         g.setAlpha(1);
         continue;
       }
       // a manager runs the zone all the time: use the clock, a cycle is one session
       const p = z.manager ? frac(z.elapsed / st.duration) : progress;
       const t = frac(p + i / n);
+      let rot: number;
+      let gx: number;
+      let gy: number;
       if (cruise) {
         const a = (t + slot) * Math.PI * 2;
-        const gx = r.x + r.w * (0.5 + 0.4 * Math.sin(a));
-        const gy = r.y + r.h * (0.3 + 0.5 * frac(slot * 3.1)) + Math.sin(time / 400 + i) * 1.2;
-        g.setPosition(gx, gy);
-        g.setFlipX(Math.cos(a) < 0);
-        g.setRotation(-UPRIGHT + Math.cos(a) * 0.08);
+        gx = r.x + r.w * (0.5 + 0.4 * Math.sin(a));
+        gy = r.y + r.h * (0.3 + 0.5 * frac(slot * 3.1)) + Math.sin(time / 400 + i) * 1;
+        rot = (Math.cos(a) >= 0 ? Math.PI / 2 : -Math.PI / 2) + Math.sin(time / 500 + i) * 0.05;
         g.setAlpha(1);
-        wake.setPosition(gx - Math.sign(Math.cos(a)) * 10, gy + 2).setVisible(true).setAlpha(0.5 + 0.2 * Math.sin(time / 200 + i));
       } else {
-        const x = r.x + r.w * (0.08 + 0.84 * slot) + Math.sin(t * Math.PI * 2) * 6;
         // ride toward the beach (up), start again from the outside
-        const gy = r.y + r.h * (0.95 - 0.8 * t);
-        g.setPosition(x, gy + Math.sin(time / 260 + i * 2) * 1.2);
-        g.setFlipX(false);
-        g.setRotation(-UPRIGHT + Math.sin(t * Math.PI * 2) * 0.1);
+        gx = r.x + r.w * (0.08 + 0.84 * slot) + Math.sin(t * Math.PI * 2) * 6;
+        gy = r.y + r.h * (0.95 - 0.8 * t);
+        rot = Math.cos(t * Math.PI * 2) * 0.16;
         // guests arrive at the start of a ride and leave at the end
         g.setAlpha(Math.min(1, t * 10, (1 - t) * 10));
-        wake.setPosition(x, gy + 5).setVisible(true).setAlpha((0.55 + 0.25 * Math.sin(time / 180 + i)) * g.alpha);
       }
+      g.setPosition(gx, gy).setRotation(rot);
+      wake.setPosition(gx, gy).setRotation(rot).setVisible(true).setAlpha(0.6 * g.alpha);
     }
   }
 }

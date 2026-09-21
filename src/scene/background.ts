@@ -59,13 +59,13 @@ export function buildBackground(scene: Phaser.Scene) {
 
   // drifting sparkles on the water
   const sparkle = placeTile(scene, 'tile-sparkle', left, 2 * UNIT, width, 12 * UNIT + M).setDepth(DEPTH.sparkle);
-  sparkle.setAlpha(0.55);
+  sparkle.setAlpha(0.3);
   // foam line where the sea meets the sand
   const foam = placeTile(scene, 'tile-shorefoam', left, 2 * UNIT - 10, width, 40).setDepth(DEPTH.sparkle + 0.1);
 
   // grid, map border and area borders
   const grid = scene.add.graphics().setDepth(DEPTH.grid);
-  grid.lineStyle(1.5, 0xffffff, 0.13);
+  grid.lineStyle(1.5, 0xffffff, 0.07);
   for (let i = 1; i < MAP_UNITS; i++) {
     grid.lineBetween(i * UNIT, 0, i * UNIT, MAP);
     grid.lineBetween(0, i * UNIT, MAP, i * UNIT);
@@ -87,7 +87,7 @@ export function buildBackground(scene: Phaser.Scene) {
 
   // big slow swells over the whole sea
   const swell = placeTile(scene, 'tile-swell', left, 2 * UNIT, width, 12 * UNIT + M, 1.5).setDepth(DEPTH.sparkle - 0.5);
-  swell.setAlpha(0.9);
+  swell.setAlpha(0.35);
 
   addDecor(scene);
   return { sparkle, foam, swell };

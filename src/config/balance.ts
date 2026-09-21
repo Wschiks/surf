@@ -17,9 +17,9 @@ export interface StatDef {
 }
 
 export const STATS: Record<StatId, StatDef> = {
-  capacity: { id: 'capacity', label: 'Capacity', icon: '👥', baseCost: 4, growth: 1.3, max: 25 },
-  price: { id: 'price', label: 'Income per guest', icon: '🏷️', baseCost: 6, growth: 1.33, max: 30 },
-  speed: { id: 'speed', label: 'Speed', icon: '⚡', baseCost: 9, growth: 1.4, max: 15 },
+  capacity: { id: 'capacity', label: 'Capacity', icon: 'people', baseCost: 4, growth: 1.3, max: 25 },
+  price: { id: 'price', label: 'Income per guest', icon: 'tag', baseCost: 6, growth: 1.33, max: 30 },
+  speed: { id: 'speed', label: 'Speed', icon: 'bolt', baseCost: 9, growth: 1.4, max: 15 },
 };
 
 export const BALANCE = {

@@ -2,9 +2,8 @@ import Phaser from 'phaser';
 import { FACILITIES } from '../config/facilities';
 import { UNIT } from '../config/layout';
 import type { GameState } from '../core/state';
-import { BUILDING_SIZE, bakeBuildings, guestTexture, placeUpright } from './art';
+import { BUILDING_SIZE, bakeBuildings, GUEST_LOOK, guestTexture, placeUpright } from './art';
 import { DEPTH } from './background';
-import { UPRIGHT } from './upright';
 
 const KEY: Record<string, string> = { shop: 'b-shop', cafe: 'b-cafe', showers: 'b-showers', lifeguard: 'b-lifeguard' };
 
@@ -65,8 +64,8 @@ export class BeachView {
     while (this.walkers.length < want) {
       const i = this.walkers.length;
       const key = guestTexture(this.scene, 'walker', WALKER_COLORS[i], i);
-      const img = this.scene.add.image(0, 0, key).setOrigin(0.5, 0.92).setDepth(DEPTH.things);
-      img.setDisplaySize(30 * 0.55, 44 * 0.55).setRotation(-UPRIGHT);
+      const img = this.scene.add.image(0, 0, key).setOrigin(0.5, 0.5).setDepth(DEPTH.things);
+      img.setDisplaySize(GUEST_LOOK.walker.w, GUEST_LOOK.walker.h);
       this.walkers.push(img);
     }
     this.walkers.forEach((w, i) => {
@@ -76,7 +75,7 @@ export class BeachView {
       const ping = phase < 1 ? phase : 2 - phase; // 0..1..0
       const x = 0.4 * UNIT + ping * 9.2 * UNIT;
       const y = (1.72 + 0.1 * (i % 3)) * UNIT + Math.sin(time / 300 + i) * 1.2;
-      w.setPosition(x, y).setFlipX(phase >= 1);
+      w.setPosition(x, y).setRotation(phase >= 1 ? -Math.PI / 2 : Math.PI / 2);
     });
   }
 }

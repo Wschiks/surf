@@ -16,3 +16,4 @@ All taken in a headless browser at 400 x 800 with `node scripts/screenshots.mjs 
 | `dpr2-` | Start screen on a 2x screen |
 | `e2e-` | A real play session through the interface (buy, hire, welcome back popup) |
 | `final-` | The last set, in order 01 to 14, from a fresh start to a fully unlocked game |
+| `redesign-` | After the look was simplified (top-down riders, round map badges, custom icons and buttons): `redesign-01` to `14`, `redesign-menu-*`, `redesign-idle-*`. The `final-` set is the older look. |

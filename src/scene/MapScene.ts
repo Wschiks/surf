@@ -84,9 +84,9 @@ export class MapScene extends Phaser.Scene {
         id: 'area-' + a.id,
         x: 5 * UNIT,
         y: c.y * UNIT,
-        maxPpu: 105,
+        maxPpu: 70,
         className: 'area',
-        html: `${a.name}<small>${a.blurb}</small>`,
+        html: a.name,
       });
     }
     this.syncAreas(false);
@@ -147,7 +147,7 @@ export class MapScene extends Phaser.Scene {
   private onUnlocked(id: string, kind: 'sport' | 'level') {
     const ref = ZONES.find((z) => z.id === id)!;
     this.ui.confetti();
-    this.ui.toast(kind === 'sport' ? `${ref.sport.icon} ${ref.sport.name} unlocked!` : `🎉 ${ref.def.name} unlocked!`);
+    this.ui.toast(kind === 'sport' ? `${ref.sport.name} unlocked!` : `${ref.def.name} unlocked!`);
     this.onSelect(id);
   }
 

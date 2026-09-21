@@ -61,7 +61,7 @@ export const SPORTS: SportDef[] = [
   {
     id: 'wave',
     name: 'Wave surfing',
-    icon: '🏄',
+    icon: 'wave',
     area: 'wave',
     order: 1,
     color: '#ff7a45',
@@ -130,7 +130,7 @@ export const SPORTS: SportDef[] = [
   {
     id: 'skimboarding',
     name: 'Skimboarding',
-    icon: '🛹',
+    icon: 'skim',
     area: 'wave',
     order: 2,
     color: '#f2b134',
@@ -200,7 +200,7 @@ export const SPORTS: SportDef[] = [
   {
     id: 'windsurfing',
     name: 'Windsurfing',
-    icon: '🌬️',
+    icon: 'wind',
     area: 'sea',
     order: 3,
     color: '#1fb6c9',
@@ -270,7 +270,7 @@ export const SPORTS: SportDef[] = [
   {
     id: 'kitesurfing',
     name: 'Kitesurfing',
-    icon: '🪁',
+    icon: 'kite',
     area: 'sea',
     order: 4,
     color: '#ff5c8a',
@@ -341,7 +341,7 @@ export const SPORTS: SportDef[] = [
   {
     id: 'foil',
     name: 'Foil and wing',
-    icon: '🦅',
+    icon: 'foil',
     area: 'sea',
     order: 5,
     color: '#8e6bd8',
@@ -411,7 +411,7 @@ export const SPORTS: SportDef[] = [
   {
     id: 'sailing',
     name: 'Sailing',
-    icon: '⛵',
+    icon: 'sail',
     area: 'ocean',
     order: 6,
     color: '#3f51b5',
