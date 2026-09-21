@@ -200,3 +200,7 @@ Every choice made while building, and why. The concept document (`docs/concept.m
 - **Bigger class and Faster are dearer over time and slower to max.** New `surge` in the cost: `cost x (1 + surge x level)` (bigger class 0.06, faster 0.1) on top of the exponential growth. **Faster**: each level now makes a session only 2% quicker (about 0.1 s on a 6 s session, was 6% / 0.3 s), with 100 levels instead of 40 (growth 1.085, first level 80), so it reaches x3 after 100 small upgrades instead of x3.4 after 40. The quest for faster asks in steps of 10 levels.
 - **Balance:** cost scale 8.8 -> 9.6 because dropping reputation made the game faster. Balance bot: expansion 1 after about 1h45, expansion 2 after about 4h, everything unlocked after about 10-11 hours (the playthrough test still asserts 4 to 14 hours).
 - The two design documents on the Desktop were updated to match.
+
+## Sideways riders and a first-run hint
+- Board riders (surfers, skimboarders, windsurfers, kitesurfers, foilers) now stand **sideways** on the board like real surfers: shoulders and arms along the board, the head a little to one side (regular/goofy alternating by guest). Sailors and beach walkers stay front-facing.
+- A new game shows a yellow "Tap to start" pill under the first zone's badge until the first session is started.

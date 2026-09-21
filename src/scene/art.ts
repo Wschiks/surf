@@ -736,26 +736,32 @@ export function guestTexture(scene: Phaser.Scene, kind: GuestKind, color: string
     const cy = h * look.oy;
     const skin = SKIN[idx % SKIN.length];
     const hair = HAIR[(idx * 3) % HAIR.length];
-    const rider = (x: number, y: number, s: number, shirt: string) => {
+    // A rider seen from above. Board sports stand SIDEWAYS on the board: the shoulders and arms run along the length of
+    // the board and the head sits a little toward one side (regular or goofy, by guest number). `facing` = 0 gives the
+    // front-facing person used for the beach walkers.
+    const rider = (x: number, y: number, s: number, shirt: string, sideways = true) => {
       ctx.save();
       ctx.translate(x, y);
       ctx.scale(s, s);
+      if (sideways) ctx.rotate(Math.PI / 2);
+      const side = idx % 2 === 0 ? 1 : -1;
+      const headY = sideways ? -2.4 * side : -0.4;
       ctx.fillStyle = skin; // arms
       ctx.beginPath();
-      ctx.ellipse(-6.4, 0.4, 1.7, 3, 0, 0, Math.PI * 2);
-      ctx.ellipse(6.4, 0.4, 1.7, 3, 0, 0, Math.PI * 2);
+      ctx.ellipse(-7, sideways ? 0.4 - 0.6 * side : 0.4, 1.8, 3.2, sideways ? 0.5 * side : 0, 0, Math.PI * 2);
+      ctx.ellipse(7, sideways ? 0.4 + 0.6 * side : 0.4, 1.8, 3.2, sideways ? -0.5 * side : 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = shirt; // shoulders
       ctx.beginPath();
-      ctx.ellipse(0, 0.6, 6, 3.6, 0, 0, Math.PI * 2);
+      ctx.ellipse(0, 0.6, 6.2, 3.6, 0, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = skin; // head
       ctx.beginPath();
-      ctx.arc(0, -0.4, 3.1, 0, Math.PI * 2);
+      ctx.arc(0, headY, 3.1, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = hair;
       ctx.beginPath();
-      ctx.arc(0, -0.4, 3.15, Math.PI * 0.9, Math.PI * 2.1);
+      ctx.arc(0, headY, 3.15, Math.PI * 0.9, Math.PI * 2.1);
       ctx.fill();
       ctx.restore();
     };
@@ -846,11 +852,11 @@ export function guestTexture(scene: Phaser.Scene, kind: GuestKind, color: string
         ctx.lineTo(cx, cy + 16);
         ctx.closePath();
         ctx.fill();
-        rider(cx - 4, cy + 12, 0.36, '#2a3a4a');
+        rider(cx - 4, cy + 12, 0.36, '#2a3a4a', false);
         break;
       }
       case 'walker':
-        rider(cx, cy, 0.85, color);
+        rider(cx, cy, 0.85, color, false);
         break;
     }
   });

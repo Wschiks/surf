@@ -370,3 +370,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 .sk-hub .ic { width: 100%; height: 100%; }
 .sk-lines line.spoke { stroke: var(--c); stroke-width: 6; opacity: 0.55; }
 .sk-label { transform: translate(-50%, -50%); }
+
+.mk-hint { position: absolute; left: 50%; top: 100%; transform: translate(-50%, 10px); white-space: nowrap; background: var(--sun); color: var(--ink); font-size: 13px; font-weight: 800; padding: 4px 10px; border-radius: calc(10px * var(--u)); box-shadow: 0 3px 0 var(--sun-d); animation: hintPulse 1.1s ease-in-out infinite; }
+.mk-hint::before { content: ''; position: absolute; left: 50%; top: -5px; width: 10px; height: 10px; margin-left: -5px; background: var(--sun); transform: rotate(45deg); border-radius: 2px; }
+@keyframes hintPulse { 0%, 100% { transform: translate(-50%, 10px); } 50% { transform: translate(-50%, 14px); } }

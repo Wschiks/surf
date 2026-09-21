@@ -54,9 +54,12 @@ export class ZoneChips {
       ring = z.phase === 'running' ? Math.min(1, Math.floor((z.elapsed / st.duration) * 20) / 20) : 1;
       cls += z.manager ? ' auto' : ' run';
     }
+    // a new game: point at the first zone
+    const hint = ref.id === 'wave-1' && state.totalCoins === 0 && z.phase === 'idle' && !z.manager;
+    if (hint) cls += ' hint';
     if (small) cls += ' small';
     if (selected) cls += ' selected';
-    const html = `<div class="mk" style="--c:${color};--p:${ring}"><i class="mk-ring"></i><span class="mk-ic">${icon(glyph)}</span>${small ? '' : `<b class="mk-lv">${ref.level}</b>`}${amount && !small ? `<b class="mk-amt">${amount}</b>` : ''}</div>`;
+    const html = `<div class="mk" style="--c:${color};--p:${ring}"><i class="mk-ring"></i><span class="mk-ic">${icon(glyph)}</span>${small ? '' : `<b class="mk-lv">${ref.level}</b>`}${amount && !small ? `<b class="mk-amt">${amount}</b>` : ''}${hint ? '<b class="mk-hint">Tap to start</b>' : ''}</div>`;
     this.labels.set({
       id: 'zone-' + ref.id,
       x: c.x,
