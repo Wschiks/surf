@@ -29,7 +29,7 @@ Start with a few kids in bright vests on small, rolling waves. Earn coins, upgra
 FEATURES
 • Six water sports with four levels each, from beginner classes to pros only
 • Watch your guests: surfers ride the waves, skimboarders slide, windsurfers tack, kitesurfers jump, foilers glide and sailors race
-• Idle earnings: managers keep working while you are away (up to 8 hours)
+• Idle earnings: managers keep working while you are away (2 hours to start with, more with skills)
 • Upgrade a thousand levels with big bonuses on the way, buy x10, x100 or Max, or just hold the button
 • Quests with coin rewards
 • Expand the beach: a giant wave washes over the screen, you start over faster than before and all your income goes up for good

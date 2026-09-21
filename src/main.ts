@@ -15,7 +15,8 @@ const game = new Phaser.Game({
   scale: { mode: Phaser.Scale.NONE, width: first.w, height: first.h },
   scene: [MapScene],
   input: { mouse: true, touch: true },
-  render: { antialias: true, roundPixels: false },
+  // 8 texture units (the minimum every device has): with more, some software renderers cut pieces out of pictures
+  render: { antialias: true, roundPixels: false, maxTextures: 8 },
 });
 
 new ResizeObserver(() => {

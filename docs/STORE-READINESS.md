@@ -10,7 +10,7 @@ Nothing has been submitted and no accounts were made. This document lists what i
 * **Android project**: portrait only, no cleartext traffic, package folder and application id set, adaptive icon with a sea-blue background.
 * **Legal**: Terms of Service and Privacy Policy inside the app (menu) and as web pages (`public/privacy.html`, `public/terms.html`, made by `npm run build`).
 * **Store texts** and the answers to the store questionnaires: `store/listing.md`. **Store screenshots** in `store/screenshots/` and the icon in `store/icon-1024.png`.
-* The game works offline, saves on the device, handles the phone going to sleep (offline earnings, max 8 hours), has no network calls, no ads, no purchases, no randomness.
+* The game works offline, saves on the device, handles the phone going to sleep (offline earnings, 2 hours, more with skills), has no network calls, no ads, no purchases, no randomness.
 * 80+ automated tests, a full-playthrough simulation and a browser smoke test pass.
 
 ## Steps for you (in this order)

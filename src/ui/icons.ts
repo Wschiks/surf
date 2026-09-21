@@ -37,6 +37,9 @@ const SHAPES: Record<string, string> = {
   chevron: '<path d="M9 5.5l6.5 6.5L9 18.5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>',
   copy: '<rect x="8.5" y="8.5" width="11" height="12" rx="2.2" fill="currentColor"/><path d="M15.5 5.5h-9a2 2 0 00-2 2v10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
   wrench: '<path d="M14.5 4a5 5 0 00-4.8 6.6L3.8 16.5a2 2 0 002.8 2.8l5.9-5.9A5 5 0 0020 9.5l-3 3-2.5-.5-.5-2.5 3-3A5 5 0 0014.5 4z" fill="currentColor"/>',
+  gem: '<path d="M12 21.5L2.8 9.6 6.6 3.5h10.8l3.8 6.1z" fill="#a66bff" stroke="#5b34c4" stroke-width="1.6" stroke-linejoin="round"/><path d="M2.8 9.6h18.4M8.6 3.5L7.2 9.6 12 21.5M15.4 3.5l1.4 6.1L12 21.5" fill="none" stroke="#5b34c4" stroke-width="1.1" stroke-linejoin="round"/><path d="M8.7 4.6l-1.1 3.6" stroke="#e6d4ff" stroke-width="1.4" stroke-linecap="round"/>',
+  clock: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M12 6.8V12l3.6 2.2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
+  tree: '<path d="M12 20.5V12.5M12 14.5L6.5 9.8M12 14.5l5.5-4.7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/><circle cx="12" cy="20" r="2.2" fill="currentColor"/><circle cx="6.2" cy="7.6" r="2.6" fill="currentColor"/><circle cx="17.8" cy="7.6" r="2.6" fill="currentColor"/><circle cx="12" cy="9" r="2.6" fill="currentColor"/>',
   // --- home screen buttons
   beach: '<path d="M3 12.5a9 9 0 0118 0z" fill="currentColor"/><path d="M12 12.5V20" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M3.5 21.2h17" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".55"/>',
   sports:

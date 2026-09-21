@@ -41,11 +41,15 @@ export class MapView {
     this.clamp();
   }
 
+  /** The width of a phone-shaped area in the screen (so a big window shows more of the map instead of zooming in). */
+  get refWidth(): number {
+    return Math.min(this.width, this.height / 2);
+  }
   defaultPpu(): number {
-    return this.width / START_UNITS_ACROSS;
+    return this.refWidth / START_UNITS_ACROSS;
   }
   maxPpu(): number {
-    return this.width / MIN_UNITS_ACROSS;
+    return this.refWidth / MIN_UNITS_ACROSS;
   }
   /** Zoomed all the way out: the whole rotated map fits on the screen. */
   minPpu(): number {

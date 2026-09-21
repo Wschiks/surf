@@ -29,7 +29,7 @@ console.log('--- the game');
 ok('no test or cheat options in the game', !/100e9|Add 100B|testAlwaysExpand/.test(src));
 ok('debug hook only in development or with ?debug', /import\.meta\.env\.DEV \|\| location\.search\.includes\('debug'\)/.test(src));
 ok('no random numbers in the game', !/Math\.random/.test(fs.readdirSync('src', { recursive: true }).filter((f) => String(f).endsWith('.ts')).map((f) => read('src/' + f)).join('\n')));
-ok('offline cap is 8 hours', BALANCE.offlineCapSeconds === 8 * 3600);
+ok('base away time is 2 hours', BALANCE.offlineCapSeconds === 2 * 3600);
 console.log('--- identity and versions');
 ok('app id is not a placeholder (com.example)', !!appId && !appId.startsWith('com.example'), 'set appId in capacitor.config.ts, then npm run phone:id');
 ok('Android applicationId matches', gradle.includes(`applicationId "${appId}"`), 'run npm run phone:id');

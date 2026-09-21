@@ -47,6 +47,7 @@ describe('saving', () => {
 describe('game clock', () => {
   it('pays managed zones for the time the player was away', () => {
     const s = newGame(0);
+    s.skills = {}; // (the free root skill would add 5%)
     s.coins = 1e6;
     buyManager(s, 'wave-1');
     const before = s.coins;
@@ -55,7 +56,7 @@ describe('game clock', () => {
     // the Game class reads localStorage, so emulate it
     (globalThis as unknown as { localStorage: unknown }).localStorage = store;
     const g = new Game(10_000 + 3600 * 1000);
-    expect(g.state.coins - before).toBeCloseTo(3600 * 0.5, 0);
+    expect(g.state.coins - before).toBeCloseTo(3600 * 0.5 * 1.05, 0); // (+5%: the free root skill of wave surfing)
     expect(g.offlineReport?.coins).toBeGreaterThan(1000);
     delete (globalThis as unknown as { localStorage?: unknown }).localStorage;
   });

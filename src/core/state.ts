@@ -1,5 +1,6 @@
 import { FACILITIES } from '../config/facilities';
 import { areaById } from '../config/areas';
+import { rootSkills } from './skills';
 import { SPORTS, ZONES, zoneId, type SportId } from '../config/sports';
 
 export type Phase = 'idle' | 'running' | 'ready';
@@ -34,6 +35,11 @@ export interface GameState {
   /** The quests on offer (three at a time) and how many were completed. */
   quests: import('./quests').Quest[];
   questsDone: number;
+  /** The second currency, earned from quests and expansions and spent on skills. */
+  skillPoints: number;
+  skillEarned: number;
+  /** Learned skills. Permanent: they stay when the beach is expanded. */
+  skills: Record<string, boolean>;
   /** Real time (ms since 1970) when the game was last saved or updated. */
   savedAt: number;
   startedAt: number;
@@ -57,6 +63,9 @@ export function newGame(now: number): GameState {
     expansions: 0,
     quests: [],
     questsDone: 0,
+    skillPoints: 0,
+    skillEarned: 0,
+    skills: rootSkills(),
     savedAt: now,
     startedAt: now,
   };
@@ -91,6 +100,9 @@ export function ensureState(state: GameState): GameState {
   state.expansions ??= 0;
   state.quests ??= [];
   state.questsDone ??= 0;
+  state.skillPoints ??= 0;
+  state.skillEarned ??= 0;
+  state.skills = { ...rootSkills(), ...(state.skills ?? {}) };
   return state;
 }
 

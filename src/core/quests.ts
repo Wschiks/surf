@@ -3,6 +3,8 @@ import { FACILITIES, facilityById } from '../config/facilities';
 import { ZONES, zoneById, type ZoneRef } from '../config/sports';
 import { fmt } from '../ui/format';
 import { autoIncomePerSecond, guestsFor, multipliers, zoneStats } from './economy';
+import { addSkillPoints, skillEffects } from './skills';
+import { QUEST_POINTS } from '../config/skills';
 import type { GameState } from './state';
 import { expansionStatus, nextGoal } from './unlocks';
 
@@ -30,6 +32,8 @@ export interface QuestView {
   target: number;
   done: boolean;
   reward: number;
+  /** Skill points (the second currency) that the quest pays besides coins. */
+  points: number;
 }
 
 export const QUEST_SLOTS = 6;
@@ -66,7 +70,8 @@ function ownedZones(state: GameState): ZoneRef[] {
 
 export function questView(state: GameState, q: Quest): QuestView {
   const v = view(state, q);
-  v.reward = q.reward ?? rewardFor(state, q.kind);
+  v.reward = Math.ceil((q.reward ?? rewardFor(state, q.kind)) * (1 + skillEffects(state).quest));
+  v.points = QUEST_POINTS[q.kind] ?? 1;
   return v;
 }
 
@@ -76,38 +81,38 @@ function view(state: GameState, q: Quest): QuestView {
   const gained = (now: number) => Math.max(0, now - (q.base ?? 0));
   switch (q.kind) {
     case 'level':
-      return { text: `Level up ${zone!.def.name} to level ${q.target}`, current: z!.price, target: q.target, done: z!.price >= q.target, reward: 0 };
+      return { text: `Level up ${zone!.def.name} to level ${q.target}`, current: z!.price, target: q.target, done: z!.price >= q.target, reward: 0, points: 0 };
     case 'sessions': {
       const c = gained(z!.sessions);
-      return { text: `Finish ${q.target} sessions at ${zone!.def.name}`, current: c, target: q.target, done: c >= q.target, reward: 0 };
+      return { text: `Finish ${q.target} sessions at ${zone!.def.name}`, current: c, target: q.target, done: c >= q.target, reward: 0, points: 0 };
     }
     case 'served': {
       const c = Math.floor(gained(z!.served));
-      return { text: `Serve ${q.target} guests at ${zone!.def.name}`, current: c, target: q.target, done: c >= q.target, reward: 0 };
+      return { text: `Serve ${q.target} guests at ${zone!.def.name}`, current: c, target: q.target, done: c >= q.target, reward: 0, points: 0 };
     }
     case 'earn': {
       const c = Math.floor(gained(state.totalCoins));
-      return { text: `Earn ${fmt(q.target)} coins`, current: c, target: q.target, done: c >= q.target, reward: 0 };
+      return { text: `Earn ${fmt(q.target)} coins`, current: c, target: q.target, done: c >= q.target, reward: 0, points: 0 };
     }
     case 'guests': {
-      const now = guestsFor(zone!, z!);
-      return { text: `Get ${q.target} ${zone!.sport.noun} in ${zone!.def.name}`, current: now, target: q.target, done: now >= q.target, reward: 0 };
+      const now = guestsFor(zone!, z!, skillEffects(state).guests[zone!.sport.id] ?? 0);
+      return { text: `Get ${q.target} ${zone!.sport.noun} in ${zone!.def.name}`, current: now, target: q.target, done: now >= q.target, reward: 0, points: 0 };
     }
     case 'speed':
-      return { text: `Make ${zone!.def.name} faster: speed level ${q.target}`, current: z!.speed, target: q.target, done: z!.speed >= q.target, reward: 0 };
+      return { text: `Make ${zone!.def.name} faster: speed level ${q.target}`, current: z!.speed, target: q.target, done: z!.speed >= q.target, reward: 0, points: 0 };
     case 'unlock': {
       const done = z!.owned;
-      return { text: zone!.level === 1 ? `Start ${zone!.sport.name}` : `Unlock ${zone!.def.name}`, current: done ? 1 : 0, target: 1, done, reward: 0 };
+      return { text: zone!.level === 1 ? `Start ${zone!.sport.name}` : `Unlock ${zone!.def.name}`, current: done ? 1 : 0, target: 1, done, reward: 0, points: 0 };
     }
     case 'manager':
-      return { text: `Hire a manager for ${zone!.def.name}`, current: z!.manager ? 1 : 0, target: 1, done: z!.manager, reward: 0 };
+      return { text: `Hire a manager for ${zone!.def.name}`, current: z!.manager ? 1 : 0, target: 1, done: z!.manager, reward: 0, points: 0 };
     case 'facility': {
       const f = facilityById(q.facility!);
       const lvl = state.facilities[f.id] ?? 0;
-      return { text: q.target === 1 ? `Build the ${f.name.toLowerCase()}` : `Upgrade the ${f.name.toLowerCase()} to level ${q.target}`, current: lvl, target: q.target, done: lvl >= q.target, reward: 0 };
+      return { text: q.target === 1 ? `Build the ${f.name.toLowerCase()}` : `Upgrade the ${f.name.toLowerCase()} to level ${q.target}`, current: lvl, target: q.target, done: lvl >= q.target, reward: 0, points: 0 };
     }
     case 'expand':
-      return { text: 'Expand the beach', current: state.expansions, target: q.target, done: state.expansions >= q.target, reward: 0 };
+      return { text: 'Expand the beach', current: state.expansions, target: q.target, done: state.expansions >= q.target, reward: 0, points: 0 };
   }
 }
 
@@ -193,7 +198,7 @@ function build(state: GameState, slot: number, taken: Quest[]): Quest | null {
   tries[5] = () => {
     if (done < 4) return null;
     const r = pick('guests', (z) => state.zones[z.id].capacity >= STATS.capacity.max, 4);
-    return r ? { kind: 'guests', zone: r.id, target: Math.max(10, nextMultiple(guestsFor(r, state.zones[r.id]), 5)) } : null;
+    return r ? { kind: 'guests', zone: r.id, target: Math.max(10, nextMultiple(guestsFor(r, state.zones[r.id], skillEffects(state).guests[r.sport.id] ?? 0), 5)) } : null;
   };
   return (tries[slot] ?? (() => null))();
 }
@@ -216,9 +221,11 @@ export function refreshQuests(state: GameState) {
 export function claimQuest(state: GameState, index: number): number {
   const q = state.quests[index];
   if (!q || !questView(state, q).done) return 0;
-  const reward = questView(state, q).reward;
+  const v = questView(state, q);
+  const reward = v.reward;
   state.coins += reward;
   state.totalCoins += reward;
+  addSkillPoints(state, v.points);
   state.questsDone += 1;
   state.quests[index] = null as unknown as Quest; // the slot gets a new quest, in the same place
   refreshQuests(state);

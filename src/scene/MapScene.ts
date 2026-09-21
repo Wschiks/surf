@@ -45,7 +45,7 @@ export class MapScene extends Phaser.Scene {
     this.labels = new LabelLayer(ui);
     this.ui = new GameUI(ui, this.game_, {
       onSelect: (id) => this.onSelect(id),
-      onFocusBeach: () => this.view.animateTo((MAP_W / 2) * UNIT, 0.8 * UNIT, this.view.width / 3.6, this.view.height * 0.2),
+      onFocusBeach: () => this.view.animateTo((MAP_W / 2) * UNIT, 0.8 * UNIT, this.view.refWidth / 3.6, this.view.height * 0.2),
       onReset: () => this.startOver(),
       onRestored: () => this.restored(),
       onCollected: (id, coins) => this.pop(id, coins),
@@ -129,7 +129,7 @@ export class MapScene extends Phaser.Scene {
       const ref = ZONES.find((z) => z.id === id)!;
       const c = rectCenter(toWorld(ref.def.rect));
       const units = Math.max(1.5, Math.min(3.2, ref.def.rect.w * 0.6 + 0.5));
-      this.view.animateTo(c.x, c.y, this.view.width / units, lift);
+      this.view.animateTo(c.x, c.y, this.view.refWidth / units, lift);
     }
   }
 

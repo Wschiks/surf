@@ -1,0 +1,21 @@
+export default async ({ page, shot, base }) => {
+  const ev = (fn, a) => page.evaluate(fn, a);
+  await page.goto(base);
+  await page.waitForTimeout(1800);
+  await ev(() => { const s = window.__surf.game.state; s.skillPoints = 9; s.skills = { ...s.skills, 'wave:prices1': true, 'wave:guests1': true, 'beach:away1': true }; });
+  await ev(() => window.__surf.ui.openSkills('wave'));
+  await page.waitForTimeout(1200);
+  await ev(() => document.querySelector('[data-skill="wave:cost1"]').click());
+  await page.waitForTimeout(500);
+  await shot('01-wave-tree');
+  await page.click('.sk-tab[data-tree=beach]', { force: true });
+  await page.waitForTimeout(900);
+  await ev(() => document.querySelector('[data-skill="beach:away2"]').click());
+  await page.waitForTimeout(400);
+  await shot('02-beach-tree');
+  await ev(() => document.querySelector('[data-learn]').click());
+  await page.waitForTimeout(500);
+  console.log('offline hours after learning away2:', await ev(() => window.__surf.game.state.skills['beach:away2']), 'points', await ev(() => window.__surf.game.state.skillPoints));
+  await ev(() => { const v = document.querySelector('[data-sk-view]'); });
+  await shot('03-learned');
+};

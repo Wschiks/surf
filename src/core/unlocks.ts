@@ -3,6 +3,8 @@ import { EXPANSIONS, expansionAfter, type ExpansionDef } from '../config/expansi
 import { SPORTS, sportById, zoneById, zoneId, type SportDef, type SportId, type ZoneRef } from '../config/sports';
 import { fmt } from '../ui/format';
 import { upgradeCount } from './economy';
+import { addSkillPoints, skillEffects } from './skills';
+import { EXPANSION_POINTS } from '../config/skills';
 import { newZone, openAreas, type GameState } from './state';
 import { FACILITIES } from '../config/facilities';
 
@@ -47,7 +49,13 @@ export function sportStatus(state: GameState, sport: SportDef): UnlockStatus {
     { text: `Reputation ${fmt(rule.reputation)}`, met: state.reputation >= rule.reputation, progress: `${fmt(Math.floor(state.reputation))} / ${fmt(rule.reputation)}` },
   ];
   const ready = reqs.every((r) => r.met);
-  return { requirements: reqs, coins: rule.coins, ready, canBuy: ready && state.coins >= rule.coins, blockedBy: null };
+  const coins = discounted(state, sport.id, rule.coins);
+  return { requirements: reqs, coins, ready, canBuy: ready && state.coins >= coins, blockedBy: null };
+}
+
+/** A price after the skill discount for unlocks. */
+function discounted(state: GameState, sport: SportId, coins: number): number {
+  return Math.round(coins * (1 - (skillEffects(state).unlock[sport] ?? 0)));
 }
 
 export function unlockSport(state: GameState, id: SportId): boolean {
@@ -83,7 +91,8 @@ export function levelStatus(state: GameState, ref: ZoneRef): UnlockStatus {
     reqs.push({ text: `Reputation ${fmt(rule.reputation)}`, met: state.reputation >= rule.reputation, progress: `${fmt(Math.floor(state.reputation))} / ${fmt(rule.reputation)}` });
   }
   const ready = !blockedBy && reqs.every((r) => r.met);
-  return { requirements: reqs, coins: rule.coins, ready, canBuy: ready && state.coins >= rule.coins, blockedBy };
+  const coins = discounted(state, ref.sport.id, rule.coins);
+  return { requirements: reqs, coins, ready, canBuy: ready && state.coins >= coins, blockedBy };
 }
 
 /** What a locked zone needs. Level 1 of a closed area needs the beach expansion; other levels need their level rule. */
@@ -146,6 +155,7 @@ export function expand(state: GameState): boolean {
   if (!canExpand(state)) return false;
   if (!st) return false;
   state.expansions += 1;
+  addSkillPoints(state, EXPANSION_POINTS[state.expansions] ?? 0); // skills stay; the expansion pays skill points
   state.coins = 0;
   state.quests = [];
   for (const id of Object.keys(state.zones)) state.zones[id] = newZone();

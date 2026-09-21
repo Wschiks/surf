@@ -21,7 +21,12 @@ import { BALANCE } from '../src/config/balance';
 import { newGame } from '../src/core/state';
 
 const W1 = 'wave-1';
-const fresh = () => newGame(0);
+/** A new game without the free root skills, so the numbers of the basic rules can be checked exactly. */
+const fresh = () => {
+  const s = newGame(0);
+  s.skills = {};
+  return s;
+};
 
 describe('starting state', () => {
   it('starts with wave surfing level 1 only', () => {

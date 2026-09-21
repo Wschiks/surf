@@ -23,9 +23,11 @@ type Page = 'main' | 'how' | 'terms' | 'privacy' | 'about' | 'save';
 const HOW_TO_PLAY = [
   ['Start sessions', 'Tap the round badge on a zone to start a session. When it is done, tap it again to collect the coins.'],
   ['Upgrade', 'Open a zone to level it up, get a bigger class or make it faster. Hold a button to buy quickly, or pick x10, x100 or Max.'],
-  ['Managers', 'Hire a manager to keep a zone running by itself, also while the game is closed (up to 8 hours).'],
+  ['Managers', 'Hire a manager to keep a zone running by itself, also while the game is closed. Away time earns for 2 hours; skills in the Beach tree make that longer.'],
   ['New levels and sports', 'Levels and sports need coins and reputation. Reputation comes from your guests.'],
-  ['Quests', 'Finish quests for extra coins. Every quest pays its own reward. Swipe the row of quests sideways to see them all.'],
+  ['Quests', 'Finish quests for extra coins and skill points. Every quest pays its own reward. Swipe the row of quests sideways to see them all.'],
+  ['Skills', 'Skill points (the purple gems) are for the skill trees: one tree for every sport and one for the beach. Each tree starts with a free skill and then splits up so you can choose. Skills stay when you expand the beach.'],
+  ['Reputation', 'The star counts how much guests love your beach. Higher levels and new sports need a minimum reputation. Tap the star to read more.'],
   ['Expand the beach', 'When you own Level 4 of every sport, you can expand the beach: all income goes up for good, a new area opens and you start over.'],
   ['Moving around', 'Swipe to move, pinch or scroll to zoom.'],
 ] as const;

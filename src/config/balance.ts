@@ -63,8 +63,8 @@ export const BALANCE = {
   speedStep: 0.06,
   /** Cost of a manager, in multiples of the tier scale. */
   managerCost: 60,
-  /** Offline earnings stop after this many seconds away. */
-  offlineCapSeconds: 8 * 3600,
+  /** Offline earnings stop after this many seconds away (2 hours; the beach skills add more). */
+  offlineCapSeconds: 2 * 3600,
   /** Only show this many guests per zone on the map. */
   maxVisibleGuests: 10,
   /** Reputation earned per guest per session at tier 0; grows with tier. */
