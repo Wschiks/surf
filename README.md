@@ -29,6 +29,7 @@ npm run dev        # dev server on http://localhost:5173 (also reachable from yo
 npm run build      # type check + production build in dist/
 npm run preview    # serve the production build
 npm test           # unit tests (idle maths, unlock rules, full playthrough simulation)
+npm run smoke      # short browser test of the built game (run npm run build first; needs Playwright's Chromium)
 ```
 
 ## Screenshots
