@@ -37,6 +37,7 @@ try {
 
   await page.evaluate(() => window.__surf.ui.openZone('wave-1'));
   await page.waitForSelector('.sheet.open [data-buy=capacity]');
+  await page.waitForTimeout(600);
   await page.evaluate(() => (window.__surf.game.state.coins = 100));
   await page.waitForTimeout(300);
   await page.click('[data-buy=capacity]', { force: true });
