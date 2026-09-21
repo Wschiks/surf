@@ -23,3 +23,13 @@ new ResizeObserver(() => {
   const s = size();
   if (s.w !== game.scale.width || s.h !== game.scale.height) game.scale.resize(s.w, s.h);
 }).observe(holder);
+
+// One size unit for buttons, pills and rounded corners: 1 on a normal phone (390 wide, 780 high), smaller on small or
+// flat screens and a little bigger on large ones, so the shapes keep their proportions when the window changes.
+function setUnit() {
+  const col = Math.min(window.innerWidth, 480);
+  const u = Math.min(1.15, Math.max(0.72, Math.min(col / 390, window.innerHeight / 780)));
+  document.documentElement.style.setProperty('--u', u.toFixed(3));
+}
+setUnit();
+window.addEventListener('resize', setUnit);

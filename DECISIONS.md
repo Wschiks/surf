@@ -187,3 +187,6 @@ Every choice made while building, and why. The concept document (`docs/concept.m
 
 ## Gem quests are fixed per quest
 - Fix: the gem was decided when a quest was claimed, so when the 5th quest came around every easy quest suddenly showed a gem. Now it is decided **when a quest is made** and stored on that quest (`points`): a hard kind (manager 1, building 1, unlock 2, expand 5) or every 5th quest that is made (`questsMade`). Only that one quest is a gem quest and it keeps its gem until you finish it; the other quests never change.
+
+## Rounded corners and buttons scale with the screen
+- One size unit `--u` (set on the page by `src/main.ts` on load and on every resize): `--u = clamp(0.72, min(columnWidth / 390, windowHeight / 780), 1.15)`, 1 on a normal phone. Every rounded corner in `src/styles.css` is now `calc(N px * var(--u))` and the sizes of the main controls (bottom-bar buttons, pills, close buttons, Go/Buy/Buy-amount buttons, level pills, menu rows, claim buttons) use the same unit, so shapes keep their proportions on small, flat and big screens. Icon tiles keep their picture size and use a proportional corner (31%), so they stay square-ish. The bottom-bar buttons are equal width. Checked at 390x844, 360x640, 800x360 and 1280x720 (`screenshots/btn-*`).
