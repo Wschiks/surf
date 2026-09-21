@@ -53,8 +53,11 @@ export interface SkillTree {
 /** Pixels per tree unit on the skill map. */
 export const TREE_UNIT = 78;
 
-/** Skill points for completing a quest, by kind of quest. */
-export const QUEST_POINTS: Record<string, number> = { level: 1, sessions: 1, served: 1, earn: 1, guests: 1, speed: 2, manager: 2, facility: 2, unlock: 3, expand: 5 };
+/** Skill points for completing a quest, by kind of quest. Easy quests pay none: skill points are rare. */
+export const QUEST_POINTS: Record<string, number> = { level: 0, sessions: 0, served: 0, earn: 0, guests: 0, speed: 0, manager: 1, facility: 1, unlock: 2, expand: 5 };
+/** On top of that, every 5th finished quest pays at least this many skill points, whatever it asks. */
+export const LUCKY_QUEST_EVERY = 5;
+export const LUCKY_QUEST_POINTS = 1;
 /** Skill points for buying beach expansion 1 and 2. */
 export const EXPANSION_POINTS = [0, 15, 25];
 

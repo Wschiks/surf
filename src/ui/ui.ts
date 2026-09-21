@@ -643,7 +643,7 @@ export class GameUI {
       if (n.textContent !== nt) n.textContent = nt;
       (row.querySelector('.q-bar b') as HTMLElement).style.width = Math.round(Math.min(1, v.current / v.target) * 100) + '%';
       const claim = row.querySelector<HTMLElement>('.q-claim')!;
-      setHtml(claim, `${v.done ? 'Claim ' : ''}${COIN} ${fmt(v.reward)}<span class="q-gem">${icon('gem')}${v.points}</span>`);
+      setHtml(claim, `${v.done ? 'Claim ' : ''}${COIN} ${fmt(v.reward)}${v.points > 0 ? `<span class="q-gem">${icon('gem')}${v.points}</span>` : ''}`);
       claim.classList.toggle('waiting', !v.done);
     }
     setHtml(this.refs.qsum, ready ? `${ready} to claim` : 'Swipe for more quests');

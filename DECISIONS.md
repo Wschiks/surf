@@ -181,3 +181,6 @@ Every choice made while building, and why. The concept document (`docs/concept.m
 - **Away time is now 2 hours** (was 8) and the Beach tree makes it longer (up to 2 + 8 = 10 hours). The welcome-back dialog says so.
 - **Rendering fix:** the game now asks for the minimum 8 texture units, which removes the "waiting surfer cut in half" glitch that showed up on some renderers with 16 units.
 - The balance bot does not spend skill points, so the playthrough numbers describe a player who ignores skills; real players will be faster. The free root skills give +5% coins in every sport.
+
+## Skill points are rare
+- Easy quests (level up, finish sessions, serve guests, earn coins, more guests, faster) pay **no** skill points. Harder ones do: hire a manager 1, build/upgrade a beach building 1, unlock a level or sport 2, expand the beach 5. On top of that **every 5th quest you finish pays at least 1**, whatever it asks (it depends on how many you finished, so it stays deterministic). A quest card only shows the gem when it pays one. Expansions still pay 15 and 25.

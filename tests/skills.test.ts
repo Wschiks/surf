@@ -3,7 +3,7 @@ import { BALANCE } from '../src/config/balance';
 import { EXPANSION_POINTS, QUEST_POINTS, SKILL_NODES, SKILL_TREES, describeSkill, skillById } from '../src/config/skills';
 import { SPORTS, zoneById } from '../src/config/sports';
 import { buyFacility, buyManager, buyStat, discounts, facilityCost, managerCost, offlineCap, statCost, zoneStats } from '../src/core/economy';
-import { claimQuest, refreshQuests } from '../src/core/quests';
+import { claimQuest, questView, refreshQuests } from '../src/core/quests';
 import { canLearn, learnSkill, skillEffects, skillStatus } from '../src/core/skills';
 import { newGame, type GameState } from '../src/core/state';
 import { expand, levelStatus } from '../src/core/unlocks';
@@ -76,16 +76,28 @@ describe('learning skills', () => {
     expect(learnSkill(s, 'wave:speed2')).toBe(false); // parent not learned
   });
 
-  it('skill points come from quests (more for harder ones) and from expansions', () => {
+  it('skill points are rare: easy quests pay none, harder ones pay some, every 5th quest pays one', () => {
     const s = game();
     refreshQuests(s);
     s.coins = 1e12;
     buyStat(s, 'wave-1', 'price', 10);
+    const easy = s.quests[0];
+    expect(easy.kind).toBe('level');
+    expect(questView(s, easy).points).toBe(0);
     const before = s.skillPoints;
     expect(claimQuest(s, 0)).toBeGreaterThan(0);
-    expect(s.skillPoints).toBe(before + QUEST_POINTS.level);
-    expect(QUEST_POINTS.unlock).toBeGreaterThan(QUEST_POINTS.level);
+    expect(s.skillPoints).toBe(before); // no gem for an easy quest
+    expect(QUEST_POINTS.unlock).toBeGreaterThan(QUEST_POINTS.manager);
+    expect(QUEST_POINTS.expand).toBeGreaterThan(QUEST_POINTS.unlock);
     expect(EXPANSION_POINTS[1]).toBeGreaterThan(0);
+    // the 5th finished quest pays a gem even when it is easy
+    s.questsDone = 4;
+    s.quests = [];
+    refreshQuests(s);
+    const q = s.quests.find((x) => QUEST_POINTS[x.kind] === 0)!;
+    expect(questView(s, q).points).toBe(1);
+    // and a hard quest pays its own gems
+    expect(questView(s, { kind: 'unlock', zone: 'wave-2', target: 1 }).points).toBe(2);
   });
 
   it('skills stay when the beach is expanded, and the expansion pays skill points', () => {

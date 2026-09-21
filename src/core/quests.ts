@@ -4,7 +4,7 @@ import { ZONES, zoneById, type ZoneRef } from '../config/sports';
 import { fmt } from '../ui/format';
 import { autoIncomePerSecond, guestsFor, multipliers, zoneStats } from './economy';
 import { addSkillPoints, skillEffects } from './skills';
-import { QUEST_POINTS } from '../config/skills';
+import { LUCKY_QUEST_EVERY, LUCKY_QUEST_POINTS, QUEST_POINTS } from '../config/skills';
 import type { GameState } from './state';
 import { expansionStatus, nextGoal } from './unlocks';
 
@@ -71,7 +71,8 @@ function ownedZones(state: GameState): ZoneRef[] {
 export function questView(state: GameState, q: Quest): QuestView {
   const v = view(state, q);
   v.reward = Math.ceil((q.reward ?? rewardFor(state, q.kind)) * (1 + skillEffects(state).quest));
-  v.points = QUEST_POINTS[q.kind] ?? 1;
+  // harder quests pay skill points; so does every 5th quest you finish (nothing random: it depends on how many you finished)
+  v.points = Math.max(QUEST_POINTS[q.kind] ?? 0, (state.questsDone + 1) % LUCKY_QUEST_EVERY === 0 ? LUCKY_QUEST_POINTS : 0);
   return v;
 }
 
