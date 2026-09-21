@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { AREAS, areaRect, type AreaId } from '../config/areas';
+import { AREAS, areaRect } from '../config/areas';
 import { MAP_W, UNIT, rectCenter, rectContains, toWorld } from '../config/layout';
 import { ZONES } from '../config/sports';
 import { tapZone } from '../core/economy';
@@ -8,7 +8,7 @@ import { resetSave } from '../core/save';
 import { GameUI } from '../ui/ui';
 import { LabelLayer } from '../ui/labels';
 import { ZoneChips } from '../ui/zoneChips';
-import { buildBackground, Haze } from './background';
+import { buildBackground, Mist } from './background';
 import { BeachView } from './beach';
 import { MapInput, MapView } from './MapView';
 import { ZoneView } from './zoneView';
@@ -24,7 +24,7 @@ export class MapScene extends Phaser.Scene {
   view = new MapView();
   game_!: Game;
   private bg!: ReturnType<typeof buildBackground>;
-  private hazes = new Map<AreaId, Haze>();
+  private mist!: Mist;
   private labels!: LabelLayer;
   private ui!: GameUI;
   private chips!: ZoneChips;
@@ -33,7 +33,6 @@ export class MapScene extends Phaser.Scene {
   private ocean!: OceanView;
   private scenery!: Scenery;
   private zones: ZoneView[] = [];
-  private clearedAreas = new Set<AreaId>(['beach', 'wave']);
   private popCount = 0;
   private popsAlive = 0;
 
@@ -80,8 +79,8 @@ export class MapScene extends Phaser.Scene {
     this.scenery = new Scenery(this);
     for (const ref of ZONES) this.zones.push(new ZoneView(this, ref, (id, coins) => this.pop(id, coins)));
 
+    this.mist = new Mist(this, this.game_.state.expansions);
     for (const a of AREAS) {
-      if (a.expansion > 0) this.hazes.set(a.id, new Haze(this, a.id));
       const c = rectCenter(areaRect(a));
       this.labels.set({
         id: 'area-' + a.id,
@@ -92,7 +91,6 @@ export class MapScene extends Phaser.Scene {
         html: a.name,
       });
     }
-    this.syncAreas(false);
 
     const holder = document.getElementById('game')!;
     this.scale.on('resize', () => this.syncSize());
@@ -182,24 +180,13 @@ export class MapScene extends Phaser.Scene {
     this.beach.reset();
     this.ocean.reset();
     this.view.jumpTo(7.9 * UNIT, 2.2 * UNIT, this.view.defaultPpu());
-  }
-
-  /** Clear the haze on every area that the bought beach expansions have opened. */
-  private syncAreas(animate: boolean) {
-    for (const a of AREAS) {
-      if (a.expansion > 0 && this.game_.state.expansions >= a.expansion) this.setAreaCleared(a.id, animate);
-    }
-  }
-
-  setAreaCleared(id: AreaId, animate = true) {
-    this.clearedAreas.add(id);
-    this.hazes.get(id)?.clear(animate);
+    // the mist pulls back once the big wave has left the screen
+    this.time.delayedCall(1700, () => this.mist.moveTo(this.game_.state.expansions));
   }
 
   update(time: number, delta: number) {
     const now = Date.now();
     this.game_.update(now);
-    this.syncAreas(true);
     this.view.update(Math.min(delta, 100) / 1000);
     const cam = this.cameras.main;
     cam.setZoom(this.view.zoom * this.dpr);
@@ -211,7 +198,7 @@ export class MapScene extends Phaser.Scene {
     this.bg.foam.tilePositionX = time * 0.012;
     this.bg.swell.tilePositionY = -time * 0.008;
     this.bg.swell.tilePositionX = time * 0.004;
-    for (const h of this.hazes.values()) h.update(time);
+    this.mist.update(time);
     for (const z of this.zones) z.update(time, this.game_.state, this.view);
     this.beach.update(this.game_.state);
     this.beach.animateWalkers(this.game_.state, time);

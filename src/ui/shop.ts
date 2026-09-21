@@ -85,7 +85,7 @@ export class Shop {
 
     const club = clubStatus(g, now);
     const until = g.perks.clubUntil ? new Date(g.perks.clubUntil).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '';
-    const perks = [`Coins x${CLUB.coinMult}, all the time`, 'Every ad reward without an ad', `${CLUB.gemsPerDay} gems every day`, `+${CLUB.awayHours} hours away time`];
+    const perks = [`Coins x${CLUB.coinMult}, all the time`, 'No ads', `${CLUB.gemsPerDay} gems every day`, `+${CLUB.awayHours} hours away time`];
     this.root.querySelector('[data-club]')!.innerHTML = `
       <div class="shop-title"><b>${icon('star')} ${CLUB.name}</b><small>${club.active ? `Active${until ? ' until ' + until : ''}` : `${this.prices.club ?? CLUB.price} / month`}</small></div>
       <ul class="club-perks">${perks.map((t) => `<li>${icon('check')}${t}</li>`).join('')}</ul>

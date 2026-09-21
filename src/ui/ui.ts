@@ -81,7 +81,6 @@ export class GameUI {
         <button class="pill gear" data-ref="gear" aria-label="Menu">${icon('gear')}</button>
       </div>
       <div class="quests" data-ref="quests">
-        <button class="q-head" data-ref="qhead"><b>Quests</b><small data-ref="qsum"></small><span class="q-chev">${icon('arrow')}</span></button>
         <div class="q-list" data-ref="qlist">${Array.from({ length: QUEST_SLOTS }, (_, i) => `<div class="q-row" data-q="${i}"><div class="q-body"><span class="q-t"></span><i class="q-bar"><b></b></i><small class="q-n"></small></div><button class="q-claim"></button></div>`).join('')}</div>
       </div>
       <button class="tip" data-ref="tip" hidden></button>
@@ -121,7 +120,6 @@ export class GameUI {
     this.refs.modal.addEventListener('click', (e) => {
       if (e.target === this.refs.modal) this.closeModal();
     });
-    this.refs.qhead.addEventListener('click', () => this.refs.quests.classList.toggle('collapsed'));
     this.refs.qlist.querySelectorAll<HTMLElement>('.q-claim').forEach((b, i) =>
       b.addEventListener('click', () => {
         const got = claimQuest(this.game.state, i);
@@ -133,7 +131,6 @@ export class GameUI {
         this.refreshTop();
       }),
     );
-    if (window.innerHeight < 560) this.refs.quests.classList.add('collapsed'); // small (landscape) screens start with the quests folded away
     if (this.game.offlineReport) this.showOffline(this.game.offlineReport);
   }
 
@@ -688,7 +685,6 @@ export class GameUI {
       setHtml(claim, `${v.done ? 'Claim ' : ''}${COIN} ${fmt(v.reward)}${v.points > 0 ? `<span class="q-gem">${icon('gem')}${v.points}</span>` : ''}`);
       claim.classList.toggle('waiting', !v.done);
     }
-    setHtml(this.refs.qsum, ready ? `${ready} to claim` : 'Swipe for more quests');
     this.refs.quests.classList.toggle('ready', ready > 0);
   }
 

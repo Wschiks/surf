@@ -53,3 +53,4 @@ Done: bag button and Shop dialog, 5-ad daily streak (1 gem, x2 30 s, 2 gems, x2 
 Shop expanded with gem packs (20/100/300 gems), 112 tests.
 
 Surf Club subscription (3.99 a month: x2 coins, ads free, 3 gems a day, +2 h away) added to the shop, 116 tests.
+Compact quests panel, single mist that slides back after the wave, no lock badges.

@@ -34,9 +34,9 @@ export class ZoneChips {
     let ring = 0;
     let amount = '';
     if (!z.owned) {
-      cls += ' locked';
-      glyph = 'lock';
-      color = '#7d92a3';
+      // a zone you do not own yet has no badge (tap the zone itself, or use the Sports button, to unlock it)
+      this.labels.remove('zone-' + ref.id);
+      return;
     } else if (!z.manager && z.phase !== 'running') {
       quick = true;
       if (z.phase === 'ready') {
