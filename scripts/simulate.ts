@@ -2,6 +2,7 @@
 // Env: CS=<cost scale> to try another BALANCE.costScale, QUIET=1 to only print the summary.
 const { BALANCE } = await import('../src/config/balance');
 if (process.env.CS) BALANCE.costScale = Number(process.env.CS);
+if (process.env.UM) BALANCE.unlockMult = Number(process.env.UM);
 const { simulate } = await import('../src/core/bot');
 const { ZONES } = await import('../src/config/sports');
 

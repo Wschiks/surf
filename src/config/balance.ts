@@ -26,7 +26,9 @@ export const BALANCE = {
   /** Every tier step multiplies the income of a zone by this factor. */
   tierScale: 5,
   /** Every tier step multiplies costs by this factor. Bigger than tierScale, so later tiers take longer to reach. */
-  costScale: 7.5,
+  costScale: 7.1,
+  /** Scales every unlock price at once (level and sport unlocks). */
+  unlockMult: 3,
   /** Price per guest gains this fraction of the base price per price level. */
   priceStep: 0.25,
   /** Sessions get this fraction faster per speed level (duration = base / (1 + step * level)). */
@@ -52,7 +54,7 @@ export function costFactor(tier: number): number {
 
 /** Coins for an unlock at a tier: `factor` times the cost scale of that tier. */
 export function unlockCoins(tier: number, factor: number): number {
-  const raw = factor * costFactor(tier);
+  const raw = factor * BALANCE.unlockMult * costFactor(tier);
   if (raw < 100) return Math.round(raw);
   const e = Math.floor(Math.log10(raw)) - 1;
   return Math.round(raw / 10 ** e) * 10 ** e;
