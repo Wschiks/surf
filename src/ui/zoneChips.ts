@@ -2,6 +2,7 @@ import { rectCenter, toWorld } from '../config/layout';
 import { ZONES, type ZoneRef } from '../config/sports';
 import { zoneStats } from '../core/economy';
 import type { GameState } from '../core/state';
+import { expansionNeededFor } from '../core/unlocks';
 import type { LabelLayer } from './labels';
 import { fmt } from './format';
 import { icon } from './icons';
@@ -34,6 +35,11 @@ export class ZoneChips {
     let ring = 0;
     let amount = '';
     if (!z.owned) {
+      if (expansionNeededFor(state, ref.sport.id) !== null) {
+        // still under the mist: not really "in play" yet, so no badge shows through it
+        this.labels.remove('zone-' + ref.id);
+        return;
+      }
       // grey with a lock, so a glance at the map shows what is still out there to unlock
       cls += ' locked';
       glyph = 'lock';
