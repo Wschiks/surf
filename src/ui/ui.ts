@@ -645,7 +645,7 @@ export class GameUI {
   // ------------------------------------------------------------ tutorial coach marks
 
   /** Which early-game hint is on screen right now, if any: the whole screen dims and only that one button stays lit. */
-  private coachKind: 'hire' | 'skills' | 'sports' | 'beach' | 'expand' | null = null;
+  private coachKind: 'upgradeCoach' | 'hire' | 'skills' | 'sports' | 'beach' | 'expand' | null = null;
 
   private refreshCoach() {
     if (this.sheet || this.skillScreen.isOpen || !this.refs.modal.hidden) return this.hideCoach();
@@ -657,11 +657,14 @@ export class GameUI {
   }
 
   /** The next milestone to point at, in the order a new player reaches them. Each is shown once, ever. */
-  private nextCoachStep(): { kind: 'hire' | 'skills' | 'sports' | 'beach' | 'expand'; el: HTMLElement; text: string } | null {
+  private nextCoachStep(): { kind: 'upgradeCoach' | 'hire' | 'skills' | 'sports' | 'beach' | 'expand'; el: HTMLElement; text: string } | null {
     const s = this.game.state;
     const wref = zoneById('wave-1');
     const wz = s.zones['wave-1'];
     const upgrades = wz.price + wz.capacity + wz.speed;
+    if (!s.tips.upgradeCoach && s.expansions === 0 && wz.owned && s.totalCoins > 0 && upgrades === 0 && s.coins >= statCost(wref, 'price', 0)) {
+      return { kind: 'upgradeCoach', el: this.refs.tip, text: 'You can upgrade! Tap here, then buy Level up to earn more coins every time.' };
+    }
     if (!s.tips.hire && s.expansions === 0 && wz.owned && upgrades >= 3 && !wz.manager && s.coins >= managerCost(wref, discounts(s, 'wave').manager)) {
       return { kind: 'hire', el: this.refs.tip, text: 'You can hire someone to run it for you! A manager keeps a zone earning by itself, even while you are away. Tap here.' };
     }
@@ -683,6 +686,7 @@ export class GameUI {
 
   private coachTarget(): HTMLElement | null {
     switch (this.coachKind) {
+      case 'upgradeCoach':
       case 'hire':
         return this.refs.tip;
       case 'skills':
@@ -698,7 +702,7 @@ export class GameUI {
     }
   }
 
-  private showCoach(step: { kind: 'hire' | 'skills' | 'sports' | 'beach' | 'expand'; el: HTMLElement; text: string }) {
+  private showCoach(step: { kind: 'upgradeCoach' | 'hire' | 'skills' | 'sports' | 'beach' | 'expand'; el: HTMLElement; text: string }) {
     this.coachKind = step.kind;
     this.game.state.tips[step.kind] = true; // shown once, however it is dismissed
     this.refs.coachBubble.textContent = step.text;
@@ -729,6 +733,10 @@ export class GameUI {
     ring.style.width = `${r.width + pad * 2}px`;
     ring.style.height = `${r.height + pad * 2}px`;
     const bubble = this.refs.coachBubble;
+    // the tip pill already carries its own message as its text, so it does not also get a floating bubble
+    const skipBubble = this.coachKind === 'upgradeCoach' || this.coachKind === 'hire';
+    bubble.hidden = skipBubble;
+    if (skipBubble) return;
     const above = r.top > host.height * 0.55;
     bubble.style.left = `${Math.min(Math.max(r.left - host.left + r.width / 2, 130), host.width - 130)}px`;
     bubble.style.top = above ? `${r.top - host.top - 12}px` : `${r.bottom - host.top + 12}px`;
