@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { AD_COOLDOWN_SECONDS, AD_STEPS, CLUB, GEM_PACKS } from '../src/config/shop';
 import { BALANCE } from '../src/config/balance';
 import { adFree, loadPerks, PERKS_KEY, refreshClub, savePerks } from '../src/core/perks';
-import { exportSave, loadGame, parseSave, saveGame } from '../src/core/save';
+import { loadGame, saveGame } from '../src/core/save';
 import { adStreak, claimAdStep, claimClubGems, clubStatus, grantGemPack } from '../src/core/shop';
 import { multipliers, offlineCap } from '../src/core/economy';
 import { newGame } from '../src/core/state';
@@ -63,17 +63,14 @@ describe('purchases', () => {
     expect(multipliers(b).coins).toBe(multipliers(a).coins * BALANCE.x5Mult);
   });
 
-  it('are kept apart from the save: not in the save, not in a save code, not lost by a reset', () => {
+  it('are kept apart from the save: not in the save, and a forged save cannot grant them', () => {
     const s = fresh();
     s.perks = { noAds: true, x5: true };
     const store = memory();
     saveGame(s, 1, store);
     expect(store.data.get('surf-tycoon-save-v1')).not.toContain('perks');
-    expect(exportSave(s)).not.toContain('perks');
     const forged = fresh() as unknown as { perks: unknown };
     forged.perks = { x5: true };
-    const parsed = parseSave(JSON.stringify(forged));
-    expect(parsed?.perks).toEqual({});
     store.data.set('surf-tycoon-save-v1', JSON.stringify(forged));
     expect(loadGame(0, store).perks).toEqual({});
   });
@@ -154,6 +151,8 @@ describe('Surf Club', () => {
     savePerks({ clubUntil: 123 }, store);
     expect(loadPerks(store).clubUntil).toBe(123);
     const s = member();
-    expect(exportSave(s)).not.toContain('clubUntil');
+    const saveStore = memory();
+    saveGame(s, 1, saveStore);
+    expect(saveStore.data.get('surf-tycoon-save-v1')).not.toContain('clubUntil');
   });
 });

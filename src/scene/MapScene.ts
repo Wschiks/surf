@@ -54,7 +54,6 @@ export class MapScene extends Phaser.Scene {
       onSelect: (id) => this.onSelect(id),
       onFocusBeach: () => this.view.animateTo((MAP_W / 2) * UNIT, 0.8 * UNIT, this.view.refWidth / 3.6, this.view.height * 0.2),
       onReset: () => this.startOver(),
-      onRestored: () => this.restored(),
       onCollected: (id, coins) => this.pop(id, coins),
       onUnlocked: (id, kind) => this.onUnlocked(id, kind),
       onExpanded: () => this.onExpanded(),
@@ -160,12 +159,6 @@ export class MapScene extends Phaser.Scene {
       this.labels.remove(id);
       this.popsAlive--;
     }, 1100);
-  }
-
-  /** A save code was written: reload and play it (nothing may overwrite it first). */
-  private restored() {
-    this.game_.stopSaving();
-    setTimeout(() => location.reload(), 150);
   }
 
   /** Erase the save and reload the page: a completely fresh game. */

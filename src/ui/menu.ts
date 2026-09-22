@@ -2,7 +2,6 @@ import pkg from '../../package.json';
 import { CREDITS, LEGAL_UPDATED, PRIVACY, TERMS, type LegalSection } from '../config/legal';
 import { ZONES } from '../config/sports';
 import type { Game } from '../core/game';
-import { exportSave, parseSave, writeSave } from '../core/save';
 import { COIN, fmt, fmtTime } from './format';
 import { icon, tile } from './icons';
 import { isMuted, setMuted, sound } from './sound';
@@ -13,12 +12,10 @@ export interface MenuContext {
   toast: (text: string) => void;
   /** Ask "Start over?" and, if confirmed, erase the save. */
   askReset: () => void;
-  /** A save code was restored: stop saving and reload the page. */
-  restored: () => void;
   refreshTop: () => void;
 }
 
-type Page = 'main' | 'how' | 'terms' | 'privacy' | 'about' | 'save';
+type Page = 'main' | 'how' | 'terms' | 'privacy' | 'about';
 
 const HOW_TO_PLAY = [
   ['Start sessions', 'Tap the round badge on a zone to start a session. When it is done, tap it again to collect the coins.'],
@@ -31,7 +28,7 @@ const HOW_TO_PLAY = [
   ['Moving around', 'Swipe to move, pinch or scroll to zoom.'],
 ] as const;
 
-/** The menu: settings, your stats, help, terms, privacy, save codes and about. It draws itself into `root`. */
+/** The menu: settings, your stats, help, terms, privacy and about. It draws itself into `root`. */
 export class Menu {
   constructor(
     private root: HTMLElement,
@@ -52,8 +49,6 @@ export class Menu {
         return this.legal('Privacy Policy', 'shield', '#2fbf8a', PRIVACY);
       case 'about':
         return this.about();
-      case 'save':
-        return this.save();
     }
   }
 
@@ -102,11 +97,6 @@ export class Menu {
         ${this.row('help', '#1497b5', 'How to play', 'The basics in a minute', 'data-go="how"')}
       </div>
 
-      <h4>Your save</h4>
-      <div class="set-group">
-        ${this.row('download', '#e9a13a', 'Save code', 'Back up or restore your game', 'data-go="save"')}
-      </div>
-
       <h4>Legal</h4>
       <div class="set-group">
         ${this.row('doc', '#7a5cff', 'Terms of Service', 'The rules of playing', 'data-go="terms"')}
@@ -150,42 +140,4 @@ export class Menu {
     );
   }
 
-  private save() {
-    const code = exportSave(this.ctx.game.state);
-    this.simple(
-      'Save code',
-      'download',
-      '#e9a13a',
-      `<p class="menu-updated">Your game is saved on this device. Copy the code below to keep a backup, or to move your game to another device.</p>
-       <textarea class="code" readonly data-code rows="4">${code}</textarea>
-       <button class="btn soft" data-copy>${icon('copy')} Copy the code</button>
-       <h4>Restore a save</h4>
-       <p class="menu-updated">Paste a code here. This replaces your current game.</p>
-       <textarea class="code" data-paste rows="3" placeholder="Paste your save code"></textarea>
-       <p class="menu-error" data-error hidden></p>
-       <button class="btn soft" data-restore>${icon('upload')} Restore this save</button>`,
-    );
-    const area = this.root.querySelector<HTMLTextAreaElement>('[data-code]')!;
-    this.root.querySelector('[data-copy]')!.addEventListener('click', async () => {
-      try {
-        await navigator.clipboard.writeText(code);
-      } catch {
-        area.select();
-        document.execCommand?.('copy');
-      }
-      this.ctx.toast('Code copied');
-    });
-    this.root.querySelector('[data-restore]')!.addEventListener('click', () => {
-      const text = this.root.querySelector<HTMLTextAreaElement>('[data-paste]')!.value;
-      const parsed = parseSave(text);
-      const err = this.root.querySelector<HTMLElement>('[data-error]')!;
-      if (!parsed) {
-        err.hidden = false;
-        err.textContent = 'That is not a valid save code for this version of the game.';
-        return;
-      }
-      this.ctx.restored();
-      writeSave(parsed);
-    });
-  }
 }

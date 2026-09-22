@@ -1,5 +1,5 @@
-// What the player bought (remove ads, coins x5). It is kept apart from the game save on purpose: it is not part of a
-// save code, so a code cannot hand out purchases, and "Start over" does not lose them.
+// What the player bought (remove ads, coins x5). It is kept apart from the game save on purpose: a forged or restored
+// save cannot hand out purchases, and "Start over" does not lose them.
 
 export interface Perks {
   noAds?: boolean;

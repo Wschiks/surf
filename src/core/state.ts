@@ -123,7 +123,7 @@ export function ensureState(state: GameState): GameState {
   state.boost ??= 0;
   state.adShop ??= { step: 0, lockedUntil: 0 };
   state.clubNext ??= 0;
-  state.perks = {}; // never taken from a save or a save code
+  state.perks = {}; // never taken from a save
 
   state.skills = { ...rootSkills(), ...(state.skills ?? {}) };
   return state;

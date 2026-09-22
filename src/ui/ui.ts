@@ -29,8 +29,6 @@ export interface UICallbacks {
   /** The beach sheet opened: show the beach. */
   onFocusBeach: () => void;
   onReset: () => void;
-  /** A save code was restored: stop saving and reload. */
-  onRestored: () => void;
   /** Coins were collected from a zone, for a floating number on the map. */
   onCollected: (zoneId: string | null, coins: number) => void;
   /** A level or a whole sport was unlocked. */
@@ -985,7 +983,6 @@ export class GameUI {
       close: () => this.closeModal(),
       toast: (t) => this.toast(t),
       askReset: () => this.confirmReset(),
-      restored: () => this.cb.onRestored(),
       refreshTop: () => this.refreshTop(),
     }).show(page);
   }
