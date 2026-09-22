@@ -54,3 +54,4 @@ Shop expanded with gem packs (20/100/300 gems), 112 tests.
 
 Surf Club subscription (3.99 a month: x2 coins, ads free, 3 gems a day, +2 h away) added to the shop, 116 tests.
 Compact quests panel, single mist that slides back after the wave, no lock badges.
+Bigger class costs 2.5x per level (was 1.17x); costScale 9.6 -> 8 to keep overall pace. Light tutorial: dark screen + one lit button for 5 early milestones (manager, skills, next sport, beach building, expand).

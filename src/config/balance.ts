@@ -20,8 +20,8 @@ export interface StatDef {
 }
 
 export const STATS: Record<StatId, StatDef> = {
-  // Bigger class: one more guest per level. Dearer than a level up.
-  capacity: { id: 'capacity', label: 'Capacity', icon: 'people', baseCost: 25, growth: 1.17, surge: 0.06, max: 100 },
+  // Bigger class: one more guest per level. Much dearer than a level up: each level costs about 2.5x (250%) the one before.
+  capacity: { id: 'capacity', label: 'Capacity', icon: 'people', baseCost: 25, growth: 2.5, surge: 0.06, max: 100 },
   // Level up: many small steps (up to 1000), with a bonus at milestone levels (see LEVEL_MILESTONES).
   price: { id: 'price', label: 'Level up', icon: 'tag', baseCost: 6, growth: 1.03, surge: 0, max: 1000 },
   // Faster sessions: the dearest of the three.
@@ -56,7 +56,7 @@ export const BALANCE = {
   /** Every tier step multiplies the income of a zone by this factor. */
   tierScale: 5,
   /** Every tier step multiplies costs by this factor. Bigger than tierScale, so later tiers take longer to reach. */
-  costScale: 9.6,
+  costScale: 8,
   /** Scales every unlock price at once (level and sport unlocks). */
   unlockMult: 3,
   /** Price per guest gains this fraction of the base price per level up (a small step). */

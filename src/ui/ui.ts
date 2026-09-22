@@ -8,7 +8,7 @@ import { milestoneMult, nextMilestone } from '../config/balance';
 import type { Game } from '../core/game';
 import type { OfflineReport } from '../core/economy';
 import { hasAffordableSkill, skillEffects } from '../core/skills';
-import { canExpand, expand, expansionNeededFor, expansionStatus, unlockZone, zoneUnlockStatus } from '../core/unlocks';
+import { canExpand, expand, expansionNeededFor, expansionStatus, nextUnlockableSport, unlockZone, zoneUnlockStatus } from '../core/unlocks';
 import { EXPANSION_MULT } from '../config/expansions';
 import { EXPANSION_POINTS } from '../config/skills';
 import { claimQuest, questView, QUEST_SLOTS } from '../core/quests';
@@ -87,7 +87,7 @@ export class GameUI {
       <div class="dock">
         <button class="dock-btn" data-ref="beach">${icon('beach')}<em>Beach</em></button>
         <button class="dock-btn" data-ref="sports">${icon('sports')}<em>Sports</em></button>
-        <button class="dock-btn dock-skills" data-ref="skills">${icon('tree')}<em>Skills</em></button>
+        <button class="dock-btn dock-skills gone" data-ref="skills">${icon('tree')}<em>Skills</em></button>
         <div class="dock-slot">
           <button class="boost" data-ref="boost">${icon('video')}<span><b data-ref="boostA">Watch ad</b><small data-ref="boostB">x${BALANCE.boostMult} coins</small></span><i class="boost-bar"><u data-ref="boostBar"></u></i></button>
           <button class="dock-btn expand" data-ref="expand">${icon('expand')}<em>Expand</em></button>
@@ -95,6 +95,7 @@ export class GameUI {
       </div>
       <div class="sheet" data-ref="sheet"></div>
       <div class="toasts" data-ref="toasts"></div>
+      <div class="coach" data-ref="coach" hidden><i class="coach-ring" data-ref="coachRing"></i><b class="coach-bubble" data-ref="coachBubble"></b></div>
       </div>
       <div class="modal-back" data-ref="modal" hidden></div>`;
     parent.appendChild(this.root);
@@ -626,7 +627,9 @@ export class GameUI {
     this.refs.coins.textContent = fmt(s.coins);
     this.refs.rate.textContent = `+${fmt(autoIncomePerSecond(s))}/s`;
     this.refs.gems.textContent = String(s.skillPoints);
-    this.refs.skills.classList.toggle('pulse', hasAffordableSkill(s));
+    const canSeeSkills = s.skillEarned > 0;
+    this.refs.skills.classList.toggle('gone', !canSeeSkills);
+    this.refs.skills.classList.toggle('pulse', canSeeSkills && hasAffordableSkill(s));
     const perm = Math.pow(EXPANSION_MULT, s.expansions) * (s.perks.x5 ? BALANCE.x5Mult : 1) * (s.perks.club ? CLUB.coinMult : 1);
     this.refs.mult.hidden = perm === 1;
     this.refs.mult.textContent = `x${perm}`;
@@ -636,6 +639,100 @@ export class GameUI {
     this.refs.expand.classList.toggle('ready', canExpand(s));
     this.refs.expand.classList.toggle('pulse', canExpand(s));
     this.refreshQuests();
+    this.refreshCoach();
+  }
+
+  // ------------------------------------------------------------ tutorial coach marks
+
+  /** Which early-game hint is on screen right now, if any: the whole screen dims and only that one button stays lit. */
+  private coachKind: 'hire' | 'skills' | 'sports' | 'beach' | 'expand' | null = null;
+
+  private refreshCoach() {
+    if (this.sheet || this.skillScreen.isOpen || !this.refs.modal.hidden) return this.hideCoach();
+    if (!this.coachKind) {
+      const next = this.nextCoachStep();
+      if (next) this.showCoach(next);
+    }
+    if (this.coachKind) this.positionCoach();
+  }
+
+  /** The next milestone to point at, in the order a new player reaches them. Each is shown once, ever. */
+  private nextCoachStep(): { kind: 'hire' | 'skills' | 'sports' | 'beach' | 'expand'; el: HTMLElement; text: string } | null {
+    const s = this.game.state;
+    const wref = zoneById('wave-1');
+    const wz = s.zones['wave-1'];
+    const upgrades = wz.price + wz.capacity + wz.speed;
+    if (!s.tips.hire && s.expansions === 0 && wz.owned && upgrades >= 3 && !wz.manager && s.coins >= managerCost(wref, discounts(s, 'wave').manager)) {
+      return { kind: 'hire', el: this.refs.tip, text: 'You can hire someone to run it for you! A manager keeps a zone earning by itself, even while you are away. Tap here.' };
+    }
+    if (!s.tips.skills && s.skillEarned > 0) {
+      return { kind: 'skills', el: this.refs.skills, text: 'You earned a skill point! Tap Skills to spend it in the skill trees.' };
+    }
+    const sport = nextUnlockableSport(s);
+    if (!s.tips.sports && sport) {
+      return { kind: 'sports', el: this.refs.sports, text: `You have enough to unlock ${sport.name}! Tap Sports to open it.` };
+    }
+    if (!s.tips.beach && s.tips.manager && FACILITIES.some((f) => s.coins >= facilityCost(f.id, s.facilities[f.id] ?? 0, skillEffects(s).facilityCost))) {
+      return { kind: 'beach', el: this.refs.beach, text: 'You can afford a beach building! They boost every sport at once.' };
+    }
+    if (!s.tips.expand && canExpand(s)) {
+      return { kind: 'expand', el: this.refs.expand, text: 'You can expand the beach! A big wave, a new area and more income for good.' };
+    }
+    return null;
+  }
+
+  private coachTarget(): HTMLElement | null {
+    switch (this.coachKind) {
+      case 'hire':
+        return this.refs.tip;
+      case 'skills':
+        return this.refs.skills;
+      case 'sports':
+        return this.refs.sports;
+      case 'beach':
+        return this.refs.beach;
+      case 'expand':
+        return this.refs.expand;
+      default:
+        return null;
+    }
+  }
+
+  private showCoach(step: { kind: 'hire' | 'skills' | 'sports' | 'beach' | 'expand'; el: HTMLElement; text: string }) {
+    this.coachKind = step.kind;
+    this.game.state.tips[step.kind] = true; // shown once, however it is dismissed
+    this.refs.coachBubble.textContent = step.text;
+    this.refs.coach.hidden = false;
+    step.el.classList.add('coached');
+    step.el.addEventListener('click', this.hideCoachBound, { once: true });
+  }
+
+  private hideCoachBound = () => this.hideCoach();
+
+  private hideCoach() {
+    if (!this.coachKind) return;
+    this.coachTarget()?.classList.remove('coached');
+    this.refs.coach.hidden = true;
+    this.coachKind = null;
+  }
+
+  /** Put the glow ring and the text bubble exactly over the coached button, wherever it currently is. */
+  private positionCoach() {
+    const target = this.coachTarget();
+    if (!target) return this.hideCoach();
+    const host = this.refs.coach.getBoundingClientRect();
+    const r = target.getBoundingClientRect();
+    const pad = 8;
+    const ring = this.refs.coachRing;
+    ring.style.left = `${r.left - host.left - pad}px`;
+    ring.style.top = `${r.top - host.top - pad}px`;
+    ring.style.width = `${r.width + pad * 2}px`;
+    ring.style.height = `${r.height + pad * 2}px`;
+    const bubble = this.refs.coachBubble;
+    const above = r.top > host.height * 0.55;
+    bubble.style.left = `${Math.min(Math.max(r.left - host.left + r.width / 2, 130), host.width - 130)}px`;
+    bubble.style.top = above ? `${r.top - host.top - 12}px` : `${r.bottom - host.top + 12}px`;
+    bubble.classList.toggle('above', above);
   }
 
   /** A short hint above the bottom bar for the first steps: buy an upgrade, then hire a manager. Each is shown until followed. */

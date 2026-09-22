@@ -49,6 +49,16 @@ export function sportStatus(state: GameState, sport: SportDef): UnlockStatus {
   return { requirements: reqs, coins, ready, canBuy: ready && state.coins >= coins, blockedBy: null };
 }
 
+/** The first locked sport whose area is already open and that can be unlocked right now (requirements met, enough coins), or null. */
+export function nextUnlockableSport(state: GameState): SportDef | null {
+  for (const sport of SPORTS) {
+    if (state.sports[sport.id]) continue;
+    if (expansionNeededFor(state, sport.id) !== null) continue;
+    if (sportStatus(state, sport).canBuy) return sport;
+  }
+  return null;
+}
+
 /** A price after the skill discount for unlocks. */
 function discounted(state: GameState, sport: SportId, coins: number): number {
   return Math.round(coins * (1 - (skillEffects(state).unlock[sport] ?? 0)));
