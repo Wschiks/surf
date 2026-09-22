@@ -316,22 +316,26 @@ export class GameUI {
       </div>`,
     ).join('');
     const modes = ([1, 10, 100, 'max'] as BuyMode[]).map((m) => `<button data-mode="${m}"${m === this.buyMode ? ' class="on"' : ''}>${m === 'max' ? 'Max' : 'x' + m}</button>`).join('');
+    const mgrRow = `
+      <div class="up mgr" data-mgr>
+        <div class="up-ico">${icon('manager')}</div>
+        <div class="up-txt"><b>${terms.manager}</b><small>${terms.managerBlurb}</small></div>
+        <button class="buy" data-buy="manager"></button>
+      </div>`;
+    // no manager yet: hiring one matters more than any upgrade, so it leads; once hired it settles at the bottom
+    // (this is decided when the sheet is built, not live while it stays open - hiring mid-session just reorders it next time)
+    const upgrades = this.game.state.zones[id].manager ? `${rows}${mgrRow}` : `${mgrRow}${rows}`;
     return `
       <div data-zone-body>
         <div class="statline">
           <div><b data-s="guests"></b><small>guests</small></div>
-          <div><b data-s="each"></b><small>${COIN} each</small></div>
+          <div><b data-s="total"></b><small>${COIN} total</small></div>
           <div><b data-s="dur"></b><small>per session</small></div>
           <div><b data-s="rate"></b><small>${COIN} per sec</small></div>
         </div>
         <div class="session"><div class="bar"><i data-bar></i></div><button class="go" data-go></button></div>
         <div class="modes" data-modes><span>Buy</span>${modes}</div>
-        <div class="ups">${rows}</div>
-        <div class="up mgr" data-mgr>
-          <div class="up-ico">${icon('manager')}</div>
-          <div class="up-txt"><b>${terms.manager}</b><small>${terms.managerBlurb}</small></div>
-          <button class="buy" data-buy="manager"></button>
-        </div>
+        <div class="ups">${upgrades}</div>
       </div>`;
   }
 
@@ -562,7 +566,7 @@ export class GameUI {
     const st = zoneStats(s, ref);
     const q = <T extends HTMLElement>(sel: string) => this.sheetEl.querySelector<T>(sel)!;
     q('[data-s="guests"]').textContent = String(st.guests);
-    q('[data-s="each"]').textContent = fmt(st.pricePerGuest);
+    q('[data-s="total"]').textContent = fmt(st.income);
     q('[data-s="dur"]').textContent = fmtSeconds(st.duration);
     q('[data-s="rate"]').textContent = fmt(st.perSecond);
     const bar = q('[data-bar]');

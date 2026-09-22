@@ -1,4 +1,4 @@
-import { SKILL_NODES, SKILL_TREES, TREE_UNIT, describeSkill, skillById, skillPosition, treeAngle, treeById, type SkillKind, type SkillNode, type TreeId } from '../config/skills';
+import { SKILL_NODES, SKILL_TREES, TREE_UNIT, describeSkill, skillById, skillPosition, treeAngle, treeById, type SkillKind, type SkillNode, type SkillTree, type TreeId } from '../config/skills';
 import type { Game } from '../core/game';
 import { canLearn, learnSkill, skillStatus, treeProgress } from '../core/skills';
 import { icon } from './icons';
@@ -45,6 +45,7 @@ export class SkillScreen {
   private anim = 0;
   private lastPoints = -1;
   private lastSkills: object | null = null;
+  private lastSportsKey = '';
 
   constructor(
     parent: HTMLElement,
@@ -75,26 +76,50 @@ export class SkillScreen {
   // ------------------------------------------------------------ building the screen
 
   private build() {
-    const tabs = `<button class="sk-tab" data-tree="hub" style="--c:#a66bff" aria-label="Whole wheel">${icon('gem')}</button>` + SKILL_TREES.map((t) => `<button class="sk-tab" data-tree="${t.id}" style="--c:${t.color}" aria-label="${t.name}">${icon(t.icon)}</button>`).join('');
     this.el.innerHTML = `
       <div class="sk-head">
         <button class="x back" data-sk-close aria-label="Back">${icon('back')}</button>
         <div class="sk-title"><h2>Skills</h2><small>Quests and expansions give skill points</small></div>
         <div class="pill gems">${icon('gem')}<b data-sk-points>0</b></div>
       </div>
-      <div class="sk-tabs">${tabs}</div>
+      <div class="sk-tabs" data-sk-tabs></div>
       <div class="sk-view" data-sk-view><div class="sk-world" data-sk-world></div></div>
       <div class="sk-card" data-sk-card></div>`;
     this.view = this.el.querySelector('[data-sk-view]')!;
     this.world = this.el.querySelector('[data-sk-world]')!;
     this.el.querySelector('[data-sk-close]')!.addEventListener('click', () => this.ctx.close());
-    this.el.querySelectorAll<HTMLElement>('.sk-tab').forEach((b) => b.addEventListener('click', () => this.focusTree(b.dataset.tree as TreeId | 'hub', true)));
     this.bindPointer();
+    this.lastSportsKey = this.sportsKey();
+    this.rebuildTabs();
     this.buildWorld();
   }
 
   private pos(n: SkillNode) {
     return skillPosition(n);
+  }
+
+  /** Only the trees for sports the player has actually unlocked (plus Beach, always free) show up at all. */
+  private visibleTrees(): SkillTree[] {
+    const s = this.ctx.game.state;
+    return SKILL_TREES.filter((t) => t.id === 'beach' || s.sports[t.id]);
+  }
+
+  private visibleNodes(): SkillNode[] {
+    const ids = new Set(this.visibleTrees().map((t) => t.id));
+    return SKILL_NODES.filter((n) => ids.has(n.tree));
+  }
+
+  /** A cheap fingerprint of which sports are unlocked, so we can tell when a newly unlocked one should appear. */
+  private sportsKey(): string {
+    const s = this.ctx.game.state;
+    return SKILL_TREES.map((t) => (t.id === 'beach' || s.sports[t.id] ? '1' : '0')).join('');
+  }
+
+  private rebuildTabs() {
+    const tabs = `<button class="sk-tab" data-tree="hub" style="--c:#a66bff" aria-label="Whole wheel">${icon('gem')}</button>` + this.visibleTrees().map((t) => `<button class="sk-tab" data-tree="${t.id}" style="--c:${t.color}" aria-label="${t.name}">${icon(t.icon)}</button>`).join('');
+    const el = this.el.querySelector('[data-sk-tabs]')!;
+    el.innerHTML = tabs;
+    el.querySelectorAll<HTMLElement>('.sk-tab').forEach((b) => b.addEventListener('click', () => this.focusTree(b.dataset.tree as TreeId | 'hub', true)));
   }
 
   private buildWorld() {
@@ -110,23 +135,24 @@ export class SkillScreen {
     };
     let lines = '';
     const hub = { x: -b.x0, y: -b.y0 };
-    // spokes from the hub to the seven free roots
-    for (const t of SKILL_TREES) lines += `<line class="spoke" x1="${hub.x}" y1="${hub.y}" x2="${t.at.x - b.x0}" y2="${t.at.y - b.y0}" style="--c:${t.color}" />`;
-    for (const n of SKILL_NODES) {
+    const visibleTrees = this.visibleTrees();
+    // spokes from the hub to the free roots the player can actually see
+    for (const t of visibleTrees) lines += `<line class="spoke" x1="${hub.x}" y1="${hub.y}" x2="${t.at.x - b.x0}" y2="${t.at.y - b.y0}" style="--c:${t.color}" />`;
+    for (const n of this.visibleNodes()) {
       if (!n.parent) continue;
       const a = at(skillById(n.parent));
       const c = at(n);
       lines += `<line data-line="${n.id}" x1="${a.x}" y1="${a.y}" x2="${c.x}" y2="${c.y}" />`;
     }
     // the names sit between the hub and the roots, on the inside of the ring
-    const labels = SKILL_TREES.map((t) => {
+    const labels = visibleTrees.map((t) => {
       const a = treeAngle(t.id);
       const d = ROOT / 2 + 34;
       const p = { x: t.at.x - Math.cos(a) * d - b.x0, y: t.at.y - Math.sin(a) * d - b.y0 };
       return `<div class="sk-label" style="left:${p.x}px;top:${p.y}px;--c:${t.color}"><b>${t.name}</b><small data-prog="${t.id}"></small></div>`;
     }).join('');
     const hubEl = `<div class="sk-hub" style="left:${hub.x}px;top:${hub.y}px">${icon('gem')}</div>`;
-    const nodes = SKILL_NODES.map((n) => {
+    const nodes = this.visibleNodes().map((n) => {
       const p = at(n);
       const t = treeById(n.tree);
       const size = n.root ? ROOT : NODE;
@@ -269,6 +295,14 @@ export class SkillScreen {
   /** Update what the skills look like. Cheap: called about ten times a second while the screen is open. */
   update() {
     if (this.el.hidden) return;
+    const sportsKey = this.sportsKey();
+    if (sportsKey !== this.lastSportsKey) {
+      // a new sport unlocked (or a beach expansion reset them): its tree can now show up
+      this.lastSportsKey = sportsKey;
+      this.rebuildTabs();
+      this.buildWorld();
+      return this.render(true);
+    }
     const s = this.ctx.game.state;
     if (s.skillPoints === this.lastPoints && s.skills === this.lastSkills) return;
     this.render();
@@ -280,7 +314,7 @@ export class SkillScreen {
     this.lastPoints = s.skillPoints;
     this.lastSkills = s.skills;
     (this.el.querySelector('[data-sk-points]') as HTMLElement).textContent = String(s.skillPoints);
-    for (const n of SKILL_NODES) {
+    for (const n of this.visibleNodes()) {
       const st = skillStatus(s, n);
       const btn = this.world.querySelector<HTMLElement>(`[data-skill="${n.id}"]`)!;
       btn.className = `sk-node${n.root ? ' root' : ''} ${st}${st === 'available' && canLearn(s, n) ? ' can' : ''}${this.selected === n.id ? ' sel' : ''}`;
@@ -290,7 +324,7 @@ export class SkillScreen {
       line?.setAttribute('class', st === 'owned' ? 'on' : st === 'available' ? 'next' : '');
       (line as SVGElement | null)?.style.setProperty('--c', treeById(n.tree).color);
     }
-    for (const t of SKILL_TREES) {
+    for (const t of this.visibleTrees()) {
       const p = treeProgress(s, t.id);
       (this.world.querySelector(`[data-prog="${t.id}"]`) as HTMLElement).textContent = `${p.learned} / ${p.total}`;
     }
