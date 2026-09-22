@@ -655,7 +655,7 @@ export class GameUI {
   }
 
   /** The next milestone to point at, in the order a new player reaches them. Each is shown once, ever. */
-  private nextCoachStep(): { kind: 'upgradeCoach' | 'levels' | 'hire' | 'skills' | 'sports' | 'beach' | 'expand'; el: HTMLElement; text: string } | null {
+  private nextCoachStep(): { kind: 'upgradeCoach' | 'levels' | 'hire' | 'skills' | 'sports' | 'beach' | 'expand'; el: HTMLElement; text: string; panTo?: string } | null {
     const s = this.game.state;
     const wref = zoneById('wave-1');
     const wz = s.zones['wave-1'];
@@ -674,7 +674,8 @@ export class GameUI {
     }
     const sport = nextUnlockableSport(s);
     if (!s.tips.sports && sport) {
-      return { kind: 'sports', el: this.refs.sports, text: `You have enough to unlock ${sport.name}! Tap Sports to open it.` };
+      // the camera pans to the new zone first (see showCoach), so the player sees it exists and where it is, before being told to open Sports
+      return { kind: 'sports', el: this.refs.sports, text: `You have enough to unlock ${sport.name}! Look, it is right there. Tap Sports to open it.`, panTo: zoneId(sport.id, 1) };
     }
     if (!s.tips.beach && s.tips.manager && FACILITIES.some((f) => s.coins >= facilityCost(f.id, s.facilities[f.id] ?? 0, skillEffects(s).facilityCost))) {
       return { kind: 'beach', el: this.refs.beach, text: 'You can afford a beach building! They boost every sport at once.' };
@@ -704,13 +705,14 @@ export class GameUI {
     }
   }
 
-  private showCoach(step: { kind: 'upgradeCoach' | 'levels' | 'hire' | 'skills' | 'sports' | 'beach' | 'expand'; el: HTMLElement; text: string }) {
+  private showCoach(step: { kind: 'upgradeCoach' | 'levels' | 'hire' | 'skills' | 'sports' | 'beach' | 'expand'; el: HTMLElement; text: string; panTo?: string }) {
     this.coachKind = step.kind;
     this.game.state.tips[step.kind] = true; // shown once, however it is dismissed
     this.refs.coachBubble.textContent = step.text;
     this.refs.coach.hidden = false;
     step.el.classList.add('coached');
     step.el.addEventListener('click', this.hideCoachBound, { once: true });
+    if (step.panTo) this.cb.onSelect(step.panTo);
   }
 
   private hideCoachBound = () => this.hideCoach();
