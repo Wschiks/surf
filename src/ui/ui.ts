@@ -8,7 +8,7 @@ import { milestoneMult, nextMilestone } from '../config/balance';
 import type { Game } from '../core/game';
 import type { OfflineReport } from '../core/economy';
 import { hasAffordableSkill, skillEffects } from '../core/skills';
-import { canExpand, expand, expansionNeededFor, expansionStatus, nextUnlockableSport, unlockZone, zoneUnlockStatus } from '../core/unlocks';
+import { canExpand, expand, expansionNeededFor, expansionStatus, levelStatus, nextUnlockableSport, unlockZone, zoneUnlockStatus } from '../core/unlocks';
 import { EXPANSION_MULT } from '../config/expansions';
 import { EXPANSION_POINTS } from '../config/skills';
 import { claimQuest, questView, QUEST_SLOTS } from '../core/quests';
@@ -645,7 +645,7 @@ export class GameUI {
   // ------------------------------------------------------------ tutorial coach marks
 
   /** Which early-game hint is on screen right now, if any: the whole screen dims and only that one button stays lit. */
-  private coachKind: 'upgradeCoach' | 'hire' | 'skills' | 'sports' | 'beach' | 'expand' | null = null;
+  private coachKind: 'upgradeCoach' | 'levels' | 'hire' | 'skills' | 'sports' | 'beach' | 'expand' | null = null;
 
   private refreshCoach() {
     if (this.sheet || this.skillScreen.isOpen || !this.refs.modal.hidden) return this.hideCoach();
@@ -657,13 +657,16 @@ export class GameUI {
   }
 
   /** The next milestone to point at, in the order a new player reaches them. Each is shown once, ever. */
-  private nextCoachStep(): { kind: 'upgradeCoach' | 'hire' | 'skills' | 'sports' | 'beach' | 'expand'; el: HTMLElement; text: string } | null {
+  private nextCoachStep(): { kind: 'upgradeCoach' | 'levels' | 'hire' | 'skills' | 'sports' | 'beach' | 'expand'; el: HTMLElement; text: string } | null {
     const s = this.game.state;
     const wref = zoneById('wave-1');
     const wz = s.zones['wave-1'];
     const upgrades = wz.price + wz.capacity + wz.speed;
     if (!s.tips.upgradeCoach && s.expansions === 0 && wz.owned && s.totalCoins > 0 && upgrades === 0 && s.coins >= statCost(wref, 'price', 0)) {
       return { kind: 'upgradeCoach', el: this.refs.tip, text: 'You can upgrade! Tap here, then buy Level up to earn more coins every time.' };
+    }
+    if (!s.tips.levels && s.expansions === 0 && levelStatus(s, zoneById('wave-2')).ready) {
+      return { kind: 'levels', el: this.refs.sports, text: 'You have upgraded enough to open more! Tap Sports, then tap 2 to unlock the next level.' };
     }
     if (!s.tips.hire && s.expansions === 0 && wz.owned && upgrades >= 3 && !wz.manager && s.coins >= managerCost(wref, discounts(s, 'wave').manager)) {
       return { kind: 'hire', el: this.refs.tip, text: 'You can hire someone to run it for you! A manager keeps a zone earning by itself, even while you are away. Tap here.' };
@@ -689,10 +692,11 @@ export class GameUI {
       case 'upgradeCoach':
       case 'hire':
         return this.refs.tip;
-      case 'skills':
-        return this.refs.skills;
+      case 'levels':
       case 'sports':
         return this.refs.sports;
+      case 'skills':
+        return this.refs.skills;
       case 'beach':
         return this.refs.beach;
       case 'expand':
@@ -702,7 +706,7 @@ export class GameUI {
     }
   }
 
-  private showCoach(step: { kind: 'upgradeCoach' | 'hire' | 'skills' | 'sports' | 'beach' | 'expand'; el: HTMLElement; text: string }) {
+  private showCoach(step: { kind: 'upgradeCoach' | 'levels' | 'hire' | 'skills' | 'sports' | 'beach' | 'expand'; el: HTMLElement; text: string }) {
     this.coachKind = step.kind;
     this.game.state.tips[step.kind] = true; // shown once, however it is dismissed
     this.refs.coachBubble.textContent = step.text;

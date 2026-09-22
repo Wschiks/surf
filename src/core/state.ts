@@ -40,7 +40,7 @@ export interface GameState {
   skillPoints: number;
   skillEarned: number;
   /** Hints the player has already seen (or followed): they are shown once. */
-  tips: { upgrade?: boolean; manager?: boolean; upgradeCoach?: boolean; hire?: boolean; skills?: boolean; sports?: boolean; beach?: boolean; expand?: boolean };
+  tips: { upgrade?: boolean; manager?: boolean; upgradeCoach?: boolean; levels?: boolean; hire?: boolean; skills?: boolean; sports?: boolean; beach?: boolean; expand?: boolean };
   /** Seconds left of the ad boost (all coin income x2). It runs down in real time, also while away. */
   boost: number;
   /** Progress in the shop's ad streak: the next reward and when the streak can be used again (ms since 1970). */
