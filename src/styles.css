@@ -102,6 +102,9 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 .sheet.open { transform: translateY(0); }
 .sheet-head { display: flex; align-items: center; gap: 12px; }
 .tile { display: grid; place-items: center; border-radius: 31%; color: #fff; flex: none; box-shadow: inset 0 -4px 0 rgba(0, 0, 0, 0.16); }
+.tile.sport-tile { position: relative; overflow: hidden; }
+.tile-scene { position: absolute; inset: 0; width: 100%; height: 100%; }
+.sport-tile .ic { position: relative; z-index: 1; }
 .tile .ic { width: 100%; height: 100%; }
 .sheet-title { flex: 1; min-width: 0; }
 .sheet-title h2 { margin: 0; font-size: 21px; line-height: 1.1; }

@@ -48,11 +48,14 @@ const SHAPES: Record<string, string> = {
     '<ellipse cx="12" cy="11" rx="3.3" ry="9" transform="rotate(38 12 11)" fill="currentColor"/><path d="M9.4 5.8l5.2 10.4" stroke="rgba(255,255,255,.7)" stroke-width="1.3" stroke-linecap="round"/><path d="M2.5 21c2-1.5 3.5-1.5 5.5 0s3.5 1.5 5.5 0 3.5-1.5 5.5 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".7"/>',
   // --- the six sports
   wave: '<ellipse cx="12" cy="11" rx="3.3" ry="9" transform="rotate(38 12 11)" fill="currentColor"/><path d="M9.4 5.8l5.2 10.4" stroke="rgba(255,255,255,.7)" stroke-width="1.3" stroke-linecap="round"/><path d="M2.5 21c2-1.5 3.5-1.5 5.5 0s3.5 1.5 5.5 0 3.5-1.5 5.5 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".7"/>',
-  skim: '<circle cx="12" cy="12" r="8.5" fill="currentColor"/><path d="M12 4.6v14.8" stroke="rgba(255,255,255,.7)" stroke-width="1.6"/><circle cx="12" cy="12" r="3" fill="none" stroke="rgba(255,255,255,.7)" stroke-width="1.6"/>',
-  wind: '<path d="M11 2.5v13.5H4z" fill="currentColor"/><path d="M12.6 5c4.4 3 5.4 7.5 4.9 11h-4.9z" fill="currentColor" opacity=".6"/><path d="M3.5 18.5h17l-2.6 3H6.1z" fill="currentColor"/>',
-  kite: '<path d="M12 2.5l7 7.4-7 5.6-7-5.6z" fill="currentColor"/><path d="M12 2.5v13" stroke="rgba(255,255,255,.65)" stroke-width="1.3"/><path d="M12 15.5c0 3.2-3.2 3-3.2 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
-  foil: '<path d="M2 10.5c3-5.5 17-5.5 20 0-3.6-2-16.4-2-20 0z" fill="currentColor"/><path d="M12 10v9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M6.5 20h11" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>',
-  sail: '<path d="M11.5 3v12H5z" fill="currentColor"/><path d="M13.2 6c4.2 2.5 5.3 6.5 5.3 9h-5.3z" fill="currentColor" opacity=".6"/><path d="M3.5 16.8h17l-3 4H6.5z" fill="currentColor"/>',
+  // a short, round board seen from above, with a splash trailing it: clearly not the long tilted wave board
+  skim: '<ellipse cx="12" cy="12.5" rx="8.2" ry="4.8" transform="rotate(-9 12 12.5)" fill="currentColor"/><path d="M5.3 12.5c2.9-1.5 10.5-1.5 13.4 0" stroke="rgba(255,255,255,.65)" stroke-width="1.3" fill="none" stroke-linecap="round"/><circle cx="4" cy="17.6" r="1.3" fill="currentColor" opacity=".55"/><circle cx="2.2" cy="14.8" r="1" fill="currentColor" opacity=".4"/><circle cx="6.6" cy="19.6" r=".9" fill="currentColor" opacity=".4"/>',
+  // a flat board with a mast, boom loop and sail: the boom is what makes it read as windsurfing, not sailing
+  wind: '<ellipse cx="10.3" cy="19.2" rx="7.6" ry="2" transform="rotate(-7 10.3 19.2)" fill="currentColor"/><path d="M11 19V3.5" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M11 4.5c4.5 2.1 5.5 7.3 4.6 10.7H11z" fill="currentColor" opacity=".65"/><path d="M8 9.6c1.3 1.1 4.3 1.1 5.7 0M8 13c1.3 1.1 4.3 1.1 5.7 0" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.1" stroke-linecap="round"/>',
+  kite: '<path d="M12 2.5l7 7.4-7 5.6-7-5.6z" fill="currentColor"/><path d="M12 2.5v13" stroke="rgba(255,255,255,.65)" stroke-width="1.3"/><path d="M12 15.5c0 3.2-3.2 3-3.2 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M3 7.5c1.6-1.6 3-2 5-1.7M21 7.5c-1.6-1.6-3-2-5-1.7" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" opacity=".5"/>',
+  foil: '<path d="M2 10.5c3-5.5 17-5.5 20 0-3.6-2-16.4-2-20 0z" fill="currentColor"/><path d="M12 10v9" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M6.5 20h11" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/><circle cx="4.2" cy="15.4" r="1" fill="currentColor" opacity=".45"/><circle cx="2.6" cy="18" r=".8" fill="currentColor" opacity=".35"/>',
+  // a hull with two sails (main + jib): a full boat, unlike windsurfing's single sail and boom
+  sail: '<path d="M3 18.3c3 2 15 2 18 0l-2 3.3H5z" fill="currentColor"/><path d="M12 20.2V3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M12 4.3c4.5 2.7 5.6 8.4 4.7 12.6H12z" fill="currentColor" opacity=".7"/><path d="M12 9.2c-2.7 1.4-3.5 5-3.1 8h3.1z" fill="currentColor" opacity=".4"/>',
   // --- beach buildings
   shop: '<path d="M3 9.5L4.6 4h14.8L21 9.5z" fill="currentColor"/><path d="M3 9.5h18a3 3 0 01-6 0 3 3 0 01-6 0 3 3 0 01-6 0z" fill="currentColor" opacity=".6"/><rect x="5" y="12.5" width="14" height="8" rx="1.2" fill="currentColor"/>',
   cafe: '<path d="M4.5 9.5h11V14a4 4 0 01-4 4h-3a4 4 0 01-4-4z" fill="currentColor"/><path d="M15.5 10.8h1.4a2.4 2.4 0 010 4.8h-1.4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 3.5c-1 1.3 1 2.1 0 3.6M12 3.5c-1 1.3 1 2.1 0 3.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" opacity=".65"/>',
@@ -72,4 +75,25 @@ export function icon(name: string, size?: string): string {
 /** A coloured rounded square with a white icon on it. */
 export function tile(name: string, color: string, size = 44): string {
   return `<span class="tile" style="background:${color};width:${size}px;height:${size}px">${icon(name, Math.round(size * 0.58) + 'px')}</span>`;
+}
+
+/**
+ * A faint scene sketched behind a sport's tile icon (waves, wind streaks, sand, sky, spray, swell), so the six
+ * sports read apart from each other at a glance, not just by colour. White at low opacity, so it works on every
+ * sport colour; drawn full-bleed under the icon, which is why the icon itself keeps its own darker accents.
+ */
+const SPORT_BG: Record<string, string> = {
+  wave: '<path d="M-2 15.5c2.4-1.7 4.4-1.7 6.8 0s4.4 1.7 6.8 0 4.4-1.7 6.8 0 4.4-1.7 6.8 0" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round"/><path d="M-2 20c2.4-1.7 4.4-1.7 6.8 0s4.4 1.7 6.8 0 4.4-1.7 6.8 0 4.4-1.7 6.8 0" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" opacity=".6"/>',
+  skim: '<circle cx="4" cy="6" r="1" fill="#fff"/><circle cx="8.5" cy="3.5" r=".7" fill="#fff"/><circle cx="19" cy="7" r="1.1" fill="#fff"/><circle cx="15.5" cy="4" r=".6" fill="#fff"/><circle cx="2.5" cy="20" r=".8" fill="#fff"/><circle cx="21" cy="19" r=".9" fill="#fff"/>',
+  wind: '<path d="M-2 6h13M-2 10h9M-2 14h15" stroke="#fff" stroke-width="1.5" stroke-linecap="round" opacity=".7" transform="rotate(-16 12 12)"/>',
+  kite: '<path d="M1.5 6a5.5 5.5 0 016.5 0M14.5 3.3a6.3 6.3 0 017.3 0M4 11.5a5.5 5.5 0 016.5 0" stroke="#fff" stroke-width="1.4" fill="none" stroke-linecap="round"/>',
+  foil: '<circle cx="4" cy="20" r=".8" fill="#fff"/><circle cx="7" cy="22" r=".6" fill="#fff"/><circle cx="19" cy="20" r=".9" fill="#fff"/><circle cx="16.5" cy="22.5" r=".6" fill="#fff"/><path d="M-2 8c2.2-1.4 4-1.4 6.2 0s4 1.4 6.2 0 4-1.4 6.2 0 4-1.4 6.2 0" stroke="#fff" stroke-width="1.3" fill="none" stroke-linecap="round" opacity=".55"/>',
+  sail: '<path d="M-2 16c3-2 5.5-2 8.5 0s5.5 2 8.5 0 5.5-2 8.5 0" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="M-2 21c3-2 5.5-2 8.5 0s5.5 2 8.5 0 5.5-2 8.5 0" stroke="#fff" stroke-width="1.8" fill="none" stroke-linecap="round" opacity=".5"/>',
+};
+
+/** A sport's tile: the coloured square, a faint themed scene behind it, and the sport's own icon on top. */
+export function sportTile(sportId: string, color: string, size = 46): string {
+  const bg = SPORT_BG[sportId];
+  const scene = bg ? `<svg class="tile-scene" viewBox="0 0 24 24" opacity=".3" aria-hidden="true">${bg}</svg>` : '';
+  return `<span class="tile sport-tile" style="background:${color};width:${size}px;height:${size}px">${scene}${icon(sportId, Math.round(size * 0.58) + 'px')}</span>`;
 }

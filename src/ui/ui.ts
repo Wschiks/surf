@@ -13,7 +13,7 @@ import { EXPANSION_MULT } from '../config/expansions';
 import { EXPANSION_POINTS } from '../config/skills';
 import { claimQuest, questView, QUEST_SLOTS } from '../core/quests';
 import { COIN, fmt, fmtSeconds, fmtTime } from './format';
-import { icon, tile } from './icons';
+import { icon, sportTile, tile } from './icons';
 import { Menu } from './menu';
 import { Shop } from './shop';
 import { adStreak } from '../core/shop';
@@ -204,7 +204,7 @@ export class GameUI {
     const sub = `${ref.sport.name} · Level ${ref.level}`;
     const head = `
       <div class="sheet-head">
-        ${tile(owned ? ref.sport.icon : 'lock', owned ? ref.sport.color : '#7d92a3', 48)}
+        ${owned ? sportTile(ref.sport.icon, ref.sport.color, 48) : tile('lock', '#7d92a3', 48)}
         <div class="sheet-title"><h2>${title}</h2><p>${sub}</p></div>
         <button class="x" data-close aria-label="Close">${icon('close')}</button>
       </div>`;
@@ -386,7 +386,7 @@ export class GameUI {
         const pips = sp.levels.map((_, i) => `<button class="pip" data-zone="${zoneId(sp.id, i + 1)}" aria-label="Level ${i + 1}">${i + 1}</button>`).join('');
         return `
         <div class="sport-row" data-sport="${sp.id}">
-          ${tile(sp.icon, sp.color, 46)}
+          ${sportTile(sp.icon, sp.color, 46)}
           <div class="sport-mid"><b>${sp.name}</b><small data-info></small><div class="pips">${pips}</div></div>
         </div>`;
       }).join('');
