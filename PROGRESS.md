@@ -57,3 +57,4 @@ Compact quests panel, single mist that slides back after the wave, no lock badge
 Bigger class costs 2.5x per level (was 1.17x); costScale 9.6 -> 8 to keep overall pace. Light tutorial: dark screen + one lit button for 5 early milestones (manager, skills, next sport, beach building, expand).
 Sport tiles redrawn (skim/windsurf/sail were too similar) with a faint themed scene behind each icon, so the six sports read apart at a glance.
 App icon (not splash) replaced with the author's own artwork, processed into a real full-bleed opaque source and rendered to every store/native size by a new script.
+Welcome-back dialog: watch-ad x2 / gems x3 boosts on offline earnings, X-only close, no Continue button. Ad streak's last reward 5 -> 3 gems.

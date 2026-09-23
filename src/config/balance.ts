@@ -74,6 +74,10 @@ export const BALANCE = {
   x5Mult: 5,
   /** Only show this many guests per zone on the map. */
   maxVisibleGuests: 10,
+  /** The welcome-back dialog: what watching an ad, or spending gems, does to the away-earnings you already got (1x). */
+  offlineAdMult: 2,
+  offlineGemMult: 3,
+  offlineGemCost: 5,
 };
 
 export function tierFactor(tier: number): number {

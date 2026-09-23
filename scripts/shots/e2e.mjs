@@ -45,7 +45,7 @@ export default async ({ page, shot, base, context }) => {
   const modal = await page.textContent('.modal-back:not([hidden])').catch(() => null);
   log('welcome back popup:', modal && modal.replace(/\s+/g, ' ').trim());
   await shot('welcome-back');
-  await page.click('[data-ok]', { force: true });
+  await page.click('[data-close]', { force: true });
   const errs = await page.evaluate(() => window.__surf.game.state.coins);
   log('coins after return', errs.toFixed(1));
 };

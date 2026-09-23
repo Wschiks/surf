@@ -8,7 +8,7 @@ export default async ({ page, shot, base }) => {
   await page.click('[data-cheat]', { force: true });
   await page.waitForTimeout(500);
   console.log('coins after cheat', await ev(() => window.__surf.game.state.coins));
-  await page.click('[data-ok]', { force: true });
+  await page.click('[data-close]', { force: true });
   await ev(() => window.__surf.ui.openSports());
   await page.waitForTimeout(900);
   await shot('sports');

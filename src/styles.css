@@ -192,6 +192,20 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 .btn.soft { background: var(--gloss), var(--tile); color: #fff; box-shadow: 0 3px 0 #163f60; }
 .btn:active { transform: translateY(2px); }
 .danger { width: 100%; margin-top: 10px; min-height: calc(46px * var(--u)); border-radius: calc(14px * var(--u)); background: var(--gloss), #d94a4a; color: #fff; box-shadow: 0 3px 0 #a72f2f; font-weight: 800; }
+/* ---------- welcome back ---------- */
+.off-lead { text-align: center; margin: 2px 0 6px; font-size: 13px; font-weight: 700; color: var(--soft); }
+.off-earn { display: flex; align-items: center; justify-content: center; gap: 8px; margin: 0 0 14px; }
+.off-earn .ic { width: 30px; height: 30px; }
+.off-earn b { font-size: 32px; font-weight: 900; line-height: 1; }
+.off-bar-row { display: flex; justify-content: space-between; font-size: 11px; font-weight: 800; color: var(--soft); text-transform: uppercase; letter-spacing: 0.04em; margin-bottom: 5px; }
+.off-boosts { display: flex; gap: 8px; margin-top: 14px; }
+.off-btn { flex: 1; min-width: 0; min-height: calc(60px * var(--u)); flex-direction: column; gap: 2px; padding: 8px 6px; }
+.off-btn .ic { width: 22px; height: 22px; }
+.off-btn b { font-size: 13px; }
+.off-btn small { font-size: 11px; opacity: 0.85; font-weight: 700; }
+.off-btn.alt { background: var(--gloss), #8a4dff; box-shadow: 0 4px 0 #5a2fc4; }
+.off-btn:disabled { filter: saturate(0.4) brightness(0.75); box-shadow: none; }
+
 .confetti { position: absolute; left: 50%; top: 42%; width: 0; height: 0; pointer-events: none; z-index: 20; }
 .confetti i { position: absolute; width: 9px; height: 14px; border-radius: 2px; animation: confetti 1.3s cubic-bezier(.2, .7, .3, 1) forwards; }
 @keyframes confetti { from { transform: translate(0, 0) rotate(0); opacity: 1; } to { transform: translate(var(--dx), calc(var(--dy) + 140px)) rotate(var(--rot)); opacity: 0; } }

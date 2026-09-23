@@ -18,7 +18,7 @@ const memory = () => {
 };
 
 describe('ad streak', () => {
-  it('gives 1 gem, x2 for 30 s, 2 gems, x2 for 60 s, 5 gems, in that order', () => {
+  it('gives 1 gem, x2 for 30 s, 2 gems, x2 for 60 s, 3 gems, in that order', () => {
     const s = fresh();
     const t = 1000;
     expect(claimAdStep(s, t)).toEqual({ gems: 1 });
@@ -28,9 +28,9 @@ describe('ad streak', () => {
     expect(claimAdStep(s, t)).toEqual({ gems: 2 });
     expect(claimAdStep(s, t)).toEqual({ boost: 60 });
     expect(s.boost).toBe(60);
-    expect(claimAdStep(s, t)).toEqual({ gems: 5 });
-    expect(s.skillPoints).toBe(8);
-    expect(s.skillEarned).toBe(8);
+    expect(claimAdStep(s, t)).toEqual({ gems: 3 });
+    expect(s.skillPoints).toBe(6);
+    expect(s.skillEarned).toBe(6);
   });
 
   it('locks for a day after the fifth ad, then starts again at the first', () => {
@@ -39,7 +39,7 @@ describe('ad streak', () => {
     for (let i = 0; i < AD_STEPS.length; i++) claimAdStep(s, t);
     expect(adStreak(s, t).lockedFor).toBe(AD_COOLDOWN_SECONDS);
     expect(claimAdStep(s, t + 3600 * 1000)).toBeNull();
-    expect(s.skillPoints).toBe(8);
+    expect(s.skillPoints).toBe(6);
     const later = t + AD_COOLDOWN_SECONDS * 1000;
     expect(adStreak(s, later).lockedFor).toBe(0);
     expect(adStreak(s, later).step).toBe(0);

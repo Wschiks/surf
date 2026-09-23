@@ -7,7 +7,7 @@ export type AdStep = { gems: number } | { boost: number };
  * Watch 5 ads in a row: 1 gem, coins x2 for 30 s, 2 gems, coins x2 for 1 minute, 5 gems.
  * After the 5th ad the streak is locked for a day, then it starts again at the first ad.
  */
-export const AD_STEPS: readonly AdStep[] = [{ gems: 1 }, { boost: 30 }, { gems: 2 }, { boost: 60 }, { gems: 5 }];
+export const AD_STEPS: readonly AdStep[] = [{ gems: 1 }, { boost: 30 }, { gems: 2 }, { boost: 60 }, { gems: 3 }];
 export const AD_COOLDOWN_SECONDS = 24 * 3600;
 
 export type ProductId = 'noAds' | 'x5';

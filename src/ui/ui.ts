@@ -3,7 +3,7 @@ import { FACILITIES } from '../config/facilities';
 import { SPORTS, sportById, zoneById, zoneId } from '../config/sports';
 import { adsNative, showRewardedAd, type AdResult } from '../ads';
 import { BALANCE } from '../config/balance';
-import { autoIncomePerSecond, startBoost, buyFacility, buyManager, buyStat, costOf, discounts, facilityCost, managerCost, planBuy, statCost, tapZone, zoneStats, type BuyMode } from '../core/economy';
+import { autoIncomePerSecond, offlineCap, startBoost, buyFacility, buyManager, buyStat, costOf, discounts, facilityCost, managerCost, planBuy, statCost, tapZone, zoneStats, type BuyMode } from '../core/economy';
 import { milestoneMult, nextMilestone } from '../config/balance';
 import type { Game } from '../core/game';
 import type { OfflineReport } from '../core/economy';
@@ -943,12 +943,64 @@ export class GameUI {
 
   showOffline(rep: OfflineReport) {
     this.game.offlineReport = null;
-    const lines = [`You were away for <b>${fmtTime(rep.away)}</b>.`];
-    if (rep.coins > 0) lines.push(`Your managers earned <b>${COIN} ${fmt(rep.coins)}</b>.`);
-    if (rep.capped) lines.push(`<small>Away time only earns for ${fmtTime(rep.seconds)}. Skills in the Beach tree add more.</small>`);
-    if (rep.waiting > 0) lines.push(`${rep.waiting} zone${rep.waiting > 1 ? 's are' : ' is'} waiting for you. Hire a manager to keep them running while you are away.`);
-    const m = this.modal(`<h2>Welcome back!</h2><p>${lines.join('</p><p>')}</p><button class="go big" data-ok>Nice</button>`);
-    m.querySelector('[data-ok]')!.addEventListener('click', () => this.closeModal());
+    const s = this.game.state;
+    const cap = offlineCap(s);
+    const pct = Math.round(Math.min(1, rep.seconds / cap) * 100);
+    const canGems = s.skillPoints >= BALANCE.offlineGemCost;
+    const notes: string[] = [];
+    if (rep.capped) notes.push(`<small>Away time only earns for ${fmtTime(rep.seconds)}. Skills in the Beach tree add more.</small>`);
+    if (rep.waiting > 0) notes.push(`<p>${rep.waiting} zone${rep.waiting > 1 ? 's are' : ' is'} waiting for you. Hire a manager to keep them running while you are away.</p>`);
+    const m = this.modal(`
+      <div class="menu-head">
+        ${tile('clock', '#1497b5', 46)}
+        <div class="menu-title"><h2>Welcome back!</h2><p>You were away for ${fmtTime(rep.away)}</p></div>
+        <button class="x" data-close aria-label="Close">${icon('close')}</button>
+      </div>
+      ${
+        rep.coins > 0
+          ? `<p class="off-lead">While you were away you earned:</p>
+      <div class="off-earn">${icon('coins')}<b data-off-total>${fmt(rep.coins)}</b></div>
+      <div class="off-bar-row"><span>Away time</span><span>Max ${fmtTime(cap)}</span></div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      ${notes.join('')}
+      <div class="off-boosts">
+        <button class="go off-btn" data-off-ad>${icon('video')}<b>Watch ad</b><small>x${BALANCE.offlineAdMult}</small></button>
+        <button class="go off-btn alt" data-off-gems${canGems ? '' : ' disabled'}>${icon('gem')}<b>${BALANCE.offlineGemCost} gems</b><small>x${BALANCE.offlineGemMult}</small></button>
+      </div>`
+          : notes.join('')
+      }`);
+    let done = false;
+    const finish = () => {
+      done = true;
+      this.closeModal();
+    };
+    m.querySelector('[data-close]')!.addEventListener('click', finish);
+    m.querySelector('[data-off-ad]')?.addEventListener('click', async () => {
+      const result = await this.playAd();
+      if (done) return; // closed while the ad was up
+      if (result === 'rewarded') {
+        const extra = Math.round(rep.coins * (BALANCE.offlineAdMult - 1));
+        s.coins += extra;
+        sound.coin();
+        this.confetti();
+        this.game.save();
+        this.refreshTop();
+        finish();
+      } else if (result === 'failed') {
+        this.toast('No ad is ready right now. Try again in a minute.');
+      }
+    });
+    m.querySelector('[data-off-gems]')?.addEventListener('click', () => {
+      if (s.skillPoints < BALANCE.offlineGemCost) return;
+      s.skillPoints -= BALANCE.offlineGemCost;
+      const extra = Math.round(rep.coins * (BALANCE.offlineGemMult - 1));
+      s.coins += extra;
+      sound.coin();
+      this.confetti();
+      this.game.save();
+      this.refreshTop();
+      finish();
+    });
   }
 
   /** Ask before erasing the save. Uses our own dialog: the browser's confirm() is blocked in some app views. */
