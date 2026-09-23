@@ -415,6 +415,15 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 .coach-bubble:not(.above) { transform: translate(-50%, 0); }
 .coached { z-index: 501; }
 
+/* ---------- first-run intro: the whole screen dark, a real hole (or a button) around the one thing to tap ---------- */
+.intro { position: absolute; inset: 0; z-index: 900; }
+.intro[hidden] { display: none; }
+.intro-dark { position: absolute; inset: 0; background: rgba(4, 10, 22, 0.86); pointer-events: auto; }
+.intro-ring { position: absolute; transform: translate(-50%, -50%); border-radius: 50%; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.6), 0 0 0 8px rgba(255, 194, 51, 0.2), 0 0 34px 10px rgba(255, 229, 122, 0.6); pointer-events: none; animation: pulse 1.3s ease-in-out infinite; }
+.intro-proxy { position: absolute; box-sizing: border-box; transform: translate(-50%, -50%); border-radius: 50%; background: var(--gloss), var(--sun); box-shadow: 0 4px 0 var(--sun-d), 0 0 34px 10px rgba(255, 229, 122, 0.6); color: var(--ink); display: grid; place-items: center; pointer-events: auto; animation: pulse 1.3s ease-in-out infinite; }
+.intro-proxy[hidden] { display: none; }
+.intro-proxy .ic { width: 55%; height: 55%; }
+
 /* ---------- shop ---------- */
 .shop-card { background: var(--card); border-radius: calc(18px * var(--u)); padding: 12px; margin-bottom: 8px; }
 .shop-card.product { display: flex; align-items: center; gap: 10px; }

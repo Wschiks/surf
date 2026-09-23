@@ -3,7 +3,7 @@ import { FACILITIES } from '../config/facilities';
 import { SPORTS, sportById, zoneById, zoneId } from '../config/sports';
 import { adsNative, showRewardedAd, type AdResult } from '../ads';
 import { BALANCE } from '../config/balance';
-import { autoIncomePerSecond, offlineCap, startBoost, buyFacility, buyManager, buyStat, costOf, discounts, facilityCost, managerCost, planBuy, statCost, tapZone, zoneStats, type BuyMode } from '../core/economy';
+import { autoIncomePerSecond, offlineCap, startBoost, buyFacility, buyManager, buyStat, costOf, discounts, facilityCost, managerCost, planBuy, tapZone, upgradeCount, zoneStats, type BuyMode } from '../core/economy';
 import { milestoneMult, nextMilestone } from '../config/balance';
 import type { Game } from '../core/game';
 import type { OfflineReport } from '../core/economy';
@@ -62,6 +62,12 @@ export class GameUI {
   private skillScreen!: SkillScreen;
   /** How many levels one tap on a buy button buys. */
   private buyMode: BuyMode = 1;
+  private introEl!: HTMLElement;
+  private introDark!: HTMLElement;
+  private introRing!: HTMLElement;
+  private introProxy!: HTMLButtonElement;
+  private introBubble!: HTMLElement;
+  private introStepKind: string | null = null;
 
   constructor(
     parent: HTMLElement,
@@ -81,7 +87,6 @@ export class GameUI {
       <div class="quests" data-ref="quests">
         <div class="q-list" data-ref="qlist">${Array.from({ length: QUEST_SLOTS }, (_, i) => `<div class="q-row" data-q="${i}"><div class="q-body"><span class="q-t"></span><i class="q-bar"><b></b></i><small class="q-n"></small></div><button class="q-claim"></button></div>`).join('')}</div>
       </div>
-      <button class="tip" data-ref="tip" hidden></button>
       <div class="dock">
         <button class="dock-btn" data-ref="beach">${icon('beach')}<em>Beach</em></button>
         <button class="dock-btn" data-ref="sports">${icon('sports')}<em>Sports</em></button>
@@ -98,6 +103,24 @@ export class GameUI {
       <div class="modal-back" data-ref="modal" hidden></div>`;
     parent.appendChild(this.root);
     this.host = parent;
+    // a full-screen, blocking first-run intro: appended last, so it sits above the map and everything else in #ui.
+    // the dark layer is its own element (only it gets the clip-path hole cut into it) so the ring/button/bubble,
+    // which sit at that same hole, are never clipped away along with it.
+    this.introEl = document.createElement('div');
+    this.introEl.className = 'intro';
+    this.introEl.hidden = true;
+    this.introEl.innerHTML = `<i class="intro-dark" data-ref="introDark"></i><i class="intro-ring" data-ref="introRing"></i><button class="intro-proxy" data-ref="introProxy" hidden>${icon('play')}</button><b class="coach-bubble" data-ref="introBubble"></b>`;
+    parent.appendChild(this.introEl);
+    this.introDark = this.introEl.querySelector('[data-ref=introDark]')!;
+    this.introRing = this.introEl.querySelector('[data-ref=introRing]')!;
+    this.introProxy = this.introEl.querySelector('[data-ref=introProxy]')!;
+    this.introBubble = this.introEl.querySelector('[data-ref=introBubble]')!;
+    // the intro only ever runs once, and only from the very first moment of a brand new game
+    if (this.game.state.tips.introDone === undefined) {
+      const z = this.game.state.zones['wave-1'];
+      const pristine = z.sessions === 0 && upgradeCount(z) === 0 && this.game.state.totalCoins === 0 && this.game.state.expansions === 0;
+      this.game.state.tips.introDone = !pristine;
+    }
     this.skillScreen = new SkillScreen(parent, { game: this.game, close: () => this.skillScreen.close(), toast: () => {}, refreshTop: () => this.refreshTop() });
     this.root.querySelectorAll<HTMLElement>('[data-ref]').forEach((el) => (this.refs[el.dataset.ref!] = el));
     this.sheetEl = this.refs.sheet;
@@ -110,11 +133,6 @@ export class GameUI {
     this.refs.shop.addEventListener('click', () => this.openShop());
     this.refs.expand.addEventListener('click', () => this.openExpand());
     this.refs.boost.addEventListener('click', () => void this.watchAd());
-    this.refs.tip.addEventListener('click', () => {
-      const kind = this.refs.tip.dataset.kind;
-      this.openZone('wave-1');
-      if (kind === 'manager') setTimeout(() => this.sheetEl.scrollTo({ top: this.sheetEl.scrollHeight, behavior: 'smooth' }), 400);
-    });
     // tapping the dark area around a dialog closes it
     this.refs.modal.addEventListener('click', (e) => {
       if (e.target === this.refs.modal) this.closeModal();
@@ -130,7 +148,7 @@ export class GameUI {
         this.refreshTop();
       }),
     );
-    if (this.game.offlineReport) this.showOffline(this.game.offlineReport);
+    if (this.game.offlineReport && !this.introStepFor()) this.showOffline(this.game.offlineReport); // never on top of the forced intro
   }
 
   // ------------------------------------------------------------ sheets
@@ -144,7 +162,6 @@ export class GameUI {
   }
 
   openZone(id: string) {
-    if (this.game.state.zones[id]?.owned) this.game.state.tips.upgrade = true; // the player found the zone panel
     this.sheet = { kind: 'zone', id };
     this.buildSheet();
     this.cb.onSelect(id);
@@ -635,19 +652,100 @@ export class GameUI {
     const perm = Math.pow(EXPANSION_MULT, s.expansions) * (s.perks.x5 ? BALANCE.x5Mult : 1) * (s.perks.club ? CLUB.coinMult : 1);
     this.refs.mult.hidden = perm === 1;
     this.refs.mult.textContent = `x${perm}`;
-    this.refreshTip();
     this.refreshBoost();
     this.refs.shopdot.hidden = adStreak(s, Date.now()).lockedFor > 0;
     this.refs.expand.classList.toggle('ready', canExpand(s));
     this.refs.expand.classList.toggle('pulse', canExpand(s));
     this.refreshQuests();
-    this.refreshCoach();
+    this.refreshIntro();
+    if (!this.introStepKind) this.refreshCoach();
+  }
+
+  // ------------------------------------------------------------ first-run intro (forced: nothing else can be tapped)
+
+  private introStepFor(): { kind: string; text: string | null } | null {
+    const s = this.game.state;
+    if (s.tips.introDone) return null;
+    const z = s.zones['wave-1'];
+    if (upgradeCount(z) > 0 || s.expansions > 0) {
+      s.tips.introDone = true; // past this already (should not happen once armed, but a safe exit all the same)
+      return null;
+    }
+    // `sessions` counts finished runs, not claims: it is already 1 the moment the first run becomes "ready", before
+    // any tap collects it. So "ready with sessions <= 2" is exactly the two claims this intro asks for.
+    if (z.phase === 'ready' && z.sessions <= 2) {
+      return { kind: 'claim', text: z.sessions <= 1 ? "It's done! Tap again to claim your coins." : 'One more time: tap the icon to claim.' };
+    }
+    if (z.sessions < 2) {
+      return z.phase === 'running' ? { kind: 'wait', text: null } : { kind: 'start', text: 'Tap the icon to start the surf lesson.' };
+    }
+    // both runs claimed (the zone is already running a third, unprompted): open the zone, then buy the first upgrade
+    if (!(this.sheet?.kind === 'zone' && this.sheet.id === 'wave-1')) {
+      return { kind: 'open', text: 'Now tap the sport to see your upgrades.' };
+    }
+    if (z.price === 0) return { kind: 'upgrade', text: 'Tap Level up to buy your first upgrade!' };
+    s.tips.introDone = true;
+    return null;
+  }
+
+  /**
+   * The very first thing a new player ever sees: tap to start, tap to claim (twice), open the zone, buy the first
+   * upgrade. One step at a time, the whole screen dark except a hole cut exactly around the real thing to tap (so
+   * its own tap, sound and animation all just happen normally) or, when a real tap there would do the wrong thing,
+   * a bright button drawn on top instead. Nothing else on screen can be reached until the step is done.
+   */
+  private refreshIntro() {
+    const step = this.introStepFor();
+    if (!step) {
+      if (this.introStepKind) {
+        this.introStepKind = null;
+        this.introEl.hidden = true;
+      }
+      return;
+    }
+    this.introEl.hidden = false;
+    this.introStepKind = step.kind;
+    this.introBubble.hidden = !step.text;
+    if (step.text) this.introBubble.textContent = step.text;
+    const target =
+      step.kind === 'upgrade' ? this.sheetEl.querySelector<HTMLElement>('[data-buy="price"]') : document.querySelector<HTMLElement>('[data-id="zone-wave-1"]');
+    if (!target) return; // the map badge or the buy row is not rendered on this exact frame yet; try again next tick
+    const host = this.introEl.getBoundingClientRect();
+    const r = target.getBoundingClientRect();
+    const pad = 10;
+    const cx = r.left + r.width / 2 - host.left;
+    const cy = r.top + r.height / 2 - host.top;
+    const rad = Math.max(r.width, r.height) / 2 + pad;
+    if (step.kind === 'open') {
+      // a real tap on the badge here would just start another session, not open the sheet: draw a button instead of a hole
+      this.introDark.style.clipPath = '';
+      this.introRing.hidden = true;
+      this.introProxy.hidden = false;
+      this.introProxy.style.left = `${cx}px`;
+      this.introProxy.style.top = `${cy}px`;
+      this.introProxy.style.width = this.introProxy.style.height = `${rad * 2}px`;
+      this.introProxy.onclick = () => this.openZone('wave-1');
+    } else {
+      // cut a real hole: the real element underneath gets the tap, with its own sound and animation
+      const w = host.width;
+      const h = host.height;
+      this.introDark.style.clipPath = `path(evenodd, "M0 0H${w}V${h}H0Z M${cx - rad} ${cy}A${rad} ${rad} 0 1 0 ${cx + rad} ${cy}A${rad} ${rad} 0 1 0 ${cx - rad} ${cy}Z")`;
+      this.introProxy.hidden = true;
+      this.introRing.hidden = false;
+      this.introRing.style.left = `${cx}px`;
+      this.introRing.style.top = `${cy}px`;
+      this.introRing.style.width = this.introRing.style.height = `${rad * 2}px`;
+    }
+    const above = r.top > host.height * 0.55;
+    this.introBubble.style.left = `${Math.min(Math.max(cx, 130), host.width - 130)}px`;
+    this.introBubble.style.top = above ? `${cy - rad - 12}px` : `${cy + rad + 12}px`;
+    this.introBubble.classList.toggle('above', above);
   }
 
   // ------------------------------------------------------------ tutorial coach marks
 
   /** Which early-game hint is on screen right now, if any: the whole screen dims and only that one button stays lit. */
-  private coachKind: 'upgradeCoach' | 'levels' | 'hire' | 'skills' | 'sports' | 'beach' | 'expand' | null = null;
+  private coachKind: 'levels' | 'skills' | 'sports' | 'beach' | 'expand' | null = null;
 
   private refreshCoach() {
     if (this.sheet || this.skillScreen.isOpen || !this.refs.modal.hidden) return this.hideCoach();
@@ -659,19 +757,10 @@ export class GameUI {
   }
 
   /** The next milestone to point at, in the order a new player reaches them. Each is shown once, ever. */
-  private nextCoachStep(): { kind: 'upgradeCoach' | 'levels' | 'hire' | 'skills' | 'sports' | 'beach' | 'expand'; el: HTMLElement; text: string; panTo?: string } | null {
+  private nextCoachStep(): { kind: 'levels' | 'skills' | 'sports' | 'beach' | 'expand'; el: HTMLElement; text: string; panTo?: string } | null {
     const s = this.game.state;
-    const wref = zoneById('wave-1');
-    const wz = s.zones['wave-1'];
-    const upgrades = wz.price + wz.capacity + wz.speed;
-    if (!s.tips.upgradeCoach && s.expansions === 0 && wz.owned && s.totalCoins > 0 && upgrades === 0 && s.coins >= statCost(wref, 'price', 0)) {
-      return { kind: 'upgradeCoach', el: this.refs.tip, text: 'You can upgrade! Tap here, then buy Level up to earn more coins every time.' };
-    }
     if (!s.tips.levels && s.expansions === 0 && levelStatus(s, zoneById('wave-2')).ready) {
       return { kind: 'levels', el: this.refs.sports, text: 'You have upgraded enough to open more! Tap Sports, then tap 2 to unlock the next level.' };
-    }
-    if (!s.tips.hire && s.expansions === 0 && wz.owned && upgrades >= 3 && !wz.manager && s.coins >= managerCost(wref, discounts(s, 'wave').manager)) {
-      return { kind: 'hire', el: this.refs.tip, text: 'You can hire someone to run it for you! A manager keeps a zone earning by itself, even while you are away. Tap here.' };
     }
     if (!s.tips.skills && s.skillEarned > 0) {
       return { kind: 'skills', el: this.refs.skills, text: 'You earned a skill point! Tap Skills to spend it in the skill trees.' };
@@ -681,7 +770,7 @@ export class GameUI {
       // the camera pans to the new zone first (see showCoach), so the player sees it exists and where it is, before being told to open Sports
       return { kind: 'sports', el: this.refs.sports, text: `You have enough to unlock ${sport.name}! Look, it is right there. Tap Sports to open it.`, panTo: zoneId(sport.id, 1) };
     }
-    if (!s.tips.beach && s.tips.manager && FACILITIES.some((f) => s.coins >= facilityCost(f.id, s.facilities[f.id] ?? 0, skillEffects(s).facilityCost))) {
+    if (!s.tips.beach && s.tips.introDone && FACILITIES.some((f) => s.coins >= facilityCost(f.id, s.facilities[f.id] ?? 0, skillEffects(s).facilityCost))) {
       return { kind: 'beach', el: this.refs.beach, text: 'You can afford a beach building! They boost every sport at once.' };
     }
     if (!s.tips.expand && canExpand(s)) {
@@ -692,9 +781,6 @@ export class GameUI {
 
   private coachTarget(): HTMLElement | null {
     switch (this.coachKind) {
-      case 'upgradeCoach':
-      case 'hire':
-        return this.refs.tip;
       case 'levels':
       case 'sports':
         return this.refs.sports;
@@ -709,7 +795,7 @@ export class GameUI {
     }
   }
 
-  private showCoach(step: { kind: 'upgradeCoach' | 'levels' | 'hire' | 'skills' | 'sports' | 'beach' | 'expand'; el: HTMLElement; text: string; panTo?: string }) {
+  private showCoach(step: { kind: 'levels' | 'skills' | 'sports' | 'beach' | 'expand'; el: HTMLElement; text: string; panTo?: string }) {
     this.coachKind = step.kind;
     this.game.state.tips[step.kind] = true; // shown once, however it is dismissed
     this.refs.coachBubble.textContent = step.text;
@@ -741,38 +827,11 @@ export class GameUI {
     ring.style.width = `${r.width + pad * 2}px`;
     ring.style.height = `${r.height + pad * 2}px`;
     const bubble = this.refs.coachBubble;
-    // the tip pill already carries its own message as its text, so it does not also get a floating bubble
-    const skipBubble = this.coachKind === 'upgradeCoach' || this.coachKind === 'hire';
-    bubble.hidden = skipBubble;
-    if (skipBubble) return;
+    bubble.hidden = false;
     const above = r.top > host.height * 0.55;
     bubble.style.left = `${Math.min(Math.max(r.left - host.left + r.width / 2, 130), host.width - 130)}px`;
     bubble.style.top = above ? `${r.top - host.top - 12}px` : `${r.bottom - host.top + 12}px`;
     bubble.classList.toggle('above', above);
-  }
-
-  /** A short hint above the bottom bar for the first steps: buy an upgrade, then hire a manager. Each is shown until followed. */
-  private refreshTip() {
-    const s = this.game.state;
-    const z = s.zones['wave-1'];
-    const ref = zoneById('wave-1');
-    let text = '';
-    let kind = '';
-    if (s.expansions === 0 && !this.sheet && z.owned) {
-      const upgrades = z.price + z.capacity + z.speed;
-      if (!s.tips.upgrade && s.totalCoins > 0 && upgrades === 0 && s.coins >= statCost(ref, 'price', 0)) {
-        text = 'You can buy an upgrade! Tap the zone on the map.';
-        kind = 'upgrade';
-      } else if (!s.tips.manager && upgrades >= 3 && !z.manager && s.coins >= managerCost(ref, discounts(s, 'wave').manager)) {
-        text = 'Hire a manager: the zone runs by itself, even when you are away.';
-        kind = 'manager';
-      }
-      if (z.manager) s.tips.manager = true;
-      if (upgrades > 0) s.tips.upgrade = true;
-    }
-    this.refs.tip.hidden = !text;
-    this.refs.tip.dataset.kind = kind;
-    if (text && this.refs.tip.textContent !== text) this.refs.tip.textContent = text;
   }
 
   private refreshQuests() {
@@ -890,7 +949,7 @@ export class GameUI {
     this.refreshSheet();
     this.skillScreen.update();
     this.shop?.update();
-    if (this.game.offlineReport) this.showOffline(this.game.offlineReport);
+    if (this.game.offlineReport && !this.introStepFor()) this.showOffline(this.game.offlineReport); // never on top of the forced intro
   }
 
   // ------------------------------------------------------------ pop-ups

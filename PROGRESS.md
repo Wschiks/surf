@@ -58,3 +58,4 @@ Bigger class costs 2.5x per level (was 1.17x); costScale 9.6 -> 8 to keep overal
 Sport tiles redrawn (skim/windsurf/sail were too similar) with a faint themed scene behind each icon, so the six sports read apart at a glance.
 App icon (not splash) replaced with the author's own artwork, processed into a real full-bleed opaque source and rendered to every store/native size by a new script.
 Welcome-back dialog: watch-ad x2 / gems x3 boosts on offline earnings, X-only close, no Continue button. Ad streak's last reward 5 -> 3 gems.
+Removed the hire-a-manager tip; added a forced first-run intro (tap to start, tap to claim x2, open the zone, buy the first upgrade) that blocks everything else via a real clip-path hole around the one thing to tap.
