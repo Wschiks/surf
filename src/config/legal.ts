@@ -16,8 +16,8 @@ export const LEGAL_UPDATED = '21 September 2026';
  * `npm run store:check` fails while `email` is empty.
  */
 export const PUBLISHER = {
-  name: '',
-  email: '',
+  name: 'MugStudio',
+  email: 'woutschiks@gmail.com',
   website: '',
 };
 
