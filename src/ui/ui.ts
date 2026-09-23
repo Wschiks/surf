@@ -14,6 +14,7 @@ import { EXPANSION_POINTS } from '../config/skills';
 import { claimQuest, questView, QUEST_SLOTS } from '../core/quests';
 import { COIN, fmt, fmtSeconds, fmtTime } from './format';
 import { icon, sportTile, tile } from './icons';
+import { introSeen, markIntroSeen } from '../core/introFlag';
 import { Menu } from './menu';
 import { Shop } from './shop';
 import { adStreak } from '../core/shop';
@@ -115,11 +116,15 @@ export class GameUI {
     this.introRing = this.introEl.querySelector('[data-ref=introRing]')!;
     this.introProxy = this.introEl.querySelector('[data-ref=introProxy]')!;
     this.introBubble = this.introEl.querySelector('[data-ref=introBubble]')!;
-    // the intro only ever runs once, and only from the very first moment of a brand new game
-    if (this.game.state.tips.introDone === undefined) {
+    // the intro only ever runs once per device, ever - not once per save, or "Start over" (a player who already
+    // knows the game, choosing to start fresh) would be forced through it again every single time
+    if (introSeen()) {
+      this.game.state.tips.introDone = true;
+    } else if (this.game.state.tips.introDone === undefined) {
       const z = this.game.state.zones['wave-1'];
       const pristine = z.sessions === 0 && upgradeCount(z) === 0 && this.game.state.totalCoins === 0 && this.game.state.expansions === 0;
       this.game.state.tips.introDone = !pristine;
+      if (!pristine) markIntroSeen(); // an already-progressed save loaded for the first time: treat like a returning player
     }
     this.skillScreen = new SkillScreen(parent, { game: this.game, close: () => this.skillScreen.close(), toast: () => {}, refreshTop: () => this.refreshTop() });
     this.root.querySelectorAll<HTMLElement>('[data-ref]').forEach((el) => (this.refs[el.dataset.ref!] = el));
@@ -669,6 +674,7 @@ export class GameUI {
     const z = s.zones['wave-1'];
     if (upgradeCount(z) > 0 || s.expansions > 0) {
       s.tips.introDone = true; // past this already (should not happen once armed, but a safe exit all the same)
+      markIntroSeen();
       return null;
     }
     // `sessions` counts finished runs, not claims: it is already 1 the moment the first run becomes "ready", before
@@ -685,6 +691,7 @@ export class GameUI {
     }
     if (z.price === 0) return { kind: 'upgrade', text: 'Tap Level up to buy your first upgrade!' };
     s.tips.introDone = true;
+    markIntroSeen();
     return null;
   }
 
@@ -696,13 +703,17 @@ export class GameUI {
    */
   private refreshIntro() {
     const step = this.introStepFor();
-    if (!step) {
-      if (this.introStepKind) {
-        this.introStepKind = null;
-        this.introEl.hidden = true;
-      }
+    // nothing to tap right now (a session is just running its course): let the player look around freely instead of
+    // staring at a locked dark screen for a few seconds - the block comes back the moment there is something to tap
+    if (!step || step.kind === 'wait') {
+      this.introStepKind = step?.kind ?? null; // 'wait' is still remembered (keeps refreshCoach suppressed), just not shown
+      this.introEl.hidden = true;
       return;
     }
+    // the badge this step needs is on the map, not in any sheet - if the player wandered into one during a free
+    // 'wait' window and it's still open when the run finishes, close it, or the hole below would be cut around
+    // coordinates the sheet now covers, blocking the badge AND the sheet's own close button at once
+    if (step.kind !== 'upgrade' && this.sheet) this.closeSheet();
     this.introEl.hidden = false;
     this.introStepKind = step.kind;
     this.introBubble.hidden = !step.text;
