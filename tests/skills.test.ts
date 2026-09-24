@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { BALANCE } from '../src/config/balance';
-import { RING_RADIUS, TREE_UNIT, skillPosition, EXPANSION_POINTS, QUEST_POINTS, SKILL_NODES, SKILL_TREES, describeSkill, skillById } from '../src/config/skills';
+import { RING_RADIUS, TREE_UNIT, skillPosition, QUEST_POINTS, SKILL_NODES, SKILL_TREES, describeSkill, skillById } from '../src/config/skills';
 import { SPORTS, zoneById } from '../src/config/sports';
 import { buyFacility, buyManager, buyStat, discounts, facilityCost, managerCost, offlineCap, statCost, zoneStats } from '../src/core/economy';
 import { claimQuest, questView, refreshQuests } from '../src/core/quests';
@@ -110,7 +110,6 @@ describe('learning skills', () => {
     expect(s.skillPoints).toBe(before); // no gem for an easy quest
     expect(QUEST_POINTS.unlock).toBeGreaterThan(QUEST_POINTS.manager);
     expect(QUEST_POINTS.expand).toBeGreaterThan(QUEST_POINTS.unlock);
-    expect(EXPANSION_POINTS[1]).toBeGreaterThan(0);
     // only some quests that are made are gem quests, and a quest keeps its gems (they are fixed when it is made)
     const t = game();
     refreshQuests(t);
@@ -129,7 +128,7 @@ describe('learning skills', () => {
     expect(questView(s, { kind: 'unlock', zone: 'wave-2', target: 1 }).points).toBe(2);
   });
 
-  it('skills stay when the beach is expanded, and the expansion pays skill points', () => {
+  it('skills stay when the beach is expanded, and the expansion pays none', () => {
     const s = newGame(0);
     s.skills = { ...s.skills, 'wave:prices1': true, 'beach:away1': true };
     s.sports.skimboarding = true;
@@ -139,7 +138,7 @@ describe('learning skills', () => {
     expect(expand(s)).toBe(true);
     expect(s.skills['wave:prices1']).toBe(true);
     expect(s.skills['beach:away1']).toBe(true);
-    expect(s.skillPoints).toBe(points + EXPANSION_POINTS[1]);
+    expect(s.skillPoints).toBe(points); // an expansion no longer pays gems
   });
 });
 

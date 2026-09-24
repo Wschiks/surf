@@ -19,6 +19,7 @@
     "icons": "node scripts/make-icons.mjs",
     "store:screenshots": "node scripts/store-screenshots.mjs",
     "store:check": "tsx scripts/store-check.ts",
+    "docs:economy": "tsx scripts/economy-doc.ts",
     "phone:id": "node scripts/set-app-id.mjs && cap sync"
   },
   "dependencies": {

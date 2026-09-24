@@ -2,8 +2,7 @@ import { areaById } from '../config/areas';
 import { EXPANSIONS, expansionAfter, type ExpansionDef } from '../config/expansions';
 import { SPORTS, sportById, zoneById, zoneId, type SportDef, type SportId, type ZoneRef } from '../config/sports';
 import { upgradeCount } from './economy';
-import { addSkillPoints, skillEffects } from './skills';
-import { EXPANSION_POINTS } from '../config/skills';
+import { skillEffects } from './skills';
 import { newZone, openAreas, type GameState } from './state';
 import { FACILITIES } from '../config/facilities';
 
@@ -157,7 +156,6 @@ export function expand(state: GameState): boolean {
   if (!canExpand(state)) return false;
   if (!st) return false;
   state.expansions += 1;
-  addSkillPoints(state, EXPANSION_POINTS[state.expansions] ?? 0); // skills stay; the expansion pays skill points
   state.coins = 0;
   state.quests = [];
   for (const id of Object.keys(state.zones)) state.zones[id] = newZone();

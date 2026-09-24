@@ -79,7 +79,7 @@ export class SkillScreen {
     this.el.innerHTML = `
       <div class="sk-head">
         <button class="x back" data-sk-close aria-label="Back">${icon('back')}</button>
-        <div class="sk-title"><h2>Skills</h2><small>Quests and expansions give skill points</small></div>
+        <div class="sk-title"><h2>Skills</h2><small>Quests give skill points</small></div>
         <div class="pill gems">${icon('gem')}<b data-sk-points>0</b></div>
       </div>
       <div class="sk-tabs" data-sk-tabs></div>

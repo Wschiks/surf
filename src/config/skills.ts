@@ -1,6 +1,6 @@
 import { SPORTS, type SportId } from './sports';
 
-// Skill trees. Skill points (the second currency) come from quests and from beach expansions. Every sport has its own
+// Skill trees. Skill points (the second currency) come from quests only. Every sport has its own
 // little tree, and the beach has one too: seven trees in all. Every tree starts with one free skill that the player
 // cannot choose (the root); from there the tree splits up and the player chooses what to learn.
 // Skills are permanent: they stay when the beach is expanded.
@@ -58,8 +58,6 @@ export const QUEST_POINTS: Record<string, number> = { level: 0, sessions: 0, ser
 /** On top of that, every 5th finished quest pays at least this many skill points, whatever it asks. */
 export const LUCKY_QUEST_EVERY = 5;
 export const LUCKY_QUEST_POINTS = 1;
-/** Skill points for buying beach expansion 1 and 2. */
-export const EXPANSION_POINTS = [0, 15, 25];
 
 interface Shape {
   key: string;

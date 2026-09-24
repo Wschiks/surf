@@ -10,7 +10,6 @@ import type { OfflineReport } from '../core/economy';
 import { hasAffordableSkill, skillEffects } from '../core/skills';
 import { canExpand, expand, expansionNeededFor, expansionStatus, levelStatus, nextUnlockableSport, unlockZone, zoneUnlockStatus } from '../core/unlocks';
 import { EXPANSION_MULT } from '../config/expansions';
-import { EXPANSION_POINTS } from '../config/skills';
 import { claimQuest, questView, QUEST_SLOTS } from '../core/quests';
 import { COIN, fmt, fmtSeconds, fmtTime } from './format';
 import { icon, sportTile, tile } from './icons';
@@ -541,7 +540,7 @@ export class GameUI {
     }, 1500);
     setTimeout(() => {
       this.confetti();
-      this.toast(`Income x${Math.pow(EXPANSION_MULT, this.game.state.expansions)}. New area open! +${EXPANSION_POINTS[this.game.state.expansions] ?? 0} skill points`);
+      this.toast(`Income x${Math.pow(EXPANSION_MULT, this.game.state.expansions)}. New area open!`);
     }, 2500);
     setTimeout(() => box.remove(), 3400);
   }
