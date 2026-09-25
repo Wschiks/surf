@@ -5,6 +5,7 @@ import fs from 'node:fs';
 
 const base = process.env.URL ?? 'http://localhost:5173/?debug=1';
 const sets = [
+  { dir: 'store/screenshots/iphone-6.5', w: 428, h: 926, dpr: 3 }, // 1284 x 2778 (the size App Store Connect asks for in its 6.5" slot)
   { dir: 'store/screenshots/iphone-6.9', w: 430, h: 932, dpr: 3 }, // 1290 x 2796
   { dir: 'store/screenshots/android-phone', w: 360, h: 640, dpr: 3 }, // 1080 x 1920
 ];
@@ -13,11 +14,13 @@ const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--ena
 for (const set of sets) {
   fs.mkdirSync(set.dir, { recursive: true });
   const ctx = await browser.newContext({ viewport: { width: set.w, height: set.h }, deviceScaleFactor: set.dpr, hasTouch: true });
+  await ctx.addInitScript(() => localStorage.setItem('surf-tycoon-intro-v1', '1')); // no first-run intro in the pictures
   const page = await ctx.newPage();
   await page.goto(base);
   await page.waitForFunction(() => window.__surf, null, { timeout: 30000 });
   await page.waitForTimeout(1500);
   const ev = (fn, a) => page.evaluate(fn, a);
+  await ev(() => { window.__surf.game.state.tips = { introDone: true, levels: true, skills: true, sports: true, beach: true, expand: true }; }); // no tutorial dimming in the pictures
   const shot = async (name) => {
     await page.waitForTimeout(900);
     await page.screenshot({ path: `${set.dir}/${name}.png` });
@@ -59,6 +62,13 @@ for (const set of sets) {
   // 6. the expansion sheet
   await ev(() => window.__surf.ui.openExpand());
   await shot('06-expand');
+  // 7. the skill wheel
+  await ev(() => { window.__surf.ui.closeSheet(); const s = window.__surf.game.state; s.skillPoints = 14; s.skillEarned = 40; window.__surf.ui.openSkills(); });
+  await shot('07-skills');
+  await ev(() => window.__surf.ui.skillScreen.close());
+  // 8. the shop
+  await ev(() => window.__surf.ui.openShop());
+  await shot('08-shop');
   await ctx.close();
 }
 await browser.close();

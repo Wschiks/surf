@@ -64,7 +64,8 @@ export class SkillScreen {
 
   open(tree: TreeId | 'hub' = 'hub') {
     this.el.hidden = false;
-    this.render();
+    // sports may have unlocked (or an expansion reset them) while this screen was closed: its trees must match first
+    if (!this.syncSports()) this.render();
     requestAnimationFrame(() => this.focusTree(tree, false));
   }
 
@@ -295,17 +296,21 @@ export class SkillScreen {
   /** Update what the skills look like. Cheap: called about ten times a second while the screen is open. */
   update() {
     if (this.el.hidden) return;
-    const sportsKey = this.sportsKey();
-    if (sportsKey !== this.lastSportsKey) {
-      // a new sport unlocked (or a beach expansion reset them): its tree can now show up
-      this.lastSportsKey = sportsKey;
-      this.rebuildTabs();
-      this.buildWorld();
-      return this.render(true);
-    }
+    if (this.syncSports()) return;
     const s = this.ctx.game.state;
     if (s.skillPoints === this.lastPoints && s.skills === this.lastSkills) return;
     this.render();
+  }
+
+  /** Rebuild the trees when the set of unlocked sports changed since they were drawn. Returns whether it did (and re-rendered). */
+  private syncSports(): boolean {
+    const key = this.sportsKey();
+    if (key === this.lastSportsKey) return false;
+    this.lastSportsKey = key;
+    this.rebuildTabs();
+    this.buildWorld();
+    this.render(true);
+    return true;
   }
 
   private render(force = false) {

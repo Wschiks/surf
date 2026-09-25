@@ -77,5 +77,5 @@ No login is needed. The game is fully playable offline. Progress is saved on the
 
 ## Pictures
 * Icon 1024×1024: `store/icon-1024.png` (opaque, no alpha).
-* Screenshots: `store/screenshots/iphone-6.9/` (1290×2796) and `store/screenshots/android-phone/` (1080×1920). Make them again with `npm run dev` and `npm run store:screenshots`.
+* Screenshots: `store/screenshots/iphone-6.5/` (1284×2778, the size App Store Connect's 6.5" slot asks for), `store/screenshots/iphone-6.9/` (1290×2796) and `store/screenshots/android-phone/` (1080×1920). Make them again with `npm run dev` and `npm run store:screenshots`.
 * Google Play also needs a **feature graphic 1024×500**: not made yet (use the icon picture on the sea gradient with the name).
