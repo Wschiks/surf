@@ -72,3 +72,5 @@ Found while making screenshots: opening the skill screen after a new sport had u
 
 ## Dimmed tutorials removed
 The five coach marks and the forced first-run intro (both dimmed the screen, and did not work reliably enough) are gone at the author's request: `refreshCoach`/`refreshIntro` and friends in `src/ui/ui.ts`, `src/core/introFlag.ts`, the `state.tips` field and their CSS. What remains is non-blocking: the "Tap to start" label on the first badge, pulsing Skills/Expand buttons, the hidden Skills button until the first gem, and How to play. Design docs synced.
+
+Tapping level 1 of a sport under the mist now shows the same card as levels 2-4 (what you get, what blocks it, the ticked requirements of the next expansion, a "Go to Expand" button) instead of a bare "Not open yet".

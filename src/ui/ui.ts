@@ -200,7 +200,7 @@ export class GameUI {
     this.sheetEl.innerHTML = head + (owned ? this.ownedBody(id) : this.lockedBody(id));
     this.sheetEl.querySelector('[data-close]')!.addEventListener('click', () => this.closeSheet());
     if (!owned) {
-      this.sheetEl.querySelector('[data-tobeach]')?.addEventListener('click', () => this.openBeach());
+      this.sheetEl.querySelector('[data-toexpand]')?.addEventListener('click', () => this.openExpand());
       this.sheetEl.querySelector('[data-unlock]')?.addEventListener('click', () => {
         const kind = unlockZone(this.game.state, id);
         if (kind) {
@@ -334,11 +334,16 @@ export class GameUI {
     const ref = zoneById(id);
     const need = zoneUnlockStatus(this.game.state, ref)!;
     if (need.kind === 'closed') {
+      // same layout as an unlockable zone: what you get, what is blocking it, and the ticked list of what the expansion that opens it needs
+      const next = expansionStatus(this.game.state);
+      const items = (next?.requirements ?? []).map((r, i) => `<li data-xreq="${i}"><span class="tick"></span><span class="rt">${r.text}</span><em></em></li>`).join('');
       return `
       <div class="unlock-card">
-        <h3>Not open yet</h3>
-        <p class="get">${need.status.blockedBy}. You start over on a bigger beach and all income is ${EXPANSION_MULT} times higher.</p>
-        <button class="go" data-tobeach>${icon('beach')} Go to the beach</button>
+        <h3>Start ${ref.sport.name}</h3>
+        <p class="get">You get: ${ref.def.starterBuys.join(', ')}</p>
+        <p class="blocked">${need.status.blockedBy}. Expanding starts you over on a bigger beach and all income is ${EXPANSION_MULT} times higher.</p>
+        <ul class="reqs">${items}</ul>
+        <button class="go" data-toexpand>${icon('expand')} Go to Expand</button>
       </div>`;
     }
     const reqs = need.status.requirements.map((r, i) => `<li data-req="${i}"><span class="tick"></span><span class="rt">${r.text}</span><em></em></li>`).join('');
@@ -355,7 +360,17 @@ export class GameUI {
   private refreshLocked(id: string) {
     const ref = zoneById(id);
     const need = zoneUnlockStatus(this.game.state, ref);
-    if (!need || need.kind === 'closed') return;
+    if (!need) return;
+    if (need.kind === 'closed') {
+      expansionStatus(this.game.state)?.requirements.forEach((r, i) => {
+        const li = this.sheetEl.querySelector<HTMLElement>(`[data-xreq="${i}"]`);
+        if (!li) return;
+        li.classList.toggle('met', r.met);
+        setHtml(li.querySelector('.tick') as HTMLElement, r.met ? icon('check') : '');
+        li.querySelector('em')!.textContent = r.progress;
+      });
+      return;
+    }
     const st = need.status;
     const blocked = this.sheetEl.querySelector<HTMLElement>('[data-blocked]')!;
     blocked.hidden = !st.blockedBy;
