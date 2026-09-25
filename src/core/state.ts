@@ -39,8 +39,6 @@ export interface GameState {
   /** The second currency, earned from quests and expansions and spent on skills. */
   skillPoints: number;
   skillEarned: number;
-  /** Hints the player has already seen (or followed): they are shown once. */
-  tips: { introDone?: boolean; levels?: boolean; skills?: boolean; sports?: boolean; beach?: boolean; expand?: boolean };
   /** Seconds left of the ad boost (all coin income x2). It runs down in real time, also while away. */
   boost: number;
   /** Progress in the shop's ad streak: the next reward and when the streak can be used again (ms since 1970). */
@@ -76,7 +74,6 @@ export function newGame(now: number): GameState {
     questsMade: 0,
     skillPoints: 0,
     skillEarned: 0,
-    tips: {},
     boost: 0,
     adShop: { step: 0, lockedUntil: 0 },
     clubNext: 0,
@@ -119,7 +116,6 @@ export function ensureState(state: GameState): GameState {
   state.questsMade ??= 0;
   state.skillPoints ??= 0;
   state.skillEarned ??= 0;
-  state.tips ??= {};
   state.boost ??= 0;
   state.adShop ??= { step: 0, lockedUntil: 0 };
   state.clubNext ??= 0;

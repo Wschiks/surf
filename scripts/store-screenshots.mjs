@@ -14,13 +14,11 @@ const browser = await chromium.launch({ args: ['--use-angle=swiftshader', '--ena
 for (const set of sets) {
   fs.mkdirSync(set.dir, { recursive: true });
   const ctx = await browser.newContext({ viewport: { width: set.w, height: set.h }, deviceScaleFactor: set.dpr, hasTouch: true });
-  await ctx.addInitScript(() => localStorage.setItem('surf-tycoon-intro-v1', '1')); // no first-run intro in the pictures
   const page = await ctx.newPage();
   await page.goto(base);
   await page.waitForFunction(() => window.__surf, null, { timeout: 30000 });
   await page.waitForTimeout(1500);
   const ev = (fn, a) => page.evaluate(fn, a);
-  await ev(() => { window.__surf.game.state.tips = { introDone: true, levels: true, skills: true, sports: true, beach: true, expand: true }; }); // no tutorial dimming in the pictures
   const shot = async (name) => {
     await page.waitForTimeout(900);
     await page.screenshot({ path: `${set.dir}/${name}.png` });

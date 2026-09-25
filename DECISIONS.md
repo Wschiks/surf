@@ -314,3 +314,6 @@ The intro above shipped with two real problems, both found by literally doing wh
 
 ## App id changed to nl.mugstudio.surftycoon
 Changed from `com.wschiks.surftycoon` (built from the GitHub name) to the reverse of the author's own domain, `nl.mugstudio.surftycoon`, before the first store upload (an id cannot change afterwards). Done with `npm run phone:id`; the store product ids in `src/config/shop.ts` (gems, remove ads, coins x5, Surf Club) and the texts in `store/listing.md`, `docs/STORE-READINESS.md` and the README follow the new id. Earlier entries in this file that mention the old id are history.
+
+## No tutorial overlays at all
+The author asked for the whole dim-the-screen tutorial to go ("not 100% working"): both the five one-time coach marks and the forced first-run intro were removed, along with the `tips` field of the save and the separate intro-seen storage key. They can be recovered from git history (last commit that has them: fcb2926). Reason to keep it that way: every variant needed a real hole or z-index trick over a moving map, and each fix (open sheets covering the target, the seen-flag resetting with the save) exposed another edge. Guidance for a new player is now only non-blocking (see DESIGN-SURF-TYCOON.md 9.6a).

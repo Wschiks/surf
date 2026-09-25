@@ -69,3 +69,6 @@ Buying a beach expansion used to add 15 / 25 skill points; that is gone (author'
 
 ## Skill screen crash fixed; new store screenshots
 Found while making screenshots: opening the skill screen after a new sport had unlocked (or after an expansion) while it was closed crashed (`null.className`), because the sport trees were only re-synced while the screen was open. `open()` now syncs them first (`syncSports()` in `src/ui/skills.ts`). Store screenshots regenerated (8 pictures incl. skills and shop, no tutorial dimming) in a new 1284x2778 set `store/screenshots/iphone-6.5/` plus the 1290x2796 and Android sets.
+
+## Dimmed tutorials removed
+The five coach marks and the forced first-run intro (both dimmed the screen, and did not work reliably enough) are gone at the author's request: `refreshCoach`/`refreshIntro` and friends in `src/ui/ui.ts`, `src/core/introFlag.ts`, the `state.tips` field and their CSS. What remains is non-blocking: the "Tap to start" label on the first badge, pulsing Skills/Expand buttons, the hidden Skills button until the first gem, and How to play. Design docs synced.

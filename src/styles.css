@@ -406,23 +406,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 .tip[hidden] { display: none; }
 @keyframes tipBob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
 
-/* ---------- tutorial coach marks: the screen dims and one button stays lit ---------- */
 .dock-skills.gone { display: none; }
-.coach { position: absolute; inset: 0; z-index: 500; background: rgba(4, 10, 22, 0.82); pointer-events: auto; }
-.coach[hidden] { display: none; }
-.coach-ring { position: absolute; border-radius: calc(22px * var(--u)); box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.55), 0 0 0 8px rgba(255, 194, 51, 0.2), 0 0 34px 8px rgba(255, 229, 122, 0.55); pointer-events: none; animation: pulse 1.3s ease-in-out infinite; }
-.coach-bubble { position: absolute; width: max-content; max-width: 240px; background: var(--sun); color: var(--ink); font-weight: 800; font-size: 13.5px; line-height: 1.3; text-align: center; padding: 10px 14px; border-radius: calc(16px * var(--u)); box-shadow: 0 4px 0 var(--sun-d), 0 8px 12px rgba(8, 36, 60, 0.25); pointer-events: none; transform: translate(-50%, -100%); }
-.coach-bubble:not(.above) { transform: translate(-50%, 0); }
-.coached { z-index: 501; }
-
-/* ---------- first-run intro: the whole screen dark, a real hole (or a button) around the one thing to tap ---------- */
-.intro { position: absolute; inset: 0; z-index: 900; }
-.intro[hidden] { display: none; }
-.intro-dark { position: absolute; inset: 0; background: rgba(4, 10, 22, 0.86); pointer-events: auto; }
-.intro-ring { position: absolute; transform: translate(-50%, -50%); border-radius: 50%; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.6), 0 0 0 8px rgba(255, 194, 51, 0.2), 0 0 34px 10px rgba(255, 229, 122, 0.6); pointer-events: none; animation: pulse 1.3s ease-in-out infinite; }
-.intro-proxy { position: absolute; box-sizing: border-box; transform: translate(-50%, -50%); border-radius: 50%; background: var(--gloss), var(--sun); box-shadow: 0 4px 0 var(--sun-d), 0 0 34px 10px rgba(255, 229, 122, 0.6); color: var(--ink); display: grid; place-items: center; pointer-events: auto; animation: pulse 1.3s ease-in-out infinite; }
-.intro-proxy[hidden] { display: none; }
-.intro-proxy .ic { width: 55%; height: 55%; }
 
 /* ---------- shop ---------- */
 .shop-card { background: var(--card); border-radius: calc(18px * var(--u)); padding: 12px; margin-bottom: 8px; }
