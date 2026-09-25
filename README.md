@@ -61,7 +61,7 @@ npm run phone:open:ios      # open in Xcode (needs a Mac with Xcode)
 npm run phone:open:android  # open in Android Studio
 ```
 
-The app id in `capacitor.config.ts` (`com.wschiks.surftycoon`) is derived from the GitHub name: change it before the first store upload, then run `npm run phone:id`.
+The app id in `capacitor.config.ts` (`nl.mugstudio.surftycoon`) is derived from the GitHub name: change it before the first store upload, then run `npm run phone:id`.
 Nothing has been published and no store accounts were created.
 
 ### App stores

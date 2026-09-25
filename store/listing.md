@@ -43,12 +43,12 @@ First release.
 Five products. The ids must match `PRODUCTS[].storeId` and `GEM_PACKS[].storeId` in `src/config/shop.ts`. The gem packs are **consumable** (App Store: Consumable; Google Play: a normal in-app product, which the app consumes after payout); Remove ads and Coins x5 are **non-consumable**.
 | Product | Id | Price | Reference name / description |
 |---|---|---|---|
-| Remove ads | `com.wschiks.surftycoon.removeads` | 2.99 EUR (tier of your choice) | "Remove ads": every ad reward without watching an ad |
-| Coins x5 | `com.wschiks.surftycoon.coins5x` | 4.99 EUR | "Coins x5": all coin income x5 for good |
-| **Surf Club (subscription)** | `com.wschiks.surftycoon.club` (Google base plan id: `monthly`) | 3.99 EUR / month | "Surf Club": coins x2, ad rewards without ads, 3 gems a day, +2 hours away time |
-| 20 gems | `com.wschiks.surftycoon.gems20` | 0.99 EUR | "20 gems": skill points for the skill trees (consumable) |
-| 100 gems | `com.wschiks.surftycoon.gems100` | 3.99 EUR | "100 gems" (consumable) |
-| 300 gems | `com.wschiks.surftycoon.gems300` | 9.99 EUR | "300 gems" (consumable) |
+| Remove ads | `nl.mugstudio.surftycoon.removeads` | 2.99 EUR (tier of your choice) | "Remove ads": every ad reward without watching an ad |
+| Coins x5 | `nl.mugstudio.surftycoon.coins5x` | 4.99 EUR | "Coins x5": all coin income x5 for good |
+| **Surf Club (subscription)** | `nl.mugstudio.surftycoon.club` (Google base plan id: `monthly`) | 3.99 EUR / month | "Surf Club": coins x2, ad rewards without ads, 3 gems a day, +2 hours away time |
+| 20 gems | `nl.mugstudio.surftycoon.gems20` | 0.99 EUR | "20 gems": skill points for the skill trees (consumable) |
+| 100 gems | `nl.mugstudio.surftycoon.gems100` | 3.99 EUR | "100 gems" (consumable) |
+| 300 gems | `nl.mugstudio.surftycoon.gems300` | 9.99 EUR | "300 gems" (consumable) |
 * App Store: App Store Connect > the app > Monetization > In-App Purchases, add a screenshot of the shop for review, and attach them to the app version. Google Play: Monetize > Products > In-app products, activate them (the app must be uploaded to a testing track first).
 * **Subscription (Surf Club)**: App Store: create a *subscription group* (for example "Surf Club") with one auto-renewable subscription of 1 month, add the localised name/description and a screenshot. Google Play: Monetize > Subscriptions, product id as above, add a **base plan with id `monthly`** (auto-renewing, 1 month) and activate it. The shop shows what Apple and Google require: name, length, price, that it renews automatically until cancelled in the account settings, a Manage subscription button and links to the Terms and Privacy Policy. Also put the Terms (or Apple's standard EULA) and Privacy links in the store listing.
 * Both stores require a working **Restore purchases** button: it is in the shop.

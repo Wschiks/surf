@@ -25,14 +25,14 @@ export interface Product {
 export const PRODUCTS: readonly Product[] = [
   {
     id: 'noAds',
-    storeId: 'com.wschiks.surftycoon.removeads',
+    storeId: 'nl.mugstudio.surftycoon.removeads',
     name: 'Remove ads',
     text: 'Every ad reward, without watching an ad. One time.',
     price: '€2.99',
   },
   {
     id: 'x5',
-    storeId: 'com.wschiks.surftycoon.coins5x',
+    storeId: 'nl.mugstudio.surftycoon.coins5x',
     name: 'Coins x5',
     text: 'All coin income x5, for good. It stacks with everything else. One time.',
     price: '€4.99',
@@ -53,15 +53,15 @@ export interface GemPack {
 
 /** Skill points (gems) for real money. The bigger the pack, the cheaper a gem. */
 export const GEM_PACKS: readonly GemPack[] = [
-  { id: 'gems20', storeId: 'com.wschiks.surftycoon.gems20', gems: 20, price: '€0.99' },
-  { id: 'gems100', storeId: 'com.wschiks.surftycoon.gems100', gems: 100, price: '€3.99', tag: 'Popular' },
-  { id: 'gems300', storeId: 'com.wschiks.surftycoon.gems300', gems: 300, price: '€9.99', tag: 'Best value' },
+  { id: 'gems20', storeId: 'nl.mugstudio.surftycoon.gems20', gems: 20, price: '€0.99' },
+  { id: 'gems100', storeId: 'nl.mugstudio.surftycoon.gems100', gems: 100, price: '€3.99', tag: 'Popular' },
+  { id: 'gems300', storeId: 'nl.mugstudio.surftycoon.gems300', gems: 300, price: '€9.99', tag: 'Best value' },
 ];
 
 /** The monthly subscription. */
 export const CLUB = {
   /** Subscription product id in App Store Connect / Google Play Console. */
-  storeId: 'com.wschiks.surftycoon.club',
+  storeId: 'nl.mugstudio.surftycoon.club',
   /** The base plan id of the monthly plan in Google Play Console (Android needs it). */
   planId: 'monthly',
   name: 'Surf Club',

@@ -4,7 +4,7 @@ Nothing has been submitted and no accounts were made. This document lists what i
 
 ## What is ready
 * **No cheat or test options** in the game (the "Add 100B coins" button and the always-expand switch are gone). The debug hook `window.__surf` exists only in development or with `?debug` in the address.
-* **Identity**: app name "Surf Tycoon", app id `com.wschiks.surftycoon` (derived from your GitHub name; change it, see below), version **1.0.0**.
+* **Identity**: app name "Surf Tycoon", app id `nl.mugstudio.surftycoon` (derived from your GitHub name; change it, see below), version **1.0.0**.
 * **The app icon is a picture** (`store/art/icon-source.png`, 1024x1024, opaque, the author's own artwork - not drawn in code, the one exception to that rule), written for iOS (1024 icon, no alpha), Android (all densities, legacy/round/adaptive) and the web. **Splash screens stay drawn in code** (`scripts/make-icons.mjs`: a sea gradient, a sun, a white wave and a coral surfboard). `npm run icons` makes every size again from `scripts/render-app-icon.py` (icon) and `make-icons.mjs` (splash).
 * **iOS project**: iPhone only, portrait only, export compliance answered, privacy manifest included (declares the AdMob tracking and data types), AdMob app id in `Info.plist`, tracking permission text, no landscape.
 * **Android project**: portrait only, no cleartext traffic, package folder and application id set, adaptive icon with a sea-blue background.

@@ -4,7 +4,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 // The app id is the reverse of a domain name you control. Change it once here and run `npm run phone:id` to
 // copy it into the Android and iOS projects.
 const config: CapacitorConfig = {
-  appId: 'com.wschiks.surftycoon',
+  appId: 'nl.mugstudio.surftycoon',
   appName: 'Surf Tycoon',
   webDir: 'dist',
   backgroundColor: '#0b5d8a',

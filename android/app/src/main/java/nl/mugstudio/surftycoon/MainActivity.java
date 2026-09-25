@@ -1,4 +1,4 @@
-package com.wschiks.surftycoon;
+package nl.mugstudio.surftycoon;
 
 import com.getcapacitor.BridgeActivity;
 
