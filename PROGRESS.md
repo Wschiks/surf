@@ -74,3 +74,6 @@ Found while making screenshots: opening the skill screen after a new sport had u
 The five coach marks and the forced first-run intro (both dimmed the screen, and did not work reliably enough) are gone at the author's request: `refreshCoach`/`refreshIntro` and friends in `src/ui/ui.ts`, `src/core/introFlag.ts`, the `state.tips` field and their CSS. What remains is non-blocking: the "Tap to start" label on the first badge, pulsing Skills/Expand buttons, the hidden Skills button until the first gem, and How to play. Design docs synced.
 
 Tapping level 1 of a sport under the mist now shows the same card as levels 2-4 (what you get, what blocks it, the ticked requirements of the next expansion, a "Go to Expand" button) instead of a bare "Not open yet".
+
+## Bigger class capped at a reachable level
+`Bigger class` (capacity) was capped at level 100, but at x2.5 per level the cost of even level 30 is already trillions of coins - level 100 needed an astronomical, unreachable sum, so "x100"/"Max" showed a meaningless price. Lowered the cap to 40 (`src/config/balance.ts`), close to what the balance bot actually reaches (13-30). The bot's playthrough timeline (8h16m) is unchanged, since it never bought anywhere near the old cap anyway. `docs/ECONOMY.md` regenerated.

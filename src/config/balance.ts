@@ -21,7 +21,9 @@ export interface StatDef {
 
 export const STATS: Record<StatId, StatDef> = {
   // Bigger class: one more guest per level. Much dearer than a level up: each level costs about 2.5x (250%) the one before.
-  capacity: { id: 'capacity', label: 'Capacity', icon: 'people', baseCost: 25, growth: 2.5, surge: 0.06, max: 100 },
+  // Capped well below its old max of 100: at x2.5 per level, level 30 already costs trillions of coins and level 100
+  // an absurd number no player will ever reach - a max of 40 keeps the "Max" button meaningful instead of decorative.
+  capacity: { id: 'capacity', label: 'Capacity', icon: 'people', baseCost: 25, growth: 2.5, surge: 0.06, max: 40 },
   // Level up: many small steps (up to 1000), with a bonus at milestone levels (see LEVEL_MILESTONES).
   price: { id: 'price', label: 'Level up', icon: 'tag', baseCost: 6, growth: 1.03, surge: 0, max: 1000 },
   // Faster sessions: the dearest of the three.
