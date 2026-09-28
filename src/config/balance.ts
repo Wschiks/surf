@@ -58,7 +58,7 @@ export const BALANCE = {
   /** Every tier step multiplies the income of a zone by this factor. */
   tierScale: 5,
   /** Every tier step multiplies costs by this factor. Bigger than tierScale, so later tiers take longer to reach. */
-  costScale: 8,
+  costScale: 8.3,
   /** Scales every unlock price at once (level and sport unlocks). */
   unlockMult: 3,
   /** Price per guest gains this fraction of the base price per level up (a small step). */
