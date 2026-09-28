@@ -104,7 +104,9 @@ Base 3 guests, 6 s, tierScale^0 = 1 coins per guest, cost factor costScale^0 = 1
 | Level up (price per guest) | 1000 | 1.37Qa | - | 271K | 6 s | 45.2K | max |
 | Bigger class (guests) | 5 | 1.94K | 3.17K | 8 | 6 s | 1.33 | +12.5% |
 | Bigger class (guests) | 10 | 238K | 381K | 13 | 6 s | 2.17 | +7.7% |
-| Bigger class (guests) | 25 | 355B | 555B | 28 | 6 s | 4.67 | +3.6% |
+| Bigger class (guests) | 20 | 3.18B | 5.00B | 23 | 6 s | 3.83 | +4.3% |
+| Bigger class (guests) | 30 | 39.0T | 60.7T | 33 | 6 s | 5.5 | +3.0% |
+| Bigger class (guests) | 40 | 455Qa | - | 43 | 6 s | 7.17 | max |
 | Faster turnover (session time) | 10 | 1.80K | 361.8 | 3 | 5 s | 0.6 | +1.7% |
 | Faster turnover (session time) | 25 | 16.3K | 2.15K | 3 | 4 s | 0.75 | +1.3% |
 | Faster turnover (session time) | 50 | 263K | 28.4K | 3 | 3 s | 1 | +1.0% |
@@ -135,7 +137,9 @@ Base 4 guests, 8 s, tierScale^1.6 = 13.1 coins per guest, cost factor costScale^
 | Level up (price per guest) | 1000 | 38.3Qa | - | 4.75M | 8 s | 594K | max |
 | Bigger class (guests) | 5 | 54.0K | 88.4K | 118.2 | 8 s | 14.8 | +11.1% |
 | Bigger class (guests) | 10 | 6.64M | 10.6M | 183.9 | 8 s | 23 | +7.1% |
-| Bigger class (guests) | 25 | 9.90T | 15.5T | 380.8 | 8 s | 47.6 | +3.4% |
+| Bigger class (guests) | 20 | 88.7B | 139B | 315.2 | 8 s | 39.4 | +4.2% |
+| Bigger class (guests) | 30 | 1.09Qa | 1.69Qa | 446.5 | 8 s | 55.8 | +2.9% |
+| Bigger class (guests) | 40 | 12.7Qi | - | 577.8 | 8 s | 72.2 | max |
 | Faster turnover (session time) | 10 | 50.1K | 10.1K | 52.5 | 6.7 s | 7.88 | +1.7% |
 | Faster turnover (session time) | 25 | 455K | 60.0K | 52.5 | 5.3 s | 9.85 | +1.3% |
 | Faster turnover (session time) | 50 | 7.32M | 790K | 52.5 | 4 s | 13.1 | +1.0% |
@@ -166,7 +170,9 @@ Base 3 guests, 10 s, tierScale^3.2 = 172.5 coins per guest, cost factor costScal
 | Level up (price per guest) | 1000 | 1.07Qi | - | 46.8M | 10 s | 4.68M | max |
 | Bigger class (guests) | 5 | 1.50M | 2.46M | 1.38K | 10 s | 138 | +12.5% |
 | Bigger class (guests) | 10 | 185M | 296M | 2.24K | 10 s | 224.2 | +7.7% |
-| Bigger class (guests) | 25 | 276T | 431T | 4.83K | 10 s | 482.9 | +3.6% |
+| Bigger class (guests) | 20 | 2.47T | 3.88T | 3.97K | 10 s | 396.7 | +4.3% |
+| Bigger class (guests) | 30 | 30.3Qa | 47.1Qa | 5.69K | 10 s | 569.1 | +3.0% |
+| Bigger class (guests) | 40 | 353Qi | - | 7.42K | 10 s | 741.6 | max |
 | Faster turnover (session time) | 10 | 1.40M | 281K | 517.4 | 8.3 s | 62.1 | +1.7% |
 | Faster turnover (session time) | 25 | 12.7M | 1.67M | 517.4 | 6.7 s | 77.6 | +1.3% |
 | Faster turnover (session time) | 50 | 204M | 22.0M | 517.4 | 5 s | 103.5 | +1.0% |
@@ -197,7 +203,9 @@ Base 2 guests, 12 s, tierScale^4.8 = 2.26K coins per guest, cost factor costScal
 | Level up (price per guest) | 1000 | 29.7Qi | - | 410M | 12 s | 34.2M | max |
 | Bigger class (guests) | 5 | 41.9M | 68.6M | 15.9K | 12 s | 1.32K | +14.3% |
 | Bigger class (guests) | 10 | 5.15B | 8.25B | 27.2K | 12 s | 2.26K | +8.3% |
-| Bigger class (guests) | 25 | 7.68Qa | 12.0Qa | 61.2K | 12 s | 5.10K | +3.7% |
+| Bigger class (guests) | 20 | 68.8T | 108T | 49.8K | 12 s | 4.15K | +4.5% |
+| Bigger class (guests) | 30 | 844Qa | 1.31Qi | 72.5K | 12 s | 6.04K | +3.1% |
+| Bigger class (guests) | 40 | 9.84Sx | - | 95.1K | 12 s | 7.93K | max |
 | Faster turnover (session time) | 10 | 38.9M | 7.82M | 4.53K | 10 s | 453 | +1.7% |
 | Faster turnover (session time) | 25 | 353M | 46.5M | 4.53K | 8 s | 566.2 | +1.3% |
 | Faster turnover (session time) | 50 | 5.68B | 613M | 4.53K | 6 s | 755 | +1.0% |
@@ -241,7 +249,9 @@ Base 4 guests, 7 s, tierScale^0.4 = 1.9 coins per guest, cost factor costScale^0
 | Level up (price per guest) | 1000 | 3.16Qa | - | 689K | 7 s | 98.4K | max |
 | Bigger class (guests) | 5 | 4.45K | 7.29K | 17.1 | 7 s | 2.45 | +11.1% |
 | Bigger class (guests) | 10 | 548K | 876K | 26.7 | 7 s | 3.81 | +7.1% |
-| Bigger class (guests) | 25 | 816B | 1.28T | 55.2 | 7 s | 7.89 | +3.4% |
+| Bigger class (guests) | 20 | 7.31B | 11.5B | 45.7 | 7 s | 6.53 | +4.2% |
+| Bigger class (guests) | 30 | 89.7T | 139T | 64.7 | 7 s | 9.25 | +2.9% |
+| Bigger class (guests) | 40 | 1.05Qi | - | 83.8 | 7 s | 12 | max |
 | Faster turnover (session time) | 10 | 4.14K | 831.1 | 7.61 | 5.8 s | 1.31 | +1.7% |
 | Faster turnover (session time) | 25 | 37.6K | 4.94K | 7.61 | 4.7 s | 1.63 | +1.3% |
 | Faster turnover (session time) | 50 | 604K | 65.2K | 7.61 | 3.5 s | 2.18 | +1.0% |
@@ -272,7 +282,9 @@ Base 4 guests, 8 s, tierScale^1.4 = 9.52 coins per guest, cost factor costScale^
 | Level up (price per guest) | 1000 | 25.3Qa | - | 3.44M | 8 s | 431K | max |
 | Bigger class (guests) | 5 | 35.6K | 58.3K | 85.7 | 8 s | 10.7 | +11.1% |
 | Bigger class (guests) | 10 | 4.38M | 7.01M | 133.3 | 8 s | 16.7 | +7.1% |
-| Bigger class (guests) | 25 | 6.53T | 10.2T | 276 | 8 s | 34.5 | +3.4% |
+| Bigger class (guests) | 20 | 58.5B | 91.9B | 228.4 | 8 s | 28.6 | +4.2% |
+| Bigger class (guests) | 30 | 717T | 1.12Qa | 323.6 | 8 s | 40.5 | +2.9% |
+| Bigger class (guests) | 40 | 8.36Qi | - | 418.8 | 8 s | 52.4 | max |
 | Faster turnover (session time) | 10 | 33.1K | 6.65K | 38.1 | 6.7 s | 5.71 | +1.7% |
 | Faster turnover (session time) | 25 | 300K | 39.6K | 38.1 | 5.3 s | 7.14 | +1.3% |
 | Faster turnover (session time) | 50 | 4.83M | 521K | 38.1 | 4 s | 9.52 | +1.0% |
@@ -303,7 +315,9 @@ Base 3 guests, 9 s, tierScale^2.6 = 65.7 coins per guest, cost factor costScale^
 | Level up (price per guest) | 1000 | 306Qa | - | 17.8M | 9 s | 1.98M | max |
 | Bigger class (guests) | 5 | 432K | 707K | 525.3 | 9 s | 58.4 | +12.5% |
 | Bigger class (guests) | 10 | 53.1M | 85.0M | 853.6 | 9 s | 94.8 | +7.7% |
-| Bigger class (guests) | 25 | 79.2T | 124T | 1.84K | 9 s | 204.3 | +3.6% |
+| Bigger class (guests) | 20 | 709B | 1.11T | 1.51K | 9 s | 167.8 | +4.3% |
+| Bigger class (guests) | 30 | 8.70Qa | 13.5Qa | 2.17K | 9 s | 240.8 | +3.0% |
+| Bigger class (guests) | 40 | 101Qi | - | 2.82K | 9 s | 313.7 | max |
 | Faster turnover (session time) | 10 | 401K | 80.6K | 197 | 7.5 s | 26.3 | +1.7% |
 | Faster turnover (session time) | 25 | 3.64M | 480K | 197 | 6 s | 32.8 | +1.3% |
 | Faster turnover (session time) | 50 | 58.6M | 6.32M | 197 | 4.5 s | 43.8 | +1.0% |
@@ -334,7 +348,9 @@ Base 2 guests, 11 s, tierScale^4 = 625 coins per guest, cost factor costScale^4 
 | Level up (price per guest) | 1000 | 5.63Qi | - | 113M | 11 s | 10.3M | max |
 | Bigger class (guests) | 5 | 7.94M | 13.0M | 4.38K | 11 s | 397.7 | +14.3% |
 | Bigger class (guests) | 10 | 977M | 1.56B | 7.50K | 11 s | 681.8 | +8.3% |
-| Bigger class (guests) | 25 | 1.46Qa | 2.27Qa | 16.9K | 11 s | 1.53K | +3.7% |
+| Bigger class (guests) | 20 | 13.0T | 20.5T | 13.8K | 11 s | 1.25K | +4.5% |
+| Bigger class (guests) | 30 | 160Qa | 249Qa | 20.0K | 11 s | 1.82K | +3.1% |
+| Bigger class (guests) | 40 | 1.86Sx | - | 26.3K | 11 s | 2.39K | max |
 | Faster turnover (session time) | 10 | 7.37M | 1.48M | 1.25K | 9.2 s | 136.4 | +1.7% |
 | Faster turnover (session time) | 25 | 67.0M | 8.82M | 1.25K | 7.3 s | 170.5 | +1.3% |
 | Faster turnover (session time) | 50 | 1.08B | 116M | 1.25K | 5.5 s | 227.3 | +1.0% |
@@ -378,7 +394,9 @@ Base 4 guests, 7 s, tierScale^4.4 = 1.19K coins per guest, cost factor costScale
 | Level up (price per guest) | 1000 | 12.9Qi | - | 431M | 7 s | 61.5M | max |
 | Bigger class (guests) | 5 | 18.2M | 29.9M | 10.7K | 7 s | 1.53K | +11.1% |
 | Bigger class (guests) | 10 | 2.24B | 3.59B | 16.7K | 7 s | 2.38K | +7.1% |
-| Bigger class (guests) | 25 | 3.34Qa | 5.22Qa | 34.5K | 7 s | 4.93K | +3.4% |
+| Bigger class (guests) | 20 | 30.0T | 47.1T | 28.6K | 7 s | 4.08K | +4.2% |
+| Bigger class (guests) | 30 | 367Qa | 571Qa | 40.5K | 7 s | 5.78K | +2.9% |
+| Bigger class (guests) | 40 | 4.28Sx | - | 52.4K | 7 s | 7.48K | max |
 | Faster turnover (session time) | 10 | 16.9M | 3.40M | 4.76K | 5.8 s | 815.9 | +1.7% |
 | Faster turnover (session time) | 25 | 154M | 20.3M | 4.76K | 4.7 s | 1.02K | +1.3% |
 | Faster turnover (session time) | 50 | 2.47B | 267M | 4.76K | 3.5 s | 1.36K | +1.0% |
@@ -409,7 +427,9 @@ Base 4 guests, 8 s, tierScale^5.4 = 5.95K coins per guest, cost factor costScale
 | Level up (price per guest) | 1000 | 104Qi | - | 2.15B | 8 s | 269M | max |
 | Bigger class (guests) | 5 | 146M | 239M | 53.5K | 8 s | 6.69K | +11.1% |
 | Bigger class (guests) | 10 | 17.9B | 28.7B | 83.3K | 8 s | 10.4K | +7.1% |
-| Bigger class (guests) | 25 | 26.7Qa | 41.8Qa | 173K | 8 s | 21.6K | +3.4% |
+| Bigger class (guests) | 20 | 240T | 377T | 143K | 8 s | 17.8K | +4.2% |
+| Bigger class (guests) | 30 | 2.94Qi | 4.57Qi | 202K | 8 s | 25.3K | +2.9% |
+| Bigger class (guests) | 40 | 34.2Sx | - | 262K | 8 s | 32.7K | max |
 | Faster turnover (session time) | 10 | 135M | 27.2M | 23.8K | 6.7 s | 3.57K | +1.7% |
 | Faster turnover (session time) | 25 | 1.23B | 162M | 23.8K | 5.3 s | 4.46K | +1.3% |
 | Faster turnover (session time) | 50 | 19.8B | 2.14B | 23.8K | 4 s | 5.95K | +1.0% |
@@ -440,7 +460,9 @@ Base 3 guests, 9 s, tierScale^6.6 = 41.0K coins per guest, cost factor costScale
 | Level up (price per guest) | 1000 | 1.26Sx | - | 11.1B | 9 s | 1.24B | max |
 | Bigger class (guests) | 5 | 1.77B | 2.90B | 328K | 9 s | 36.5K | +12.5% |
 | Bigger class (guests) | 10 | 218B | 348B | 534K | 9 s | 59.3K | +7.7% |
-| Bigger class (guests) | 25 | 324Qa | 507Qa | 1.15M | 9 s | 128K | +3.6% |
+| Bigger class (guests) | 20 | 2.91Qa | 4.57Qa | 944K | 9 s | 105K | +4.3% |
+| Bigger class (guests) | 30 | 35.6Qi | 55.4Qi | 1.35M | 9 s | 150K | +3.0% |
+| Bigger class (guests) | 40 | 415Sx | - | 1.76M | 9 s | 196K | max |
 | Faster turnover (session time) | 10 | 1.64B | 330M | 123K | 7.5 s | 16.4K | +1.7% |
 | Faster turnover (session time) | 25 | 14.9B | 1.96B | 123K | 6 s | 20.5K | +1.3% |
 | Faster turnover (session time) | 50 | 240B | 25.9B | 123K | 4.5 s | 27.4K | +1.0% |
@@ -471,7 +493,9 @@ Base 2 guests, 11 s, tierScale^7.8 = 283K coins per guest, cost factor costScale
 | Level up (price per guest) | 1000 | 15.2Sx | - | 51.2B | 11 s | 4.66B | max |
 | Bigger class (guests) | 5 | 21.5B | 35.1B | 1.98M | 11 s | 180K | +14.3% |
 | Bigger class (guests) | 10 | 2.64T | 4.22T | 3.40M | 11 s | 309K | +8.3% |
-| Bigger class (guests) | 25 | 3.93Qi | 6.14Qi | 7.64M | 11 s | 695K | +3.7% |
+| Bigger class (guests) | 20 | 35.2Qa | 55.4Qa | 6.23M | 11 s | 566K | +4.5% |
+| Bigger class (guests) | 30 | 432Qi | 672Qi | 9.06M | 11 s | 824K | +3.1% |
+| Bigger class (guests) | 40 | 5.04Sp | - | 11.9M | 11 s | 1.08M | max |
 | Faster turnover (session time) | 10 | 19.9B | 4.00B | 566K | 9.2 s | 61.8K | +1.7% |
 | Faster turnover (session time) | 25 | 181B | 23.8B | 566K | 7.3 s | 77.2K | +1.3% |
 | Faster turnover (session time) | 50 | 2.91T | 314B | 566K | 5.5 s | 103K | +1.0% |
@@ -515,7 +539,9 @@ Base 4 guests, 8 s, tierScale^5 = 3.13K coins per guest, cost factor costScale^5
 | Level up (price per guest) | 1000 | 45.1Qi | - | 1.13B | 8 s | 141M | max |
 | Bigger class (guests) | 5 | 63.5M | 104M | 28.1K | 8 s | 3.52K | +11.1% |
 | Bigger class (guests) | 10 | 7.81B | 12.5B | 43.8K | 8 s | 5.47K | +7.1% |
-| Bigger class (guests) | 25 | 11.6Qa | 18.2Qa | 90.6K | 8 s | 11.3K | +3.4% |
+| Bigger class (guests) | 20 | 104T | 164T | 75.0K | 8 s | 9.38K | +4.2% |
+| Bigger class (guests) | 30 | 1.28Qi | 1.99Qi | 106K | 8 s | 13.3K | +2.9% |
+| Bigger class (guests) | 40 | 14.9Sx | - | 138K | 8 s | 17.2K | max |
 | Faster turnover (session time) | 10 | 59.0M | 11.9M | 12.5K | 6.7 s | 1.88K | +1.7% |
 | Faster turnover (session time) | 25 | 536M | 70.5M | 12.5K | 5.3 s | 2.34K | +1.3% |
 | Faster turnover (session time) | 50 | 8.62B | 929M | 12.5K | 4 s | 3.13K | +1.0% |
@@ -546,7 +572,9 @@ Base 4 guests, 8 s, tierScale^6 = 15.6K coins per guest, cost factor costScale^6
 | Level up (price per guest) | 1000 | 360Qi | - | 5.65B | 8 s | 707M | max |
 | Bigger class (guests) | 5 | 508M | 832M | 141K | 8 s | 17.6K | +11.1% |
 | Bigger class (guests) | 10 | 62.5B | 100B | 219K | 8 s | 27.3K | +7.1% |
-| Bigger class (guests) | 25 | 93.1Qa | 146Qa | 453K | 8 s | 56.6K | +3.4% |
+| Bigger class (guests) | 20 | 834T | 1.31Qa | 375K | 8 s | 46.9K | +4.2% |
+| Bigger class (guests) | 30 | 10.2Qi | 15.9Qi | 531K | 8 s | 66.4K | +2.9% |
+| Bigger class (guests) | 40 | 119Sx | - | 688K | 8 s | 85.9K | max |
 | Faster turnover (session time) | 10 | 472M | 94.8M | 62.5K | 6.7 s | 9.38K | +1.7% |
 | Faster turnover (session time) | 25 | 4.29B | 564M | 62.5K | 5.3 s | 11.7K | +1.3% |
 | Faster turnover (session time) | 50 | 68.9B | 7.43B | 62.5K | 4 s | 15.6K | +1.0% |
@@ -577,7 +605,9 @@ Base 3 guests, 10 s, tierScale^7.2 = 108K coins per guest, cost factor costScale
 | Level up (price per guest) | 1000 | 4.37Sx | - | 29.3B | 10 s | 2.93B | max |
 | Bigger class (guests) | 5 | 6.16B | 10.1B | 862K | 10 s | 86.2K | +12.5% |
 | Bigger class (guests) | 10 | 758B | 1.21T | 1.40M | 10 s | 140K | +7.7% |
-| Bigger class (guests) | 25 | 1.13Qi | 1.76Qi | 3.02M | 10 s | 302K | +3.6% |
+| Bigger class (guests) | 20 | 10.1Qa | 15.9Qa | 2.48M | 10 s | 248K | +4.3% |
+| Bigger class (guests) | 30 | 124Qi | 193Qi | 3.56M | 10 s | 356K | +3.0% |
+| Bigger class (guests) | 40 | 1.45Sp | - | 4.64M | 10 s | 464K | max |
 | Faster turnover (session time) | 10 | 5.72B | 1.15B | 323K | 8.3 s | 38.8K | +1.7% |
 | Faster turnover (session time) | 25 | 52.0B | 6.84B | 323K | 6.7 s | 48.5K | +1.3% |
 | Faster turnover (session time) | 50 | 836B | 90.2B | 323K | 5 s | 64.7K | +1.0% |
@@ -608,7 +638,9 @@ Base 2 guests, 12 s, tierScale^8.4 = 744K coins per guest, cost factor costScale
 | Level up (price per guest) | 1000 | 53.0Sx | - | 135B | 12 s | 11.2B | max |
 | Bigger class (guests) | 5 | 74.7B | 122B | 5.21M | 12 s | 434K | +14.3% |
 | Bigger class (guests) | 10 | 9.19T | 14.7T | 8.92M | 12 s | 744K | +8.3% |
-| Bigger class (guests) | 25 | 13.7Qi | 21.4Qi | 20.1M | 12 s | 1.67M | +3.7% |
+| Bigger class (guests) | 20 | 123Qa | 193Qa | 16.4M | 12 s | 1.36M | +4.5% |
+| Bigger class (guests) | 30 | 1.50Sx | 2.34Sx | 23.8M | 12 s | 1.98M | +3.1% |
+| Bigger class (guests) | 40 | 17.5Sp | - | 31.2M | 12 s | 2.60M | max |
 | Faster turnover (session time) | 10 | 69.4B | 13.9B | 1.49M | 10 s | 149K | +1.7% |
 | Faster turnover (session time) | 25 | 630B | 83.0B | 1.49M | 8 s | 186K | +1.3% |
 | Faster turnover (session time) | 50 | 10.1T | 1.09T | 1.49M | 6 s | 248K | +1.0% |
@@ -652,7 +684,9 @@ Base 4 guests, 9 s, tierScale^5.6 = 8.21K coins per guest, cost factor costScale
 | Level up (price per guest) | 1000 | 157Qi | - | 2.97B | 9 s | 330M | max |
 | Bigger class (guests) | 5 | 221M | 362M | 73.9K | 9 s | 8.21K | +11.1% |
 | Bigger class (guests) | 10 | 27.2B | 43.5B | 115K | 9 s | 12.8K | +7.1% |
-| Bigger class (guests) | 25 | 40.5Qa | 63.3Qa | 238K | 9 s | 26.4K | +3.4% |
+| Bigger class (guests) | 20 | 363T | 571T | 197K | 9 s | 21.9K | +4.2% |
+| Bigger class (guests) | 30 | 4.45Qi | 6.93Qi | 279K | 9 s | 31.0K | +2.9% |
+| Bigger class (guests) | 40 | 51.9Sx | - | 361K | 9 s | 40.1K | max |
 | Faster turnover (session time) | 10 | 205M | 41.3M | 32.8K | 7.5 s | 4.38K | +1.7% |
 | Faster turnover (session time) | 25 | 1.87B | 246M | 32.8K | 6 s | 5.47K | +1.3% |
 | Faster turnover (session time) | 50 | 30.0B | 3.24B | 32.8K | 4.5 s | 7.30K | +1.0% |
@@ -683,7 +717,9 @@ Base 4 guests, 9 s, tierScale^6.6 = 41.0K coins per guest, cost factor costScale
 | Level up (price per guest) | 1000 | 1.26Sx | - | 14.9B | 9 s | 1.65B | max |
 | Bigger class (guests) | 5 | 1.77B | 2.90B | 369K | 9 s | 41.0K | +11.1% |
 | Bigger class (guests) | 10 | 218B | 348B | 575K | 9 s | 63.8K | +7.1% |
-| Bigger class (guests) | 25 | 324Qa | 507Qa | 1.19M | 9 s | 132K | +3.4% |
+| Bigger class (guests) | 20 | 2.91Qa | 4.57Qa | 985K | 9 s | 109K | +4.2% |
+| Bigger class (guests) | 30 | 35.6Qi | 55.4Qi | 1.40M | 9 s | 155K | +2.9% |
+| Bigger class (guests) | 40 | 415Sx | - | 1.81M | 9 s | 201K | max |
 | Faster turnover (session time) | 10 | 1.64B | 330M | 164K | 7.5 s | 21.9K | +1.7% |
 | Faster turnover (session time) | 25 | 14.9B | 1.96B | 164K | 6 s | 27.4K | +1.3% |
 | Faster turnover (session time) | 50 | 240B | 25.9B | 164K | 4.5 s | 36.5K | +1.0% |
@@ -714,7 +750,9 @@ Base 3 guests, 11 s, tierScale^7.8 = 283K coins per guest, cost factor costScale
 | Level up (price per guest) | 1000 | 15.2Sx | - | 76.8B | 11 s | 6.99B | max |
 | Bigger class (guests) | 5 | 21.5B | 35.1B | 2.26M | 11 s | 206K | +12.5% |
 | Bigger class (guests) | 10 | 2.64T | 4.22T | 3.68M | 11 s | 335K | +7.7% |
-| Bigger class (guests) | 25 | 3.93Qi | 6.14Qi | 7.93M | 11 s | 721K | +3.6% |
+| Bigger class (guests) | 20 | 35.2Qa | 55.4Qa | 6.51M | 11 s | 592K | +4.3% |
+| Bigger class (guests) | 30 | 432Qi | 672Qi | 9.34M | 11 s | 849K | +3.0% |
+| Bigger class (guests) | 40 | 5.04Sp | - | 12.2M | 11 s | 1.11M | max |
 | Faster turnover (session time) | 10 | 19.9B | 4.00B | 849K | 9.2 s | 92.7K | +1.7% |
 | Faster turnover (session time) | 25 | 181B | 23.8B | 849K | 7.3 s | 116K | +1.3% |
 | Faster turnover (session time) | 50 | 2.91T | 314B | 849K | 5.5 s | 154K | +1.0% |
@@ -745,7 +783,9 @@ Base 2 guests, 13 s, tierScale^9 = 1.95M coins per guest, cost factor costScale^
 | Level up (price per guest) | 1000 | 185Sx | - | 353B | 13 s | 27.2B | max |
 | Bigger class (guests) | 5 | 260B | 426B | 13.7M | 13 s | 1.05M | +14.3% |
 | Bigger class (guests) | 10 | 32.0T | 51.2T | 23.4M | 13 s | 1.80M | +8.3% |
-| Bigger class (guests) | 25 | 47.7Qi | 74.5Qi | 52.7M | 13 s | 4.06M | +3.7% |
+| Bigger class (guests) | 20 | 427Qa | 671Qa | 43.0M | 13 s | 3.31M | +4.5% |
+| Bigger class (guests) | 30 | 5.24Sx | 8.15Sx | 62.5M | 13 s | 4.81M | +3.1% |
+| Bigger class (guests) | 40 | 61.1Sp | - | 82.0M | 13 s | 6.31M | max |
 | Faster turnover (session time) | 10 | 242B | 48.6B | 3.91M | 10.8 s | 361K | +1.7% |
 | Faster turnover (session time) | 25 | 2.19T | 289B | 3.91M | 8.7 s | 451K | +1.3% |
 | Faster turnover (session time) | 50 | 35.3T | 3.81T | 3.91M | 6.5 s | 601K | +1.0% |
@@ -789,7 +829,9 @@ Base 4 guests, 8 s, tierScale^8.2 = 539K coins per guest, cost factor costScale^
 | Level up (price per guest) | 1000 | 35.0Sx | - | 195B | 8 s | 24.4B | max |
 | Bigger class (guests) | 5 | 49.3B | 80.7B | 4.85M | 8 s | 606K | +11.1% |
 | Bigger class (guests) | 10 | 6.06T | 9.70T | 7.55M | 8 s | 943K | +7.1% |
-| Bigger class (guests) | 25 | 9.03Qi | 14.1Qi | 15.6M | 8 s | 1.95M | +3.4% |
+| Bigger class (guests) | 20 | 80.9Qa | 127Qa | 12.9M | 8 s | 1.62M | +4.2% |
+| Bigger class (guests) | 30 | 993Qi | 1.54Sx | 18.3M | 8 s | 2.29M | +2.9% |
+| Bigger class (guests) | 40 | 11.6Sp | - | 23.7M | 8 s | 2.96M | max |
 | Faster turnover (session time) | 10 | 45.8B | 9.20B | 2.16M | 6.7 s | 323K | +1.7% |
 | Faster turnover (session time) | 25 | 416B | 54.7B | 2.16M | 5.3 s | 404K | +1.3% |
 | Faster turnover (session time) | 50 | 6.69T | 721B | 2.16M | 4 s | 539K | +1.0% |
@@ -820,7 +862,9 @@ Base 4 guests, 10 s, tierScale^9.4 = 3.72M coins per guest, cost factor costScal
 | Level up (price per guest) | 1000 | 424Sx | - | 1.35T | 10 s | 135B | max |
 | Bigger class (guests) | 5 | 598B | 979B | 33.5M | 10 s | 3.35M | +11.1% |
 | Bigger class (guests) | 10 | 73.5T | 118T | 52.1M | 10 s | 5.21M | +7.1% |
-| Bigger class (guests) | 25 | 110Qi | 171Qi | 108M | 10 s | 10.8M | +3.4% |
+| Bigger class (guests) | 20 | 982Qa | 1.54Qi | 89.2M | 10 s | 8.92M | +4.2% |
+| Bigger class (guests) | 30 | 12.0Sx | 18.7Sx | 126M | 10 s | 12.6M | +2.9% |
+| Bigger class (guests) | 40 | 140Sp | - | 164M | 10 s | 16.4M | max |
 | Faster turnover (session time) | 10 | 555B | 112B | 14.9M | 8.3 s | 1.78M | +1.7% |
 | Faster turnover (session time) | 25 | 5.04T | 664B | 14.9M | 6.7 s | 2.23M | +1.3% |
 | Faster turnover (session time) | 50 | 81.1T | 8.75T | 14.9M | 5 s | 2.97M | +1.0% |
@@ -851,7 +895,9 @@ Base 3 guests, 12 s, tierScale^10.6 = 25.6M coins per guest, cost factor costSca
 | Level up (price per guest) | 1000 | 5.14Sp | - | 6.96T | 12 s | 580B | max |
 | Bigger class (guests) | 5 | 7.25T | 11.9T | 205M | 12 s | 17.1M | +12.5% |
 | Bigger class (guests) | 10 | 891T | 1.43Qa | 333M | 12 s | 27.8M | +7.7% |
-| Bigger class (guests) | 25 | 1.33Sx | 2.08Sx | 718M | 12 s | 59.8M | +3.6% |
+| Bigger class (guests) | 20 | 11.9Qi | 18.7Qi | 590M | 12 s | 49.2M | +4.3% |
+| Bigger class (guests) | 30 | 146Sx | 227Sx | 846M | 12 s | 70.5M | +3.0% |
+| Bigger class (guests) | 40 | 1.70Oc | - | 1.10B | 12 s | 91.9M | max |
 | Faster turnover (session time) | 10 | 6.73T | 1.35T | 76.9M | 10 s | 7.69M | +1.7% |
 | Faster turnover (session time) | 25 | 61.1T | 8.05T | 76.9M | 8 s | 9.62M | +1.3% |
 | Faster turnover (session time) | 50 | 983T | 106T | 76.9M | 6 s | 12.8M | +1.0% |
@@ -882,7 +928,9 @@ Base 2 guests, 14 s, tierScale^11.8 = 177M coins per guest, cost factor costScal
 | Level up (price per guest) | 1000 | 62.3Sp | - | 32.0T | 14 s | 2.29T | max |
 | Bigger class (guests) | 5 | 87.9T | 144T | 1.24B | 14 s | 88.5M | +14.3% |
 | Bigger class (guests) | 10 | 10.8Qa | 17.3Qa | 2.12B | 14 s | 152M | +8.3% |
-| Bigger class (guests) | 25 | 16.1Sx | 25.2Sx | 4.78B | 14 s | 341M | +3.7% |
+| Bigger class (guests) | 20 | 144Qi | 227Qi | 3.89B | 14 s | 278M | +4.5% |
+| Bigger class (guests) | 30 | 1.77Sp | 2.75Sp | 5.66B | 14 s | 404M | +3.1% |
+| Bigger class (guests) | 40 | 20.6Oc | - | 7.43B | 14 s | 531M | max |
 | Faster turnover (session time) | 10 | 81.6T | 16.4T | 354M | 11.7 s | 30.3M | +1.7% |
 | Faster turnover (session time) | 25 | 741T | 97.6T | 354M | 9.3 s | 37.9M | +1.3% |
 | Faster turnover (session time) | 50 | 11.9Qa | 1.29Qa | 354M | 7 s | 50.6M | +1.0% |

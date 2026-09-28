@@ -41,7 +41,7 @@ const withStat = (stat: StatId, n: number): Lv => ({ ...ZERO, [stat]: n });
 
 const CHECK: Record<StatId, number[]> = {
   price: [10, 25, 50, 100, 200, 500, 1000],
-  capacity: [5, 10, 25, 50, 100],
+  capacity: [5, 10, 20, 30, 40],
   speed: [10, 25, 50, 100],
 };
 const LABEL: Record<StatId, string> = { price: 'Level up (price per guest)', capacity: 'Bigger class (guests)', speed: 'Faster turnover (session time)' };
