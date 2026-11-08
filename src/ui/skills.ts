@@ -117,7 +117,9 @@ export class SkillScreen {
   }
 
   private rebuildTabs() {
-    const tabs = `<button class="sk-tab" data-tree="hub" style="--c:#a66bff" aria-label="Whole wheel">${icon('gem')}</button>` + this.visibleTrees().map((t) => `<button class="sk-tab" data-tree="${t.id}" style="--c:${t.color}" aria-label="${t.name}">${icon(t.icon)}</button>`).join('');
+    // one tab per tree, the Beach first (it is the top of the wheel), then the sports
+    const trees = [...this.visibleTrees()].sort((a, b) => (a.id === 'beach' ? -1 : b.id === 'beach' ? 1 : 0));
+    const tabs = trees.map((t) => `<button class="sk-tab" data-tree="${t.id}" style="--c:${t.color}" aria-label="${t.name}">${icon(t.icon)}</button>`).join('');
     const el = this.el.querySelector('[data-sk-tabs]')!;
     el.innerHTML = tabs;
     el.querySelectorAll<HTMLElement>('.sk-tab').forEach((b) => b.addEventListener('click', () => this.focusTree(b.dataset.tree as TreeId | 'hub', true)));
