@@ -1,13 +1,14 @@
-import { STATS, STAT_IDS, type StatId } from '../config/balance';
+import { type StatId } from '../config/balance';
 import { FACILITIES } from '../config/facilities';
 import { areaById } from '../config/areas';
-import { SPORTS, ZONES, sportById, zoneById, zoneId } from '../config/sports';
+import { anyZoneById, SPORTS, ZONES, sportById, zoneById, zoneId } from '../config/sports';
+import { BEACH_SPORTS } from '../config/beach';
 import type { GameState } from '../core/state';
 import { adsNative, interstitialAvailable, showInterstitialAd, showRewardedAd, type AdResult } from '../ads';
 import { AD_BREAK, type RewardedSpot } from '../config/ads';
 import { adBreakDue } from '../core/perks';
 import { BALANCE } from '../config/balance';
-import { autoIncomePerSecond, statMax, topUpOffline, bonusFor, bonusMult, facilityOpen, offlineCap, startBoost, buyFacility, buyManager, buyStat, costOf, discounts, facilityCost, managerCost, planBuy, tapZone, zoneStats, type BuyMode } from '../core/economy';
+import { autoIncomePerSecond, beachSportOpen, statDef, statIdsFor, unlockBeachSport, statMax, topUpOffline, bonusFor, bonusMult, facilityOpen, offlineCap, startBoost, buyFacility, buyManager, buyStat, costOf, discounts, facilityCost, managerCost, planBuy, tapZone, zoneStats, type BuyMode } from '../core/economy';
 import { milestoneMult, nextMilestone } from '../config/balance';
 import type { Game } from '../core/game';
 import type { OfflineReport } from '../core/economy';
@@ -211,7 +212,10 @@ export class GameUI {
   }
 
   openZone(id: string) {
-    if (zoneMisted(this.game.state, id)) return this.expandFirst();
+    const ref = anyZoneById(id);
+    // a beach sport is bought in the Beach sheet
+    if (ref.beach && !this.game.state.zones[id].owned) return this.openBeach();
+    if (!ref.beach && zoneMisted(this.game.state, id)) return this.expandFirst();
     this.sheet = { kind: 'zone', id };
     this.buildSheet();
     this.cb.onSelect(id);
@@ -311,17 +315,17 @@ export class GameUI {
   }
 
   private buildZoneSheet(id: string) {
-    const ref = zoneById(id);
+    const ref = anyZoneById(id);
     const owned = this.game.state.zones[id].owned;
     this.sheetOwned = owned;
     const title = ref.def.name;
-    const sub = `${ref.sport.name} · Level ${ref.level}`;
+    const sub = ref.beach ? 'Beach' : `${ref.sport.name} · Level ${ref.level}`;
     const head = `
       <div class="sheet-head">
         ${owned ? sportTile(ref.sport.icon, ref.sport.color, 48) : tile('lock', '#7d92a3', 48)}
         <div class="sheet-title"><h2>${title}</h2><p>${sub}</p></div>
-        ${stepZone(this.game.state, id, prevZoneId) ? `<button class="zarrow" data-prev aria-label="Level before">${icon('back')}</button>` : ''}
-        ${stepZone(this.game.state, id, nextZoneId) ? `<button class="zarrow" data-next aria-label="Next level">${icon('arrow')}</button>` : ''}
+        ${!ref.beach && stepZone(this.game.state, id, prevZoneId) ? `<button class="zarrow" data-prev aria-label="Level before">${icon('back')}</button>` : ''}
+        ${!ref.beach && stepZone(this.game.state, id, nextZoneId) ? `<button class="zarrow" data-next aria-label="Next level">${icon('arrow')}</button>` : ''}
         <button class="x" data-close aria-label="Close">${icon('close')}</button>
       </div>`;
     this.sheetEl.innerHTML = head + (owned ? this.ownedBody(id) : this.lockedBody(id));
@@ -438,13 +442,13 @@ export class GameUI {
   }
 
   private ownedBody(id: string): string {
-    const ref = zoneById(id);
+    const ref = anyZoneById(id);
     const { terms } = ref.sport;
-    const rows = STAT_IDS.map(
+    const rows = statIdsFor(ref).map(
       (s) => `
       <div class="up" data-stat="${s}">
-        <div class="up-ico">${icon(STATS[s].icon)}</div>
-        <div class="up-txt"><b>${terms[s]}</b><small data-eff></small>${s === 'price' ? '<small data-ms class="ms"></small>' : ''}</div>
+        <div class="up-ico">${icon(statDef(ref, s).icon)}</div>
+        <div class="up-txt"><b>${terms[s] ?? statDef(ref, s).label}</b><small data-eff></small>${s === 'price' ? '<small data-ms class="ms"></small>' : ''}</div>
         <button class="buy" data-buy="${s}"></button>
       </div>`,
     ).join('');
@@ -577,15 +581,40 @@ export class GameUI {
         <button class="buy" data-buyfac="${f.id}"></button>
       </div>`,
     ).join('');
+    // the beach sports: bought here, then played on their fields like a sport zone
+    const sports = BEACH_SPORTS.map(
+      (b) => `
+      <div class="up bsport" data-bsp="${b.id}">
+        <div class="up-ico">${sportTile(b.icon, b.color, 40)}</div>
+        <div class="up-txt"><b>${b.name} <em data-lvl></em></b><small data-eff class="eff"></small></div>
+        <button class="buy" data-bspbtn="${b.id}"></button>
+      </div>`,
+    ).join('');
     this.sheetEl.innerHTML = `
       <div class="sheet-head">
         ${tile('beach', '#e9a13a', 48)}
         <div class="sheet-title"><h2>Beach</h2></div>
         <button class="x" data-close aria-label="Close">${icon('close')}</button>
       </div>
-      <div class="ups">${rows}</div>`;
+      <div class="ups">${rows}${sports}</div>`;
     this.sheetEl.querySelector('[data-close]')!.addEventListener('click', () => this.closeSheet());
     this.sheetEl.querySelectorAll<HTMLElement>('[data-buyfac]').forEach((b) => this.bindBuy(b, true, () => buyFacility(this.game.state, b.dataset.buyfac!)));
+    this.sheetEl.querySelectorAll<HTMLElement>('[data-bspbtn]').forEach((btn) =>
+      btn.addEventListener('click', () => {
+        const id = btn.dataset.bspbtn!;
+        const s = this.game.state;
+        // already played: go to its fields; otherwise buy it, and the first field appears on the sand
+        if (s.zones[id].owned) {
+          sound.tap();
+          return this.openZone(id);
+        }
+        if (!unlockBeachSport(s, id)) return;
+        sound.unlock();
+        this.game.save();
+        this.cb.onUnlocked(id, 'sport');
+        this.openZone(id);
+      }),
+    );
   }
 
   private buildExpandSheet() {
@@ -745,10 +774,34 @@ export class GameUI {
           setHtml(btn, icon('lock'));
         }
       }
+      for (const b of BEACH_SPORTS) {
+        const row = this.sheetEl.querySelector<HTMLElement>(`[data-bsp="${b.id}"]`)!;
+        const z = s.zones[b.id];
+        const open = beachSportOpen(s, b);
+        row.classList.toggle('locked', !open && !z.owned);
+        row.querySelector('[data-lvl]')!.textContent = z.owned ? `Lv ${z.price}` : '';
+        const need = zoneById(b.needs);
+        setHtml(
+          row.querySelector('[data-eff]') as HTMLElement,
+          z.owned ? `${icon('people')} ${1 + z.capacity}v${1 + z.capacity} · ${icon('flag')} ${1 + z.fields}` : open ? `${icon('people')} 1v1 · ${icon('flag')} 1` : b.stage > s.expansions ? `${icon('lock')} ${icon('expand')} ${b.stage}` : `${icon('lock')} ${icon(need.sport.icon)} ${need.def.name}`,
+        );
+        const btn = row.querySelector<HTMLButtonElement>('[data-bspbtn]')!;
+        if (z.owned) {
+          btn.disabled = false;
+          btn.classList.remove('maxed');
+          btn.setAttribute('data-afford', '');
+          setHtml(btn, icon('arrow'));
+        } else if (open) this.setBuy(btn, b.coins);
+        else {
+          btn.disabled = true;
+          btn.removeAttribute('data-afford');
+          setHtml(btn, icon('lock'));
+        }
+      }
       return;
     }
     const id = this.sheet.id;
-    const ref = zoneById(id);
+    const ref = anyZoneById(id);
     const z = s.zones[id];
     if (z.owned !== this.sheetOwned) return this.buildSheet();
     if (!z.owned) return this.refreshLocked(id);
@@ -779,11 +832,11 @@ export class GameUI {
       go.disabled = true;
       go.className = 'go';
     }
-    for (const stat of STAT_IDS) {
+    for (const stat of statIdsFor(ref)) {
       const row = q(`[data-stat="${stat}"]`);
-      const lvl = z[stat];
+      const lvl = z[stat] ?? 0;
       const disc = discounts(s, ref.sport.id);
-      const top = statMax(stat, s.rebirths);
+      const top = statMax(stat, s.rebirths, ref);
       const plan = planBuy(ref, stat, lvl, s.coins, this.buyMode, disc.stat(stat), top);
       // when the coins are not there yet, still show what the chosen amount would cost
       const want = this.buyMode === 'max' ? 1 : Math.min(this.buyMode, top - lvl);
@@ -792,7 +845,12 @@ export class GameUI {
       const next = zoneStats(s, ref, { ...z, [stat]: after });
       const maxed = lvl >= top;
       let eff = '';
-      if (stat === 'capacity') eff = maxed ? `${icon('people')} ${st.guests} ${icon('check')}` : `${icon('people')} ${st.guests} → ${next.guests}`;
+      if (stat === 'capacity' && ref.beach) {
+        // players: 1v1, 2v2 ... 5v5
+        const v = (n: number) => `${1 + n}v${1 + n}`;
+        eff = maxed ? `${icon('people')} ${v(lvl)} ${icon('check')}` : `${icon('people')} ${v(lvl)} → ${v(after)}`;
+      } else if (stat === 'capacity') eff = maxed ? `${icon('people')} ${st.guests} ${icon('check')}` : `${icon('people')} ${st.guests} → ${next.guests}`;
+      if (stat === 'fields') eff = maxed ? `${icon('flag')} ${1 + lvl} ${icon('check')}` : `${icon('flag')} ${1 + lvl} → ${1 + after}`;
       if (stat === 'price') eff = maxed ? `${COIN} ${fmt(st.pricePerGuest)} (max)` : `${COIN} ${fmt(st.pricePerGuest)} → ${fmt(next.pricePerGuest)}`;
       if (stat === 'speed') eff = maxed ? `${icon('clock')} ${fmtSeconds(st.duration)} (max)` : `${icon('clock')} ${fmtSeconds(st.duration)} → ${fmtSeconds(next.duration)}`;
       setHtml(row.querySelector('[data-eff]')!, `Lv ${lvl} · ${eff}`);
@@ -801,11 +859,11 @@ export class GameUI {
         setHtml(row.querySelector('[data-ms]')!, `${icon('star', '12px')} x${fmt(milestoneMult(lvl))} → x${fmt(milestoneMult(lvl) * nm.mult)} at Lv ${nm.level}`);
       }
       // a full class grows again with the next rebirth: the button says so with icons
-      const rebirthMore = maxed && !!STATS[stat].perRebirth;
+      const rebirthMore = maxed && statMax(stat, s.rebirths + 1, ref) > top;
       this.setStatBuy(row.querySelector('[data-buy]')!, maxed, plan.count > 0, shown, plan.count > 0 ? plan.cost : costOf(ref, stat, lvl, shown, disc.stat(stat), top), rebirthMore);
     }
     // the next arrow glows when the next level can be unlocked right now
-    const nextId = stepZone(s, id, nextZoneId);
+    const nextId = ref.beach ? null : stepZone(s, id, nextZoneId);
     this.sheetEl.querySelector('[data-next]')?.classList.toggle('ready', !!(nextId && zoneUnlockStatus(s, zoneById(nextId))?.status.canBuy));
     const mgrBtn = q('[data-buy="manager"]');
     if (z.manager) {
@@ -821,6 +879,7 @@ export class GameUI {
 
   /** Beach buildings that could be built at the last check (to say so when a new one opens). */
   private openFacilities: Set<string> | null = null;
+  private openBeachSports: Set<string> | null = null;
 
   private refreshTop() {
     const s = this.game.state;
@@ -834,6 +893,17 @@ export class GameUI {
       }
     }
     this.openFacilities = open;
+    // a beach sport that can now be bought: say so, and the Beach button pulses
+    const openSports = new Set(BEACH_SPORTS.filter((b) => beachSportOpen(s, b) && !s.zones[b.id].owned).map((b) => b.id));
+    if (this.openBeachSports) {
+      for (const id of openSports) {
+        if (this.openBeachSports.has(id)) continue;
+        const b = BEACH_SPORTS.find((x) => x.id === id)!;
+        this.toast(`${icon(b.icon)} New: ${b.name}!`, () => this.openBeach());
+        this.refs.beach.classList.add('pulse');
+      }
+    }
+    this.openBeachSports = openSports;
     if (this.sheet?.kind === 'beach') this.refs.beach.classList.remove('pulse');
     this.refs.coins.textContent = fmt(s.coins);
     this.refs.rate.textContent = `+${fmt(autoIncomePerSecond(s))}/s`;

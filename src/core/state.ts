@@ -2,7 +2,7 @@ import type { Perks } from './perks';
 import { FACILITIES } from '../config/facilities';
 import { areaById } from '../config/areas';
 import { rootSkills } from './skills';
-import { SPORTS, ZONES, zoneId, type SportId } from '../config/sports';
+import { ALL_ZONES, SPORTS, zoneId, type SportId } from '../config/sports';
 
 export type Phase = 'idle' | 'running' | 'ready';
 
@@ -11,6 +11,8 @@ export interface ZoneState {
   capacity: number;
   price: number;
   speed: number;
+  /** Extra fields bought (beach sports only: 0 = one field). */
+  fields: number;
   manager: boolean;
   phase: Phase;
   /** Seconds into the current session. */
@@ -62,7 +64,7 @@ export interface GameState {
 export const SAVE_VERSION = 3;
 
 export function newZone(owned = false): ZoneState {
-  return { owned, capacity: 0, price: 0, speed: 0, manager: false, phase: 'idle', elapsed: 0, pending: 0, sessions: 0, served: 0 };
+  return { owned, capacity: 0, price: 0, speed: 0, fields: 0, manager: false, phase: 'idle', elapsed: 0, pending: 0, sessions: 0, served: 0 };
 }
 
 export function newGame(now: number): GameState {
@@ -112,10 +114,11 @@ export function openAreas(state: GameState) {
 export function ensureState(state: GameState): GameState {
   state.hints ??= {};
   for (const s of SPORTS) state.sports[s.id] ??= false;
-  for (const z of ZONES) state.zones[z.id] ??= newZone();
+  for (const z of ALL_ZONES) state.zones[z.id] ??= newZone();
   for (const z of Object.values(state.zones)) {
     z.sessions ??= 0;
     z.served ??= 0;
+    z.fields ??= 0;
   }
   for (const f of FACILITIES) state.facilities[f.id] ??= 0;
   state.expansions ??= 0;

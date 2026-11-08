@@ -1,7 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import { AREAS, areaById } from '../src/config/areas';
 import { FACILITIES } from '../src/config/facilities';
-import { MAP_H, MAP_W, type Rect } from '../src/config/layout';
+import { LAND, MAP_H, MAP_W, type Rect } from '../src/config/layout';
+import { BEACH_SPORTS, fieldRect, MAX_FIELDS } from '../src/config/beach';
+import { SHORE } from '../src/config/areas';
 import { SPORTS, ZONES } from '../src/config/sports';
 
 const overlap = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
@@ -53,10 +55,11 @@ describe('map layout data', () => {
     expect(SPORTS.find((s) => s.id === 'sailing')?.beachSite?.id).toBe('jetty');
   });
 
-  it('beach facilities stand on the beach and beach sites do not sit on them', () => {
+  it('beach facilities stand on the beach front (the promenade) and beach sites do not sit on them', () => {
     for (const f of FACILITIES) {
-      expect(f.at.y).toBeGreaterThanOrEqual(0);
-      expect(f.at.y).toBeLessThan(2);
+      // the building's foot (at.y + 0.5) stands on the promenade
+      expect(f.at.y + 0.5).toBeGreaterThan(LAND.promenade.from);
+      expect(f.at.y + 0.5).toBeLessThan(LAND.promenade.to);
       for (const s of SPORTS) {
         const site = s.beachSite?.rect;
         if (site) expect(overlap({ x: f.at.x - 0.5, y: f.at.y + 0.2, w: 1.0, h: 0.4 }, site), `${f.id} vs ${s.id} site`).toBe(false);
@@ -64,4 +67,19 @@ describe('map layout data', () => {
     }
   });
 
+  it('beach sport fields lie on the sand, inside the map, clear of the beach sites and of each other', () => {
+    const all: { id: string; r: Rect }[] = [];
+    for (const b of BEACH_SPORTS) {
+      for (let i = 0; i < MAX_FIELDS; i++) {
+        const r = fieldRect(b, i);
+        expect(r.y).toBeGreaterThanOrEqual(LAND.wall);
+        expect(r.y + r.h).toBeLessThan(SHORE);
+        expect(r.x).toBeGreaterThanOrEqual(0);
+        expect(r.x + r.w).toBeLessThanOrEqual(MAP_W);
+        for (const s of SPORTS) if (s.beachSite) expect(overlap(r, s.beachSite.rect), `${b.id} field ${i} vs ${s.id} site`).toBe(false);
+        all.push({ id: `${b.id}-${i}`, r });
+      }
+    }
+    for (const a of all) for (const b of all) if (a !== b) expect(overlap(a.r, b.r), `${a.id} vs ${b.id}`).toBe(false);
+  });
 });

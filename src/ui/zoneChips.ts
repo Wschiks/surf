@@ -1,5 +1,7 @@
 import { rectCenter, toWorld } from '../config/layout';
-import { SPORTS, ZONES, type SportId, type ZoneRef } from '../config/sports';
+import { BEACH_ZONES, SPORTS, ZONES, type AnyZoneRef, type SportId } from '../config/sports';
+import { fieldsArea } from '../config/beach';
+import { beachSportOpen } from '../core/economy';
 import { zoneStats } from '../core/economy';
 import type { GameState } from '../core/state';
 import { expansionNeededFor } from '../core/unlocks';
@@ -31,6 +33,8 @@ export class ZoneChips {
       if (merged) this.labels.remove('zone-' + ref.id);
       else this.set(ref, state, ppu, selected === ref.id);
     }
+    // a beach sport is one zone: its badge stays when zoomed out
+    for (const ref of BEACH_ZONES) this.set(ref, state, ppu, selected === ref.id);
     for (const sp of SPORTS) {
       if (merged) this.setSport(sp.id, state);
       else this.labels.remove('sport-' + sp.id);
@@ -60,9 +64,9 @@ export class ZoneChips {
     this.labels.set({ id: 'sport-' + id, x, y, className: 'zone-chip sport-chip' + (waiting ? ' waiting' : ''), html, onClick: () => this.h.onSport(id) });
   }
 
-  private set(ref: ZoneRef, state: GameState, ppu: number, selected: boolean) {
+  private set(ref: AnyZoneRef, state: GameState, ppu: number, selected: boolean) {
     const z = state.zones[ref.id];
-    const c = rectCenter(toWorld(ref.def.rect));
+    const c = rectCenter(toWorld(ref.beach ? fieldsArea(ref.beach, 1 + (z.fields ?? 0)) : ref.def.rect));
     const small = ppu < 120;
     let cls = 'zone-chip';
     let quick = false;
@@ -70,8 +74,13 @@ export class ZoneChips {
     let color = ref.sport.color;
     let ring = 0;
     let amount = '';
-    if (!z.owned) {
-      if (expansionNeededFor(state, ref.sport.id) !== null) {
+    if (!z.owned && ref.beach) {
+      // a beach sport: no badge until it can be bought (in the Beach sheet); then a grey one with its icon
+      if (!beachSportOpen(state, ref.beach)) return this.labels.remove('zone-' + ref.id);
+      cls += ' locked';
+      color = '#7d92a3';
+    } else if (!z.owned) {
+      if (expansionNeededFor(state, ref.sport.id as SportId) !== null) {
         // still under the mist: not really "in play" yet, so no badge shows through it
         this.labels.remove('zone-' + ref.id);
         return;
@@ -102,7 +111,7 @@ export class ZoneChips {
     if (hint) cls += ' hint';
     if (small) cls += ' small';
     if (selected) cls += ' selected';
-    const html = `<div class="mk" style="--c:${color};--p:${ring}"><i class="mk-ring"></i><span class="mk-ic">${icon(glyph)}</span>${small ? '' : `<b class="mk-lv">${ref.level}</b>`}${amount && !small ? `<b class="mk-amt">${amount}</b>` : ''}${hint ? '<b class="mk-hint">Tap to start</b>' : ''}</div>`;
+    const html = `<div class="mk" style="--c:${color};--p:${ring}"><i class="mk-ring"></i><span class="mk-ic">${icon(glyph)}</span>${small || ref.beach ? '' : `<b class="mk-lv">${ref.level}</b>`}${amount && !small ? `<b class="mk-amt">${amount}</b>` : ''}${hint ? '<b class="mk-hint">Tap to start</b>' : ''}</div>`;
     this.labels.set({
       id: 'zone-' + ref.id,
       x: c.x,

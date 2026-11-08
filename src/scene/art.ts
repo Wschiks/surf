@@ -155,6 +155,27 @@ export function bakeSandTile(scene: Phaser.Scene) {
   });
 }
 
+/** Warm paving stones for the promenade behind the beach, in a staggered brick pattern. */
+export function bakePavingTile(scene: Phaser.Scene) {
+  bake(scene, 'tile-paving', 120, 120, 1.5, (ctx, w, h) => {
+    const r = rng(23);
+    ctx.fillStyle = '#e3d3b2';
+    ctx.fillRect(0, 0, w, h);
+    const bw = 30;
+    const bh = 15;
+    for (let row = 0; row < h / bh; row++) {
+      const off = row % 2 ? bw / 2 : 0;
+      for (let col = -1; col < w / bw + 1; col++) {
+        const x = col * bw + off;
+        const y = row * bh;
+        const tone = 0.9 + r() * 0.12;
+        ctx.fillStyle = `rgb(${Math.round(233 * tone)},${Math.round(219 * tone)},${Math.round(188 * tone)})`;
+        ctx.fillRect(x + 1, y + 1, bw - 2, bh - 2);
+      }
+    }
+  });
+}
+
 /** Small white dashes that drift over the water to make it feel alive. */
 export function bakeSparkleTile(scene: Phaser.Scene) {
   bake(scene, 'tile-sparkle', 240, 240, 1.5, (ctx, w, h) => {

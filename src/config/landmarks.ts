@@ -38,7 +38,8 @@ export interface DecorDef {
 
 /** Palms, umbrellas, towels and starfish on the beach. Fixed positions: nothing is random. */
 export const BEACH_DECOR: DecorDef[] = [
-  ...[0.35, 2.3, 4.6, 9.0, 9.9, 12.3, 14.5, -1.4, 16.4].map((x, i): DecorDef => ({ texture: 'deco-palm', x, y: 0.12 + (i % 2) * 0.04, w: 52 + (i % 3) * 6, h: 84 + (i % 3) * 8, upright: true })),
+  // palms along the front of the promenade, between the buildings and clear of the beach sport fields
+  ...[-1.4, 0.3, 2.2, 3.15, 8.9, 9.4, 14.3, 16.4].map((x, i): DecorDef => ({ texture: 'deco-palm', x, y: -0.4 + (i % 2) * 0.03, w: 52 + (i % 3) * 6, h: 84 + (i % 3) * 8, upright: true })),
   ...(
     [
       [11.2, 1.2, 'a'],
@@ -60,11 +61,11 @@ export const BEACH_DECOR: DecorDef[] = [
   ).map(([x, y]): DecorDef => ({ texture: 'deco-star', x, y, w: 14, h: 14, upright: false })),
 ];
 
-/** Trees and bushes on the land behind the beach (seen when the view reaches past the back of the map). */
+/** Trees and bushes on the land behind the road (seen when the view reaches past the beach front). */
 export const LAND_DECOR: DecorDef[] = Array.from({ length: 52 }, (_, i): DecorDef => {
   const x = -5 + i * 0.46 + ((i * 7) % 5) * 0.06;
   const row = i % 3;
-  const y = -1.55 - row * 0.55 - ((i * 13) % 4) * 0.12;
+  const y = -2.3 - row * 0.55 - ((i * 13) % 4) * 0.12;
   return i % 4 === 0
     ? { texture: 'deco-bush', x, y, w: 40, h: 32, upright: true }
     : { texture: 'deco-tree', x, y: y - 0.1, w: 54 + (i % 3) * 8, h: 70 + (i % 3) * 8, upright: true };

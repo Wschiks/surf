@@ -1,4 +1,4 @@
-import { MAP_H, MAP_ROTATION_DEG, MAP_W, MIN_UNITS_ACROSS, START_UNITS_ACROSS, UNIT } from '../config/layout';
+import { LAND, MAP_H, MAP_ROTATION_DEG, MAP_W, MIN_UNITS_ACROSS, START_UNITS_ACROSS, UNIT } from '../config/layout';
 
 const ROT = (MAP_ROTATION_DEG * Math.PI) / 180;
 const COS = Math.cos(ROT);
@@ -53,8 +53,9 @@ export class MapView {
   }
   /** Zoomed all the way out: the whole rotated map fits on the screen. */
   minPpu(): number {
-    const boxW = MAP_W * ACOS + MAP_H * ASIN + 0.4;
-    const boxH = MAP_W * ASIN + MAP_H * ACOS + 0.4;
+    const deep = MAP_H + LAND.back;
+    const boxW = MAP_W * ACOS + deep * ASIN + 0.4;
+    const boxH = MAP_W * ASIN + deep * ACOS + 0.4;
     return Math.min(this.width / boxW, this.height / boxH);
   }
   get zoom(): number {
@@ -133,12 +134,14 @@ export class MapView {
   private clampPoint(x: number, y: number, ppu: number): Pt {
     const maxX = MAP_W * UNIT;
     const maxY = MAP_H * UNIT;
+    // the view may go back over the beach front and the road behind the beach
+    const minY = -LAND.back * UNIT;
     const h = this.halfExtents(ppu);
     const lx = h.x * (1 - OVERHANG);
     const ly = h.y * (1 - OVERHANG);
     return {
       x: h.x * 2 >= maxX ? maxX / 2 : Math.min(Math.max(x, lx), maxX - lx),
-      y: h.y * 2 >= maxY ? maxY / 2 : Math.min(Math.max(y, ly), maxY - ly),
+      y: h.y * 2 >= maxY - minY ? (maxY + minY) / 2 : Math.min(Math.max(y, minY + ly), maxY - ly),
     };
   }
 

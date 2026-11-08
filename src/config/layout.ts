@@ -13,6 +13,12 @@ export const MAP_ROTATION_DEG = 215;
 export const START_UNITS_ACROSS = 1.1;
 /** Closest allowed zoom, in map units across the screen width. */
 export const MIN_UNITS_ACROSS = 0.7;
+/**
+ * Behind the beach (negative depth): the beach front, a paved promenade with the buildings, then the road and the trees.
+ * The camera may go this far back. Depths in map units.
+ */
+export const LAND = { back: 3.3, road: { from: -1.9, to: -1.45 }, sidewalk: -1.38, promenade: { from: -1.38, to: -0.42 }, wall: -0.34 };
+
 /** How far the world (sea, sand) is drawn past the map edges, in units. */
 export const WORLD_MARGIN = 40;
 

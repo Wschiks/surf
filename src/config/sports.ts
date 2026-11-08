@@ -1,5 +1,6 @@
 import type { AreaId } from './areas';
 import { unlockCoins } from './balance';
+import { BEACH_PLAYERS, BEACH_SPORTS, type BeachSportDef, type BeachSportId } from './beach';
 import type { Rect } from './layout';
 
 export type SportId = 'wave' | 'skimboarding' | 'windsurfing' | 'kitesurfing' | 'foil' | 'sailing';
@@ -35,8 +36,9 @@ export interface LevelDef {
   unlock?: UnlockRule;
 }
 
-export interface SportDef {
-  id: SportId;
+/** A sport. `I` is its id type: the water sports in SPORTS, or a beach sport (see BEACH_ZONES). */
+export interface SportDef<I extends string = SportId> {
+  id: I;
   name: string;
   icon: string;
   area: AreaId;
@@ -51,7 +53,7 @@ export interface SportDef {
   /** A place on the beach this sport needs (kite launch area, jetty). It appears when the sport unlocks. */
   beachSite?: { id: 'kite-launch' | 'jetty'; name: string; rect: Rect };
   /** Names for the shared upgrade types in this sport. */
-  terms: { capacity: string; price: string; speed: string; manager: string; managerBlurb: string };
+  terms: { capacity: string; price: string; speed: string; manager: string; managerBlurb: string; fields?: string };
   levels: LevelDef[];
 }
 
@@ -472,17 +474,66 @@ export function zoneId(sport: SportId, level: number): string {
   return `${sport}-${level}`;
 }
 
+/** A water zone (a level of a water sport). */
 export interface ZoneRef {
   id: string;
   sport: SportDef;
   level: number; // 1-based
   def: LevelDef;
+  beach?: undefined;
 }
 
+/** A beach sport (volleyball, soccer) as a zone: fields on the sand instead of a water zone. */
+export interface BeachZoneRef {
+  id: string;
+  sport: SportDef<BeachSportId>;
+  level: number;
+  def: LevelDef;
+  beach: BeachSportDef;
+}
+
+/** Any zone that earns coins. */
+export type AnyZoneRef = ZoneRef | BeachZoneRef;
+
+/** The water zones: 6 sports x 4 levels. Expansions, quests and skills are about these. */
 export const ZONES: ZoneRef[] = SPORTS.flatMap((s) => s.levels.map((def, i) => ({ id: zoneId(s.id, i + 1), sport: s, level: i + 1, def })));
 
+/** The beach sports, as zones (one each), so they earn, collect and upgrade the same way as a water zone. */
+export const BEACH_ZONES: BeachZoneRef[] = BEACH_SPORTS.map((b) => {
+  const def: LevelDef = { name: b.name, guests: 'Players', conditions: 'Sand', starterBuys: [], rect: b.rect, tier: b.tier, baseGuests: BEACH_PLAYERS.start, baseSeconds: b.baseSeconds, look: 'flat' };
+  const sport: SportDef<BeachSportId> = {
+    id: b.id,
+    name: b.name,
+    icon: b.icon,
+    area: 'beach',
+    color: b.color,
+    noun: 'players',
+    guestKind: 'walker',
+    guestColors: [...b.teams],
+    terms: { capacity: b.terms.players, price: 'Level up', speed: '', fields: b.terms.fields, manager: b.terms.manager, managerBlurb: b.terms.managerBlurb },
+    levels: [def],
+  };
+  return { id: b.id, sport, level: 1, def, beach: b };
+});
+
+/** Every zone that earns coins: the water zones and the beach sports. */
+export const ALL_ZONES: AnyZoneRef[] = [...ZONES, ...BEACH_ZONES];
+
+/** A water zone by id. */
 export function zoneById(id: string): ZoneRef {
   const z = ZONES.find((x) => x.id === id);
   if (!z) throw new Error('Unknown zone ' + id);
   return z;
+}
+
+/** Any zone by id: a water zone or a beach sport. */
+export function anyZoneById(id: string): AnyZoneRef {
+  const z = ALL_ZONES.find((x) => x.id === id);
+  if (!z) throw new Error('Unknown zone ' + id);
+  return z;
+}
+
+/** Is this id a beach sport? */
+export function isBeachZone(id: string): boolean {
+  return BEACH_ZONES.some((b) => b.id === id);
 }

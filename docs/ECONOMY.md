@@ -929,30 +929,31 @@ Timeline of the active, patient bot (unlocks and expansions only; managers are b
 | 8h02m | unlocked Foil and wing level 2 (Wing freeride) |
 | 8h16m | unlocked Windsurfing level 3 (Speed and freestyle) |
 | 8h37m | unlocked Kitesurfing level 3 (Freestyle and big air) |
-| 9h20m | unlocked Foil and wing level 3 (Downwind) |
-| 9h55m | unlocked Windsurfing level 4 (Wave zone) |
-| 10h48m | unlocked Kitesurfing level 4 (Big air and waves) |
-| 11h54m | unlocked Foil and wing level 4 (Pro arena) |
-| 13h11m | EXPANSION 2: the big wave. Area opened, everything starts over |
-| 13h12m | unlocked Wave surfing level 2 (Longboarders) |
-| 13h12m | unlocked sport Skimboarding |
-| 13h12m | unlocked Skimboarding level 2 (Flatland) |
-| 13h17m | unlocked Skimboarding level 3 (Shore break) |
-| 13h26m | unlocked Wave surfing level 3 (Reef) |
-| 13h43m | unlocked sport Windsurfing |
-| 13h51m | unlocked Skimboarding level 4 (Big shore break) |
-| 14h05m | unlocked Wave surfing level 4 (Nazaré) |
-| 14h13m | unlocked Windsurfing level 2 (Freeride) |
-| 14h16m | unlocked sport Kitesurfing |
-| 14h25m | unlocked Kitesurfing level 2 (Freeride) |
-| 14h28m | unlocked sport Foil and wing |
-| 14h40m | unlocked Foil and wing level 2 (Wing freeride) |
-| 14h49m | unlocked Windsurfing level 3 (Speed and freestyle) |
-| 15h06m | unlocked Kitesurfing level 3 (Freestyle and big air) |
-| 15h40m | unlocked sport Sailing |
-| 15h48m | unlocked Foil and wing level 3 (Downwind) |
+| 9h15m | unlocked Foil and wing level 3 (Downwind) |
+| 9h41m | unlocked Windsurfing level 4 (Wave zone) |
+| 10h32m | unlocked Kitesurfing level 4 (Big air and waves) |
+| 11h24m | unlocked Foil and wing level 4 (Pro arena) |
+| 12h54m | EXPANSION 2: the big wave. Area opened, everything starts over |
+| 12h55m | unlocked Wave surfing level 2 (Longboarders) |
+| 12h55m | unlocked sport Skimboarding |
+| 12h56m | unlocked Skimboarding level 2 (Flatland) |
+| 13h02m | unlocked Skimboarding level 3 (Shore break) |
+| 13h10m | unlocked Wave surfing level 3 (Reef) |
+| 13h33m | unlocked sport Windsurfing |
+| 13h37m | unlocked Skimboarding level 4 (Big shore break) |
+| 13h53m | unlocked Wave surfing level 4 (Nazaré) |
+| 13h59m | unlocked Windsurfing level 2 (Freeride) |
+| 14h03m | unlocked sport Kitesurfing |
+| 14h14m | unlocked Kitesurfing level 2 (Freeride) |
+| 14h16m | unlocked sport Foil and wing |
+| 14h28m | unlocked Foil and wing level 2 (Wing freeride) |
+| 14h37m | unlocked Windsurfing level 3 (Speed and freestyle) |
+| 14h56m | unlocked Kitesurfing level 3 (Freestyle and big air) |
+| 15h27m | unlocked sport Sailing |
+| 15h35m | unlocked Foil and wing level 3 (Downwind) |
+| 15h48m | unlocked Windsurfing level 4 (Wave zone) |
 
-Finished (everything unlocked and managed): **not within 16 h**, longest wait between purchases 2h11m, 10003 purchases. A relaxed player who only checks in now and then takes several times longer; away time (2 h, more with skills) and ads speed that up.
+Finished (everything unlocked and managed): **not within 16 h**, longest wait between purchases 2h11m, 11141 purchases. A relaxed player who only checks in now and then takes several times longer; away time (2 h, more with skills) and ads speed that up.
 
 ## 7. What the numbers imply (worth knowing when tuning)
 

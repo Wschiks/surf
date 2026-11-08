@@ -3,7 +3,9 @@ import Phaser from 'phaser';
 import { AREAS, areaRect } from '../config/areas';
 import { MAP_W, UNIT, rectCenter, rectContains, toWorld } from '../config/layout';
 import { expansionReady, mistFrom } from '../core/unlocks';
-import { ZONES, type SportId } from '../config/sports';
+import { anyZoneById, ZONES, type SportId } from '../config/sports';
+import { fieldsArea } from '../config/beach';
+import { FieldView, RoadView } from './fields';
 import { tapZone } from '../core/economy';
 import type { FacilityDef } from '../config/facilities';
 import { Game } from '../core/game';
@@ -34,6 +36,8 @@ export class MapScene extends Phaser.Scene {
   private ui!: GameUI;
   private chips!: ZoneChips;
   private beach!: BeachView;
+  private fields!: FieldView;
+  private road!: RoadView;
   private sites!: SiteView;
   private ocean!: OceanView;
   private scenery!: Scenery;
@@ -58,7 +62,7 @@ export class MapScene extends Phaser.Scene {
     this.labels = new LabelLayer(ui);
     this.ui = new GameUI(ui, this.game_, {
       onSelect: (id) => this.onSelect(id),
-      onFocusBeach: () => this.view.animateTo((MAP_W / 2) * UNIT, 0.8 * UNIT, this.view.refWidth / 3.6, this.view.height * 0.2),
+      onFocusBeach: () => this.view.animateTo((MAP_W / 2) * UNIT, -0.75 * UNIT, this.view.refWidth / 3.6, this.view.height * 0.2),
       onReset: () => this.startOver(),
       onCollected: (id, coins) => this.pop(id, coins),
       onUnlocked: (id, kind) => this.onUnlocked(id, kind),
@@ -89,6 +93,8 @@ export class MapScene extends Phaser.Scene {
     this.ocean = new OceanView(this);
     this.ocean.update(this.game_.state, 0, false);
     this.scenery = new Scenery(this);
+    this.fields = new FieldView(this);
+    this.road = new RoadView(this);
     this.plane = new PlaneView(this, this.view);
     for (const ref of ZONES) this.zones.push(new ZoneView(this, ref, (id, coins) => this.pop(id, coins)));
 
@@ -143,6 +149,8 @@ export class MapScene extends Phaser.Scene {
     const w = this.view.screenToWorld(sx, sy);
     const f = this.beach.hit(w.x, w.y);
     if (f) return this.ui.openBeach();
+    const field = this.fields.hit(this.game_.state, w.x, w.y);
+    if (field) return this.ui.openZone(field);
     // anywhere under the mist: a short "expand first" popup instead of a screen full of text
     const mist = mistFrom(this.game_.state);
     if (mist !== null && w.y >= mist * UNIT) return this.ui.expandFirst();
@@ -156,15 +164,22 @@ export class MapScene extends Phaser.Scene {
     for (const z of this.zones) z.setSelected(z.ref.id === id);
     const lift = this.view.height * 0.2;
     if (id) {
-      const ref = ZONES.find((z) => z.id === id)!;
-      const c = rectCenter(toWorld(ref.def.rect));
-      const units = Math.max(1.5, Math.min(3.2, ref.def.rect.w * 0.6 + 0.5));
+      const r = this.zoneArea(id);
+      const c = rectCenter(r);
+      const units = Math.max(1.5, Math.min(3.2, (r.w / UNIT) * 0.6 + 0.5));
       this.view.animateTo(c.x, c.y, this.view.refWidth / units, lift);
     }
   }
 
+  /** Where a zone lies in world px: a water zone's rectangle, or the fields a beach sport has now. */
+  private zoneArea(id: string) {
+    const ref = anyZoneById(id);
+    if (ref.beach) return toWorld(fieldsArea(ref.beach, 1 + (this.game_.state.zones[id]?.fields ?? 0)));
+    return toWorld(ref.def.rect);
+  }
+
   private onUnlocked(id: string, kind: 'level' | 'sport') {
-    const ref = ZONES.find((z) => z.id === id)!;
+    const ref = anyZoneById(id);
     this.ui.confetti();
     this.ui.toast(kind === 'sport' ? `${ref.sport.name} unlocked!` : `${ref.def.name} unlocked!`);
     this.onSelect(id);
@@ -199,8 +214,7 @@ export class MapScene extends Phaser.Scene {
 
   private pop(zoneId: string | null, coins: number) {
     if (coins <= 0 || this.popsAlive >= 8) return;
-    const ref = zoneId ? ZONES.find((z) => z.id === zoneId) : null;
-    const c = ref ? rectCenter(toWorld(ref.def.rect)) : { x: this.view.cx, y: this.view.cy };
+    const c = zoneId ? rectCenter(this.zoneArea(zoneId)) : { x: this.view.cx, y: this.view.cy };
     const id = 'pop-' + this.popCount++;
     this.labels.set({ id, x: c.x, y: c.y, className: 'pop', html: `+${fmt(coins)}` });
     this.popsAlive++;
@@ -295,6 +309,8 @@ export class MapScene extends Phaser.Scene {
     this.sites.update(this.game_.state);
     this.ocean.update(this.game_.state, time);
     this.scenery.update(time);
+    this.fields.update(this.game_.state, time);
+    this.road.update(time);
     this.plane.update(Math.min(delta, 100) / 1000);
     this.chips.update(this.game_.state, this.view.ppu, this.ui.selectedZone);
     this.labels.update(this.view);

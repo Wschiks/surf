@@ -1,8 +1,8 @@
 // All balance numbers in one place. Costs and incomes of every zone scale with its "tier"
 // (see sports.ts), so a new sport only needs data, not new formulas.
 
-export type StatId = 'capacity' | 'price' | 'speed';
-/** The order of the upgrade rows: level up, bigger class, faster. */
+export type StatId = 'capacity' | 'price' | 'speed' | 'fields';
+/** The order of the upgrade rows of a sport zone: level up, bigger class, faster. (Beach sports: level up, players, fields.) */
 export const STAT_IDS: StatId[] = ['price', 'capacity', 'speed'];
 
 export interface StatDef {
@@ -19,6 +19,8 @@ export interface StatDef {
   max: number;
   /** Every rebirth raises the highest level by this much. */
   perRebirth?: number;
+  /** The highest level ever, however many rebirths (none: no limit). */
+  cap?: number;
 }
 
 export const STATS: Record<StatId, StatDef> = {
@@ -29,6 +31,8 @@ export const STATS: Record<StatId, StatDef> = {
   price: { id: 'price', label: 'Level up', icon: 'tag', baseCost: 6, growth: 1.03, surge: 0, max: 1000 },
   // Faster sessions: the dearest of the three.
   speed: { id: 'speed', label: 'Speed', icon: 'bolt', baseCost: 80, growth: 1.336, surge: 0, max: 100 },
+  // Fields: only beach sports have them (their own numbers are in src/config/beach.ts).
+  fields: { id: 'fields', label: 'Fields', icon: 'flag', baseCost: 400, growth: 6, surge: 0, max: 1, perRebirth: 1, cap: 3 },
 };
 
 /** Bonus multipliers for the income of a zone at certain levels. They stack. After level 300 every 100 levels doubles it. */

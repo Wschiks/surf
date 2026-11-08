@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { MapView } from '../src/scene/MapView';
-import { MAP_H, MAP_W, UNIT } from '../src/config/layout';
+import { LAND, MAP_H, MAP_W, UNIT } from '../src/config/layout';
+/** The view may also go back over the beach front and the road behind the beach. */
+const BACK = LAND.back * UNIT;
 const MAPW = MAP_W * UNIT;
 const MAPH = MAP_H * UNIT;
 const MAP_MID = { x: MAPW / 2, y: MAPH / 2 };
@@ -64,7 +66,7 @@ describe('MapView', () => {
       for (const p of v.viewCorners()) {
         expect(p.x).toBeGreaterThanOrEqual(-size / 4);
         expect(p.x).toBeLessThanOrEqual(MAPW + size / 4);
-        expect(p.y).toBeGreaterThanOrEqual(-size / 4);
+        expect(p.y).toBeGreaterThanOrEqual(-BACK - size / 4);
         expect(p.y).toBeLessThanOrEqual(MAPH + size / 4);
       }
     }
@@ -90,7 +92,7 @@ describe('MapView', () => {
       const h = Math.max(...ys) - Math.min(...ys);
       if (w <= MAPW && h <= MAPH) {
         expect(Math.min(...xs)).toBeGreaterThanOrEqual(-w / 4 - 0.001);
-        expect(Math.min(...ys)).toBeGreaterThanOrEqual(-h / 4 - 0.001);
+        expect(Math.min(...ys)).toBeGreaterThanOrEqual(-BACK - h / 4 - 0.001);
       }
     }
   });

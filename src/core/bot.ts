@@ -1,8 +1,9 @@
 import { STAT_IDS, type StatId } from '../config/balance';
+import { BEACH_SPORTS } from '../config/beach';
 import { FACILITIES } from '../config/facilities';
-import { SPORTS, ZONES, type ZoneRef } from '../config/sports';
-import { buyFacility, facilityOpen, statMax, buyManager, buyStat, collectAll, facilityCost, managerCost, multipliers, planBuy, statCost, tick, zoneStats } from './economy';
-import { newGame, type GameState } from './state';
+import { ALL_ZONES, anyZoneById, SPORTS, ZONES, type AnyZoneRef } from '../config/sports';
+import { beachSportOpen, statIdsFor, unlockBeachSport, buyFacility, facilityOpen, statMax, buyManager, buyStat, collectAll, facilityCost, managerCost, multipliers, planBuy, statCost, tick, zoneStats } from './economy';
+import { newGame, newZone, type GameState } from './state';
 import { claimQuest, refreshQuests } from './quests';
 import { EXPANSIONS } from '../config/expansions';
 import { expand, expansionNeededFor, expansionStatus, levelStatus, sportStatus, unlockLevel, unlockSport } from './unlocks';
@@ -30,7 +31,7 @@ export interface SimResult {
 function totalRate(state: GameState): number {
   const m = multipliers(state);
   let sum = 0;
-  for (const r of ZONES) {
+  for (const r of ALL_ZONES) {
     const z = state.zones[r.id];
     if (z.owned) sum += zoneStats(state, r, z, m).perSecond;
   }
@@ -45,25 +46,31 @@ interface Candidate {
 }
 
 /** How many levels to buy at once: as many as fit in a quarter of the money, so a thousand levels do not take a thousand steps. */
-function bulk(state: GameState, r: ZoneRef, stat: StatId, level: number, firstCost: number): number {
+function bulk(state: GameState, r: AnyZoneRef, stat: StatId, level: number, firstCost: number): number {
   if (firstCost > state.coins * 0.25) return 1;
-  return Math.max(1, Math.min(200, planBuy(r, stat, level, state.coins * 0.25, 'max', 0, statMax(stat, state.rebirths)).count));
+  return Math.max(1, Math.min(200, planBuy(r, stat, level, state.coins * 0.25, 'max', 0, statMax(stat, state.rebirths, r)).count));
 }
 
 function candidates(state: GameState): Candidate[] {
   const out: Candidate[] = [];
   const m = multipliers(state);
-  for (const r of ZONES) {
+  for (const r of ALL_ZONES) {
     const z = state.zones[r.id];
     if (!z.owned) continue;
     const cur = zoneStats(state, r, z, m).perSecond;
-    for (const stat of STAT_IDS) {
-      const cost = statCost(r, stat, z[stat], 0, statMax(stat, state.rebirths));
+    for (const stat of statIdsFor(r)) {
+      const cost = statCost(r, stat, z[stat], 0, statMax(stat, state.rebirths, r));
       if (!isFinite(cost)) continue;
       const next = zoneStats(state, r, { ...z, [stat]: z[stat] + 1 }, m).perSecond;
       out.push({ name: `${r.id} ${stat} ${z[stat] + 1}`, cost, gain: next - cur, buy: () => buyStat(state, r.id, stat, bulk(state, r, stat, z[stat], cost)) });
     }
     if (!z.manager) out.push({ name: `${r.id} manager`, cost: managerCost(r), gain: cur * 0.15, buy: () => buyManager(state, r.id) });
+  }
+  // a beach sport that can be bought: worth what its first field earns
+  for (const b of BEACH_SPORTS) {
+    if (state.zones[b.id].owned || !beachSportOpen(state, b)) continue;
+    const gain = zoneStats(state, anyZoneById(b.id), newZone(true), m).perSecond;
+    out.push({ name: `beach ${b.id}`, cost: b.coins, gain, buy: () => unlockBeachSport(state, b.id) });
   }
   const rate = totalRate(state);
   for (const f of FACILITIES) {

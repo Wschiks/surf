@@ -3,7 +3,9 @@ import { CLUB } from '../config/shop';
 import { REBIRTH } from '../config/rebirth';
 import { EXPANSION_BONUS, EXPANSIONS } from '../config/expansions';
 import { FACILITIES, facilityById, type FacilityDef } from '../config/facilities';
-import { ZONES, zoneById, type ZoneRef } from '../config/sports';
+import { ALL_ZONES, anyZoneById, type AnyZoneRef } from '../config/sports';
+import { BEACH_PLAYERS, BEACH_SPORTS, type BeachSportDef } from '../config/beach';
+import type { StatDef } from '../config/balance';
 import { skillEffects } from './skills';
 import type { GameState, ZoneState } from './state';
 
@@ -51,12 +53,27 @@ export interface ZoneStats {
   perSecond: number;
 }
 
-/** Guests in a zone: the base, the bought bigger-class levels and the extra guests from skills. */
-export function guestsFor(ref: ZoneRef, z: ZoneState, extra = 0): number {
+/**
+ * Guests in a zone: the base, the bought bigger-class levels and the extra guests from skills. A beach sport: the
+ * players on a field (2 more per Players level: 1v1, 2v2 ...) times the number of fields.
+ */
+export function guestsFor(ref: AnyZoneRef, z: ZoneState, extra = 0): number {
+  if (ref.beach) return (ref.def.baseGuests + z.capacity * BEACH_PLAYERS.step) * (1 + (z.fields ?? 0)) + extra;
   return ref.def.baseGuests + z.capacity + extra;
 }
 
-export function zoneStats(state: GameState, ref: ZoneRef, z: ZoneState = state.zones[ref.id], m: Multipliers = multipliers(state)): ZoneStats {
+/** The upgrade rows of a zone: Level up, Bigger class, Faster turnover; a beach sport: Level up, Players, Fields. */
+export function statIdsFor(ref: AnyZoneRef): StatId[] {
+  return ref.beach ? ['price', 'capacity', 'fields'] : STAT_IDS;
+}
+
+/** The numbers of an upgrade in a zone (beach sports have their own Players and Fields). */
+export function statDef(ref: AnyZoneRef | undefined, stat: StatId): StatDef {
+  if (ref?.beach && (stat === 'capacity' || stat === 'fields')) return ref.beach.stats[stat];
+  return STATS[stat];
+}
+
+export function zoneStats(state: GameState, ref: AnyZoneRef, z: ZoneState = state.zones[ref.id], m: Multipliers = multipliers(state)): ZoneStats {
   const fx = skillEffects(state);
   const sp = ref.sport.id;
   const guests = guestsFor(ref, z, fx.guests[sp] ?? 0);
@@ -72,19 +89,20 @@ export function speedSeconds(baseSeconds: number, level: number): number {
 }
 
 /** Cost of the next level of a stat, or Infinity at the maximum. */
-/** The highest level of a stat after `rebirths` rebirths (Bigger class grows with every rebirth). */
-export function statMax(stat: StatId, rebirths = 0): number {
-  const s = STATS[stat];
-  return s.max + (s.perRebirth ?? 0) * rebirths;
+/** The highest level of a stat after `rebirths` rebirths (Bigger class grows with every rebirth). Pass the zone for a beach sport. */
+export function statMax(stat: StatId, rebirths = 0, ref?: AnyZoneRef): number {
+  const s = statDef(ref, stat);
+  const top = s.max + (s.perRebirth ?? 0) * rebirths;
+  return s.cap === undefined ? top : Math.min(top, s.cap);
 }
 
-export function statCost(ref: ZoneRef, stat: StatId, level: number, discount = 0, max = STATS[stat].max): number {
-  const s = STATS[stat];
+export function statCost(ref: AnyZoneRef, stat: StatId, level: number, discount = 0, max = statDef(ref, stat).max): number {
+  const s = statDef(ref, stat);
   if (level >= max) return Infinity;
   return Math.ceil(s.baseCost * costFactor(ref.def.tier) * Math.pow(s.growth, level) * (1 + s.surge * level) * (1 - discount) * 100) / 100;
 }
 
-export function managerCost(ref: ZoneRef, discount = 0): number {
+export function managerCost(ref: AnyZoneRef, discount = 0): number {
   return Math.ceil(BALANCE.managerCost * costFactor(ref.def.tier) * (1 - discount));
 }
 
@@ -109,7 +127,7 @@ export function offlineCap(state: GameState): number {
 
 /** Total upgrade levels bought in a zone (used by the Level 2 unlock rule). */
 export function upgradeCount(z: ZoneState): number {
-  return STAT_IDS.reduce((n, s) => n + z[s], 0);
+  return STAT_IDS.reduce((n, s) => n + (z[s] ?? 0), 0);
 }
 
 export type BuyMode = number | 'max';
@@ -118,7 +136,7 @@ export type BuyMode = number | 'max';
  * What a tap on a buy button buys. A number (x1, x10, x100) is all or nothing: exactly that many levels, if the coins
  * are there. 'max' buys as many as the coins allow.
  */
-export function planBuy(ref: ZoneRef, stat: StatId, level: number, coins: number, mode: BuyMode, discount = 0, max = STATS[stat].max): { count: number; cost: number } {
+export function planBuy(ref: AnyZoneRef, stat: StatId, level: number, coins: number, mode: BuyMode, discount = 0, max = statDef(ref, stat).max): { count: number; cost: number } {
   // x10 / x100 near the top buy what is left (all or nothing for that), so the last levels can still be bought
   const limit = mode === 'max' ? max : Math.min(mode, max - level);
   let count = 0;
@@ -134,7 +152,7 @@ export function planBuy(ref: ZoneRef, stat: StatId, level: number, coins: number
 }
 
 /** What `count` levels of a stat cost together, starting at `level` (stops at the top level). Works even when the coins are not there. */
-export function costOf(ref: ZoneRef, stat: StatId, level: number, count: number, discount = 0, max = STATS[stat].max): number {
+export function costOf(ref: AnyZoneRef, stat: StatId, level: number, count: number, discount = 0, max = statDef(ref, stat).max): number {
   let cost = 0;
   for (let n = level; n < level + count && n < max; n++) cost += statCost(ref, stat, n, discount, max);
   return cost;
@@ -142,10 +160,10 @@ export function costOf(ref: ZoneRef, stat: StatId, level: number, count: number,
 
 /** Buy levels of a stat (see planBuy). Returns false if nothing could be bought. */
 export function buyStat(state: GameState, zoneId: string, stat: StatId, mode: BuyMode = 1): boolean {
-  const ref = zoneById(zoneId);
+  const ref = anyZoneById(zoneId);
   const z = state.zones[zoneId];
-  if (!z.owned) return false;
-  const plan = planBuy(ref, stat, z[stat], state.coins, mode, discounts(state, ref.sport.id).stat(stat), statMax(stat, state.rebirths));
+  if (!z.owned || !statIdsFor(ref).includes(stat)) return false;
+  const plan = planBuy(ref, stat, z[stat] ?? 0, state.coins, mode, discounts(state, ref.sport.id).stat(stat), statMax(stat, state.rebirths, ref));
   if (plan.count === 0) return false;
   state.coins -= plan.cost;
   z[stat] += plan.count;
@@ -153,7 +171,7 @@ export function buyStat(state: GameState, zoneId: string, stat: StatId, mode: Bu
 }
 
 export function buyManager(state: GameState, zoneId: string): boolean {
-  const ref = zoneById(zoneId);
+  const ref = anyZoneById(zoneId);
   const z = state.zones[zoneId];
   if (!z.owned || z.manager) return false;
   const cost = managerCost(ref, discounts(state, ref.sport.id).manager);
@@ -162,6 +180,23 @@ export function buyManager(state: GameState, zoneId: string): boolean {
   z.manager = true;
   if (z.phase === 'ready') collect(state, zoneId);
   if (z.phase === 'idle') z.phase = 'running';
+  return true;
+}
+
+/** Can the beach sport be bought? Its stage of the game must be reached and the zone it needs unlocked (like a building). */
+export function beachSportOpen(state: GameState, b: BeachSportDef): boolean {
+  return b.stage <= state.expansions && !!state.zones[b.needs]?.owned;
+}
+
+/** Buy a beach sport: its first field appears on the sand, with a game of 1v1. */
+export function unlockBeachSport(state: GameState, id: string): boolean {
+  const b = BEACH_SPORTS.find((x) => x.id === id);
+  const z = state.zones[id];
+  if (!b || !z || z.owned || !beachSportOpen(state, b) || state.coins < b.coins) return false;
+  state.coins -= b.coins;
+  z.owned = true;
+  z.phase = 'idle';
+  z.elapsed = 0;
   return true;
 }
 
@@ -216,7 +251,7 @@ export function tapZone(state: GameState, id: string): 'collected' | 'started' |
 
 /** Zones that are waiting for the player (idle or ready, without a manager). */
 export function waitingZones(state: GameState): string[] {
-  return ZONES.filter((r) => {
+  return ALL_ZONES.filter((r) => {
     const z = state.zones[r.id];
     return z.owned && !z.manager && z.phase !== 'running';
   }).map((r) => r.id);
@@ -233,7 +268,7 @@ export function collectAll(state: GameState): number {
 }
 
 /** Advance one zone by `dt` seconds. Zones with a manager keep earning; others stop after one session. */
-export function advanceZone(state: GameState, ref: ZoneRef, dt: number, m: Multipliers = multipliers(state)) {
+export function advanceZone(state: GameState, ref: AnyZoneRef, dt: number, m: Multipliers = multipliers(state)) {
   const z = state.zones[ref.id];
   if (!z.owned) return;
   if (z.phase === 'ready') {
@@ -268,13 +303,13 @@ export function tick(state: GameState, dt: number) {
   const boosted = Math.min(dt, state.boost);
   if (boosted > 0) {
     const m = multipliers(state);
-    for (const ref of ZONES) advanceZone(state, ref, boosted, m);
+    for (const ref of ALL_ZONES) advanceZone(state, ref, boosted, m);
     state.boost -= boosted;
     dt -= boosted;
   }
   if (dt <= 0) return;
   const m = multipliers(state);
-  for (const ref of ZONES) advanceZone(state, ref, dt, m);
+  for (const ref of ALL_ZONES) advanceZone(state, ref, dt, m);
 }
 
 /** Start (or restart) the ad boost. */
@@ -309,7 +344,7 @@ export function applyOffline(state: GameState, awaySeconds: number): OfflineRepo
   const kept = full * BALANCE.offlineRate;
   state.coins = before.coins + kept;
   state.totalCoins -= full - kept;
-  const waiting = ZONES.filter((r) => {
+  const waiting = ALL_ZONES.filter((r) => {
     const z = state.zones[r.id];
     return z.owned && !z.manager && z.phase === 'ready';
   }).length;
@@ -339,7 +374,7 @@ export function topUpOffline(state: GameState, rep: OfflineReport, rate: number)
 export function autoIncomePerSecond(state: GameState): number {
   const m = multipliers(state);
   let sum = 0;
-  for (const r of ZONES) {
+  for (const r of ALL_ZONES) {
     const z = state.zones[r.id];
     if (z.owned && z.manager) sum += zoneStats(state, r, z, m).perSecond;
   }
