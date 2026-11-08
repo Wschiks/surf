@@ -752,6 +752,47 @@ export function bakeWaveTile(scene: Phaser.Scene, look: WaterLook) {
 const SKIN = ['#f2c9a0', '#d9a06f', '#a86b43', '#7a4a2c'];
 const HAIR = ['#3b2a1a', '#e2b04a', '#1c1c1c', '#8a3b1a', '#c9c9c9'];
 
+/** Size (world px) of a beach sport player seen from above. */
+export const PLAYER_SIZE = 17;
+
+/**
+ * A beach sport player seen from above, facing up (-y): a big jersey in the team colour with a darker edge, arms,
+ * and a head with hair at the back. Four skin and hair looks per team.
+ */
+export function playerTexture(scene: Phaser.Scene, color: string, idx: number): string {
+  const key = `player-${color}-${idx % 4}`;
+  if (scene.textures.exists(key)) return key;
+  bake(scene, key, PLAYER_SIZE, PLAYER_SIZE, 5, (ctx, w, h) => {
+    const cx = w / 2;
+    const cy = h / 2 + 0.6;
+    const skin = SKIN[idx % SKIN.length];
+    const hair = HAIR[(idx * 3 + 1) % HAIR.length];
+    ctx.fillStyle = skin; // arms
+    ctx.beginPath();
+    ctx.ellipse(cx - 6.2, cy - 0.6, 1.7, 2.9, 0.35, 0, Math.PI * 2);
+    ctx.ellipse(cx + 6.2, cy - 0.6, 1.7, 2.9, -0.35, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = color; // jersey
+    ctx.strokeStyle = lighten(color, -0.35);
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 0.4, 5.6, 3.9, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.85)'; // a white stripe across the shoulders
+    ctx.fillRect(cx - 4.6, cy - 0.2, 9.2, 1.1);
+    ctx.fillStyle = skin; // head
+    ctx.beginPath();
+    ctx.arc(cx, cy - 1.2, 2.8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = hair; // hair at the back of the head (the player faces up)
+    ctx.beginPath();
+    ctx.arc(cx, cy - 1.0, 2.85, -0.15, Math.PI + 0.15);
+    ctx.fill();
+  });
+  return key;
+}
+
 /** Size (world px) of each guest picture and where the rider stands in it (fractions). */
 export const GUEST_LOOK: Record<GuestKind, { w: number; h: number; ox: number; oy: number }> = {
   surfer: { w: 14, h: 34, ox: 0.5, oy: 0.55 },
