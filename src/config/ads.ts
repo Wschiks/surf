@@ -13,13 +13,13 @@ export const ADS = {
      * spin = the daily spin, itemBox = the item box (those two come later).
      */
     rewarded: {
-      boost: 'ca-app-pub-8560073239883666/6132040872',
-      plane: '',
-      spin: '',
-      itemBox: '',
+      boost: 'ca-app-pub-8560073239883666/6132040872', // Rewarded_DubbelInkomen
+      plane: 'ca-app-pub-8560073239883666/1934496710', // Rewarded_BannerPlane
+      spin: 'ca-app-pub-8560073239883666/5744703031', // Rewarded_DailySpin
+      itemBox: 'ca-app-pub-8560073239883666/1822816073', // Rewarded_ItemBox
     } as Record<RewardedSpot, string>,
-    /** The ad break (interstitial) ad block. Empty until it is made in AdMob: live builds then have no ad breaks. */
-    interstitial: '',
+    /** The ad break (interstitial) ad block: Interstitial_AdBreak. */
+    interstitial: 'ca-app-pub-8560073239883666/3310111386',
   },
   // Android has no AdMob app of its own yet: these are Google's public test ids (they only show test ads).
   // Make an Android app in AdMob, then put its app id here, in android/app/src/main/res/values/strings.xml
