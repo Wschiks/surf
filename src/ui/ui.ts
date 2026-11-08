@@ -118,21 +118,26 @@ export class GameUI {
       <div class="hud">
         <div class="pill coins"><span class="ico">${COIN}</span><span class="cv"><b data-ref="coins">0</b><small data-ref="rate">+0/s</small></span><em class="mult" data-ref="mult" hidden></em></div>
         <button class="pill gems" data-ref="gembtn" aria-label="Skill points"><span class="ico">${icon('gem')}</span><b data-ref="gems">0</b></button>
-        <button class="pill shopbtn" data-ref="shop" aria-label="Shop">${icon('bag')}<i class="dot" data-ref="shopdot" hidden></i></button>
         <button class="pill gear" data-ref="gear" aria-label="Menu">${icon('gear')}</button>
       </div>
       <div class="quests" data-ref="quests">
         <div class="q-list" data-ref="qlist">${Array.from({ length: QUEST_SLOTS }, (_, i) => `<div class="q-row" data-q="${i}"><div class="q-body"><span class="q-t"></span><i class="q-bar"><b></b></i><small class="q-n"></small></div><button class="q-claim"></button></div>`).join('')}</div>
       </div>
+      <!-- left rail: progression (each button only shows once it is unlocked) -->
+      <div class="rail left" data-ref="railL">
+        <button class="rbtn skills gone" data-ref="skills" aria-label="Skills">${icon('tree')}</button>
+        <button class="rbtn expand" data-ref="expand" aria-label="Expand" hidden>${icon('expand')}<i class="dot" data-ref="expanddot" hidden></i></button>
+        <button class="rbtn rebirth-btn" data-ref="rebirth" aria-label="Rebirth" hidden>${icon('rebirth')}</button>
+      </div>
+      <!-- right rail: shop and ads -->
+      <div class="rail right" data-ref="railR">
+        <button class="rbtn shop" data-ref="shop" aria-label="Shop">${icon('bag')}<i class="dot" data-ref="shopdot" hidden></i></button>
+        <button class="rbtn boost" data-ref="boost" aria-label="Watch ad">${icon('video')}<b data-ref="boostA" hidden></b><small data-ref="boostB">x${BALANCE.boostMult}</small><i class="boost-bar"><u data-ref="boostBar"></u></i></button>
+      </div>
+      <!-- bottom: only the two main buttons, in the corners; the middle stays free for the map -->
       <div class="dock">
         <button class="dock-btn" data-ref="beach">${icon('beach')}<em>Beach</em></button>
         <button class="dock-btn" data-ref="sports">${icon('sports')}<em>Sports</em></button>
-        <button class="dock-btn dock-skills gone" data-ref="skills">${icon('tree')}<em>Skills</em></button>
-        <div class="dock-slot" data-ref="dockslot">
-          <button class="rebirth-btn" data-ref="rebirth" aria-label="Rebirth" hidden>${icon('rebirth')}</button>
-          <button class="boost" data-ref="boost">${icon('video')}<span><b data-ref="boostA">Watch ad</b><small data-ref="boostB">x${BALANCE.boostMult} coins</small></span><i class="boost-bar"><u data-ref="boostBar"></u></i></button>
-          <button class="dock-btn expand" data-ref="expand">${icon('expand')}<em>Expand</em><i class="dot" data-ref="expanddot" hidden></i></button>
-        </div>
       </div>
       <div class="sheet" data-ref="sheet"></div>
       <div class="toasts" data-ref="toasts"></div>
@@ -231,6 +236,7 @@ export class GameUI {
     this.sheet = null;
     this.sheetEl.classList.remove('open');
     this.dockEl.classList.remove('hidden');
+    this.root.classList.remove('sheet-open');
     this.cb.onSelect(null);
     if (adBreak) this.maybeAdBreak();
   }
@@ -283,6 +289,7 @@ export class GameUI {
   private buildSheet() {
     if (!this.sheet) return;
     this.dockEl.classList.add('hidden');
+    this.root.classList.add('sheet-open');
     if (this.sheet.kind === 'zone') this.buildZoneSheet(this.sheet.id);
     else if (this.sheet.kind === 'sports') this.buildSportsSheet();
     else if (this.sheet.kind === 'expand') this.buildExpandSheet();
@@ -841,11 +848,12 @@ export class GameUI {
     // until then the Watch ad button takes its place
     const ready = expansionReady(s);
     const showExpand = ready; // after the last expansion the round rebirth button takes over
-    if (showExpand && this.refs.dockslot.classList.contains('noexpand') && this.wasExpandReady !== null) {
-      this.refs.expand.classList.add('arrive');
-      setTimeout(() => this.refs.expand.classList.remove('arrive'), 600);
+    const expandBtn = this.refs.expand as HTMLButtonElement;
+    if (showExpand && expandBtn.hidden && this.wasExpandReady !== null) {
+      expandBtn.classList.add('arrive');
+      setTimeout(() => expandBtn.classList.remove('arrive'), 600);
     }
-    this.refs.dockslot.classList.toggle('noexpand', !showExpand);
+    expandBtn.hidden = !showExpand;
     if (this.wasExpandReady === false && ready) this.cb.onExpandReady();
     this.wasExpandReady = ready;
     const reb = canRebirth(s);
@@ -933,7 +941,8 @@ export class GameUI {
     btn.classList.toggle('busy', this.adBusy);
     btn.disabled = on || this.adBusy;
     const a = on ? `Coins x${BALANCE.boostMult}` : this.adBusy ? 'Loading...' : 'Watch ad';
-    const b = on ? `${fmtClock(s.boost)} left` : `x${BALANCE.boostMult} · ${fmtDuration(BALANCE.boostSeconds)}`;
+    // round button: under the icon just x2, or the time left while it runs
+    const b = on ? fmtClock(s.boost) : this.adBusy ? '...' : `x${BALANCE.boostMult}`;
     if (this.refs.boostA.textContent !== a) this.refs.boostA.textContent = a;
     if (this.refs.boostB.textContent !== b) this.refs.boostB.textContent = b;
     this.refs.boostBar.style.width = (on ? Math.min(1, s.boost / BALANCE.boostSeconds) * 100 : 0) + '%';
