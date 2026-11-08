@@ -27,6 +27,7 @@ const person = (name: string, hint: string) => {
 
 console.log('--- the game');
 ok('no test or cheat options in the game', !/100e9|Add 100B|testAlwaysExpand/.test(src));
+ok('unlimited test coins are off (VITE_TEST_COINS is not set)', process.env.VITE_TEST_COINS !== '1', 'unset VITE_TEST_COINS before a store build');
 ok('debug hook only in development or with ?debug', /import\.meta\.env\.DEV \|\| location\.search\.includes\('debug'\)/.test(src));
 ok('no random numbers in the game', !/Math\.random/.test(fs.readdirSync('src', { recursive: true }).filter((f) => String(f).endsWith('.ts')).map((f) => read('src/' + f)).join('\n')));
 ok('base away time is 2 hours', BALANCE.offlineCapSeconds === 2 * 3600);
