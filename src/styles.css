@@ -627,3 +627,16 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 .dock .boost.on small { background: var(--ink); }
 .dock .boost .boost-bar { display: none; }
 .toasts { left: 80px; right: 80px; align-items: center; }
+/* sizes like the Codigames games: bottom buttons ~12.5% of the screen width (all the same), side buttons ~9.5% */
+.cbtn, .cbtn.big { width: min(12.5vw, 56px); height: min(12.5vw, 56px); }
+.cbtn > .ic, .cbtn.big > .ic { width: 56%; height: 56%; }
+.rbtn, .rail .rebirth-btn { width: min(9.5vw, 42px); height: min(9.5vw, 42px); }
+.rbtn > .ic { width: 55%; height: 55%; }
+.corner { gap: min(3vw, 12px); }
+.rail { gap: min(2.6vw, 11px); }
+.rail.right { bottom: calc(max(14px, env(safe-area-inset-bottom)) + min(12.5vw, 56px) + 16px); right: 14px; }
+.rail.left { top: calc(max(62px, env(safe-area-inset-top) + 52px) + 112px); }
+.dock .boost > .ic { width: 52%; height: 52%; }
+.dock .boost small { font-size: 10px; bottom: -7px; padding: 0 6px; }
+.rbtn .dot, .cbtn .dot { width: 12px; height: 12px; }
+.toasts { left: 60px; right: 60px; }
