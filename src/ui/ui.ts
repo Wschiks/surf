@@ -135,15 +135,15 @@ export class GameUI {
         <button class="rbtn" data-ref="skins" aria-label="Skins">${icon('skin')}</button>
         <button class="rbtn" data-ref="gear" aria-label="Menu">${icon('gear')}</button>
       </div>
-      <!-- bottom corners: shop + sports left, watch ad + beach right; the middle stays free for the map -->
+      <!-- bottom corners: beach + sports left, watch ad + shop right; the middle stays free for the map -->
       <div class="dock">
         <div class="corner left">
-          <button class="cbtn big shop" data-ref="shop" aria-label="Shop">${icon('bag')}<i class="dot" data-ref="shopdot" hidden></i></button>
+          <button class="cbtn big beach" data-ref="beach" aria-label="Beach">${icon('beach')}</button>
           <button class="cbtn sports" data-ref="sports" aria-label="Sports">${icon('sports')}</button>
         </div>
         <div class="corner right">
-          <button class="cbtn boost" data-ref="boost" aria-label="Watch ad">${icon('video')}<b data-ref="boostA" hidden></b><small data-ref="boostB">x${BALANCE.boostMult}</small><i class="boost-bar"><u data-ref="boostBar"></u></i></button>
-          <button class="cbtn big beach" data-ref="beach" aria-label="Beach">${icon('beach')}</button>
+          <button class="cbtn boost" data-ref="boost" aria-label="Watch ad">${icon('bill')}<b data-ref="boostA" hidden></b><small data-ref="boostB">x${BALANCE.boostMult}</small><i class="boost-bar"><u data-ref="boostBar"></u></i></button>
+          <button class="cbtn big shop" data-ref="shop" aria-label="Shop">${icon('bag')}<i class="dot" data-ref="shopdot" hidden></i></button>
         </div>
       </div>
       <div class="sheet" data-ref="sheet"></div>

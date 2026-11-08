@@ -653,3 +653,6 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 .dock .boost { color: var(--coral); }
 .dock .boost small { background: var(--coral); }
 .dock .boost > .ic { width: 72%; height: 72%; }
+/* Watch ad: a green money bill */
+.dock .boost { color: #2fbf6a; }
+.dock .boost small { background: #2fbf6a; }
