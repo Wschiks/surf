@@ -125,9 +125,12 @@ export class GameUI {
       </div>
       <!-- under the quests, left: progression, in a row (each button only shows once it is unlocked) -->
       <div class="rail left" data-ref="railL">
-        <button class="rbtn skills gone" data-ref="skills" aria-label="Skills">${icon('tree')}</button>
         <button class="rbtn expand" data-ref="expand" aria-label="Expand" hidden>${icon('expand')}<i class="dot" data-ref="expanddot" hidden></i></button>
         <button class="rbtn rebirth-btn" data-ref="rebirth" aria-label="Rebirth" hidden>${icon('rebirth')}</button>
+      </div>
+      <!-- under the right quest: watch an ad for coins x2 -->
+      <div class="rail topright">
+        <button class="cbtn boost" data-ref="boost" aria-label="Watch ad">${icon('bill')}<b data-ref="boostA" hidden></b><small data-ref="boostB">x${BALANCE.boostMult}</small><i class="boost-bar"><u data-ref="boostBar"></u></i></button>
       </div>
       <!-- right column above the bottom corner: extras (spin and skins are placeholders for now) -->
       <div class="rail right" data-ref="railR">
@@ -135,14 +138,14 @@ export class GameUI {
         <button class="rbtn" data-ref="skins" aria-label="Skins">${icon('skin')}</button>
         <button class="rbtn" data-ref="gear" aria-label="Menu">${icon('gear')}</button>
       </div>
-      <!-- bottom corners: beach + sports left, watch ad + shop right; the middle stays free for the map -->
+      <!-- bottom corners: beach + sports left, skills + shop right; the middle stays free for the map -->
       <div class="dock">
         <div class="corner left">
           <button class="cbtn big beach" data-ref="beach" aria-label="Beach">${icon('beach')}</button>
           <button class="cbtn sports" data-ref="sports" aria-label="Sports">${icon('sports')}</button>
         </div>
         <div class="corner right">
-          <button class="cbtn boost" data-ref="boost" aria-label="Watch ad">${icon('bill')}<b data-ref="boostA" hidden></b><small data-ref="boostB">x${BALANCE.boostMult}</small><i class="boost-bar"><u data-ref="boostBar"></u></i></button>
+          <button class="cbtn skills gone" data-ref="skills" aria-label="Skills">${icon('tree')}</button>
           <button class="cbtn big shop" data-ref="shop" aria-label="Shop">${icon('bag')}<i class="dot" data-ref="shopdot" hidden></i></button>
         </div>
       </div>

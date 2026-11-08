@@ -656,3 +656,15 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 /* Watch ad: a green money bill */
 .dock .boost { color: #2fbf6a; }
 .dock .boost small { background: #2fbf6a; }
+/* x2 money under the right quest; Skills in the bottom-right corner next to the shop */
+.rail.topright { right: 10px; top: calc(max(62px, env(safe-area-inset-top) + 52px) + 112px); }
+.sheet-open .rail.topright { transform: translateX(90px); opacity: 0; }
+.topright .boost { position: relative; left: auto; right: auto; bottom: auto; padding: 0; overflow: visible; color: #2fbf6a; }
+.topright .boost > .ic { width: 72%; height: 72%; display: block; }
+.topright .boost small { position: absolute; left: 50%; bottom: -7px; transform: translateX(-50%); background: #2fbf6a; color: #fff; font-size: 10px; font-weight: 900; padding: 0 6px; border-radius: 9px; opacity: 1; white-space: nowrap; }
+.topright .boost.on { background: var(--gloss), var(--sun); box-shadow: 0 4px 0 var(--sun-d), 0 8px 12px rgba(8, 36, 60, 0.3); color: var(--ink); }
+.topright .boost.on > .ic { display: block; }
+.topright .boost.on small { background: var(--ink); }
+.topright .boost .boost-bar { display: none; }
+.cbtn.gone, .cbtn[hidden] { display: none; }
+.cbtn.skills { color: #2fbf8a; }
