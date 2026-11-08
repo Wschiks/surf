@@ -840,6 +840,11 @@ export class GameUI {
     const canSeeSkills = s.skillEarned > 0;
     this.refs.skills.classList.toggle('gone', !canSeeSkills);
     this.refs.skills.classList.toggle('pulse', canSeeSkills && hasAffordableSkill(s));
+    // the first gem: the screen goes dark and only the Skills button is lit (once; not for players who already learned a skill)
+    if (canSeeSkills && !s.hints.skills && !this.coachOpen && this.refs.modal.hidden && !this.skillScreen.isOpen) {
+      if (Object.keys(s.skills).some((k) => s.skills[k] && !k.endsWith(':root'))) s.hints.skills = true;
+      else this.coach(this.refs.skills, 'tree', 'Skills!', 'skills', () => this.openSkills());
+    }
     const perm = bonusMult(s) * (s.perks.x5 ? BALANCE.x5Mult : 1) * (s.perks.club ? CLUB.coinMult : 1);
     this.refs.mult.hidden = perm === 1;
     this.refs.mult.textContent = `x${perm}`;
@@ -848,7 +853,8 @@ export class GameUI {
     // the rebirth button shows once the whole game is done, and glows when a rebirth can be bought
     const showRebirth = rebirthShown(s);
     (this.refs.rebirth as HTMLButtonElement).hidden = !showRebirth;
-    if (showRebirth && !s.hints.rebirth && !this.coachOpen) this.coachRebirth();
+    if (showRebirth && !s.hints.rebirth && !this.coachOpen && this.refs.modal.hidden)
+      this.coach(this.refs.rebirth, 'rebirth', 'Rebirth!', 'rebirth', () => this.openExpand());
     this.refs.rebirth.classList.toggle('ready', canRebirth(s));
     const big = canExpand(s) || canRebirth(s);
     this.refs.expand.classList.toggle('ready', big);
@@ -907,13 +913,16 @@ export class GameUI {
    * The first time the rebirth button shows: the screen goes dark except for that button, an arrow points at it,
    * and only tapping it closes this (it opens the rebirth screen). Shown once per save.
    */
-  private coachRebirth() {
-    const btn = this.refs.rebirth;
+  /**
+   * A one-time spotlight: the whole screen goes dark except one button, with a short tip and an arrow pointing at it.
+   * Tapping the button is the only way out. The tip goes on the side of the button with the most room.
+   */
+  private coach(btn: HTMLElement, iconName: string, text: string, hint: string, open: () => void) {
     this.coachOpen = true;
     this.closeSheet(false);
     const el = document.createElement('div');
     el.className = 'coach';
-    el.innerHTML = `<button class="coach-hole" aria-label="Rebirth"></button><div class="coach-tip"><b>${icon('rebirth')} Rebirth!</b><span class="coach-arrow">${icon('arrow')}</span></div>`;
+    el.innerHTML = `<button class="coach-hole" aria-label="${text}"></button><div class="coach-tip"><b>${icon(iconName)} ${text}</b><span class="coach-arrow">${icon('arrow')}</span></div>`;
     this.root.appendChild(el);
     const hole = el.querySelector<HTMLElement>('.coach-hole')!;
     const tip = el.querySelector<HTMLElement>('.coach-tip')!;
@@ -923,18 +932,22 @@ export class GameUI {
       const o = this.root.getBoundingClientRect();
       const pad = 8;
       Object.assign(hole.style, { left: `${r.left - o.left - pad}px`, top: `${r.top - o.top - pad}px`, width: `${r.width + pad * 2}px`, height: `${r.height + pad * 2}px` });
-      Object.assign(tip.style, { right: `${o.right - r.left + 14}px`, top: `${r.top - o.top + r.height / 2}px` });
+      // button on the left half: the tip on its right, arrow pointing left; otherwise on its left, arrow pointing right
+      const onLeft = r.left + r.width / 2 < o.left + o.width / 2;
+      tip.classList.toggle('flip', onLeft);
+      if (onLeft) Object.assign(tip.style, { left: `${r.right - o.left + 14}px`, right: '', top: `${r.top - o.top + r.height / 2}px` });
+      else Object.assign(tip.style, { right: `${o.right - r.left + 14}px`, left: '', top: `${r.top - o.top + r.height / 2}px` });
       requestAnimationFrame(place);
     };
     place();
     sound.unlock();
     hole.addEventListener('click', () => {
-      this.game.state.hints.rebirth = true;
+      this.game.state.hints[hint] = true;
       this.game.save();
       el.remove();
       this.coachOpen = false;
       sound.tap();
-      this.openExpand();
+      open();
     });
   }
 

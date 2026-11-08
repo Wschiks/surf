@@ -668,3 +668,9 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 .topright .boost .boost-bar { display: none; }
 .cbtn.gone, .cbtn[hidden] { display: none; }
 .cbtn.skills { color: #2fbf8a; }
+/* coach: round buttons get a round spotlight; a tip on the right of the button points left */
+.coach-hole { border-radius: 50%; }
+.coach-tip.flip { flex-direction: row-reverse; }
+.coach-tip.flip .coach-arrow { transform: scaleX(-1); animation: coachPointL 0.8s ease-in-out infinite; }
+@keyframes coachPointL { 0%, 100% { transform: scaleX(-1); } 50% { transform: scaleX(-1) translateX(8px); } }
+.coach-tip b .ic { color: #2fbf8a; }
