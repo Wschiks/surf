@@ -643,8 +643,13 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 /* top bar covers the whole width: total coins | coins per second | gems on the right */
 .hud { gap: 6px; }
 .hud .pill.coins { flex: 1.25 1 0; min-width: 0; }
-.hud .pill.rate { flex: 1 1 0; min-width: 0; color: #7ff0a8; }
+.hud .pill.rate { flex: 1 1 0; min-width: 0; color: #fff; }
 .hud .pill.rate b { font-size: 16px; white-space: nowrap; }
 .hud .pill.rate .ico .ic { color: #5be08f; }
 .hud .pill.gems { flex: 0 0 auto; margin-left: 0; }
 .hud .pill b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* no purple on the bottom buttons: Sports in sea blue, Watch ad in coral */
+.cbtn.sports { color: #1497b5; }
+.dock .boost { color: var(--coral); }
+.dock .boost small { background: var(--coral); }
+.dock .boost > .ic { width: 72%; height: 72%; }
