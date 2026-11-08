@@ -132,10 +132,11 @@ export class GameUI {
       <div class="rail topright">
         <button class="cbtn boost" data-ref="boost" aria-label="Watch ad">${icon('bill')}<b data-ref="boostA" hidden></b><small data-ref="boostB">x${BALANCE.boostMult}</small><i class="boost-bar"><u data-ref="boostBar"></u></i></button>
       </div>
-      <!-- right column above the bottom corner: extras (spin and skins are placeholders for now) -->
+      <!-- right column above the bottom corner: extras (spin and skins come later) -->
       <div class="rail right" data-ref="railR">
-        <button class="rbtn" data-ref="spin" aria-label="Daily spin">${icon('spin')}</button>
-        <button class="rbtn" data-ref="skins" aria-label="Skins">${icon('skin')}</button>
+        <!-- hidden until they work: Apple rejects buttons that do nothing -->
+        <button class="rbtn" data-ref="spin" aria-label="Daily spin" hidden>${icon('spin')}</button>
+        <button class="rbtn" data-ref="skins" aria-label="Skins" hidden>${icon('skin')}</button>
         <button class="rbtn" data-ref="gear" aria-label="Menu">${icon('gear')}</button>
       </div>
       <!-- bottom corners: beach + sports left, skills + shop right; the middle stays free for the map -->
