@@ -4,7 +4,7 @@ import { areaById } from '../config/areas';
 import { SPORTS, ZONES, sportById, zoneById, zoneId } from '../config/sports';
 import type { GameState } from '../core/state';
 import { adsNative, interstitialAvailable, showInterstitialAd, showRewardedAd, type AdResult } from '../ads';
-import { AD_BREAK } from '../config/ads';
+import { AD_BREAK, type RewardedSpot } from '../config/ads';
 import { adBreakDue } from '../core/perks';
 import { BALANCE } from '../config/balance';
 import { autoIncomePerSecond, statMax, topUpOffline, bonusFor, bonusMult, facilityOpen, offlineCap, startBoost, buyFacility, buyManager, buyStat, costOf, discounts, facilityCost, managerCost, planBuy, tapZone, zoneStats, type BuyMode } from '../core/economy';
@@ -956,13 +956,13 @@ export class GameUI {
   }
 
   /** Show one ad and say how it went. Players who bought "Remove ads" skip the video and still get the reward. */
-  private async playAd(): Promise<AdResult> {
+  private async playAd(spot: RewardedSpot = 'boost'): Promise<AdResult> {
     if (this.adBusy) return 'closed';
     if (adFree(this.game.state.perks)) return 'rewarded';
     this.adBusy = true;
     this.refreshBoost();
     try {
-      return adsNative ? await showRewardedAd() : await this.demoAd();
+      return adsNative ? await showRewardedAd(spot) : await this.demoAd();
     } finally {
       this.adBusy = false;
       this.lastAdBreak = performance.now(); // just watched an ad: no ad break right after it
@@ -1089,7 +1089,7 @@ export class GameUI {
     const btn = m.querySelector<HTMLButtonElement>('[data-plane]')!;
     btn.addEventListener('click', async () => {
       btn.disabled = true;
-      const result = await this.playAd();
+      const result = await this.playAd('plane');
       if (result === 'rewarded') {
         claimed = true;
         claimPlanePrize(this.game.state, prize);

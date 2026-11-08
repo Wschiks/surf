@@ -1,5 +1,5 @@
 import { Capacitor } from '@capacitor/core';
-import { ADS } from './config/ads';
+import { ADS, type RewardedSpot } from './config/ads';
 
 export type AdResult = 'rewarded' | 'closed' | 'failed';
 
@@ -35,13 +35,19 @@ function setup(): Promise<void> {
   }));
 }
 
+/** The ad block for a place in the game; a place without its own block yet uses the Watch ad x2 one. */
+function rewardedId(spot: RewardedSpot): string {
+  const ids = Capacitor.getPlatform() === 'ios' ? ADS.ios.rewarded : ADS.android.rewarded;
+  return ids[spot] || ids.boost;
+}
+
 /** Show one rewarded video. Resolves 'rewarded' only when the player watched it to the end. */
-export async function showRewardedAd(): Promise<AdResult> {
+export async function showRewardedAd(spot: RewardedSpot = 'boost'): Promise<AdResult> {
   if (!adsNative) return 'failed';
   try {
     await setup();
     const { AdMob, RewardAdPluginEvents } = await admob();
-    const adId = Capacitor.getPlatform() === 'ios' ? ADS.ios.rewarded : ADS.android.rewarded;
+    const adId = rewardedId(spot);
     await AdMob.prepareRewardVideoAd({ adId, isTesting: !ADS.live });
     let earned = false;
     return await new Promise<AdResult>((resolve) => {

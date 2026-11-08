@@ -1,10 +1,23 @@
-// Google AdMob ids for the rewarded video ad ("Watch an ad: coins x2 for 2 minutes") and the ad breaks.
-// The ids are not secret: they only say which AdMob app and ad block the ad belongs to.
+// Google AdMob ids: every place that shows an ad has its own ad block (ad unit), so AdMob reports show which one
+// earns what. The ids are not secret: they only say which AdMob app and ad block the ad belongs to.
+
+/** The places in the game that show a rewarded video. */
+export type RewardedSpot = 'boost' | 'plane' | 'spin' | 'itemBox';
 
 export const ADS = {
   ios: {
     appId: 'ca-app-pub-8560073239883666~9782230015',
-    rewarded: 'ca-app-pub-8560073239883666/6132040872',
+    /**
+     * Rewarded video ad blocks, one per place. An empty one uses the `boost` block until it is made in AdMob.
+     * boost = Watch ad x2 (also the welcome-back ad and the shop's ad streak), plane = the banner plane,
+     * spin = the daily spin, itemBox = the item box (those two come later).
+     */
+    rewarded: {
+      boost: 'ca-app-pub-8560073239883666/6132040872',
+      plane: '',
+      spin: '',
+      itemBox: '',
+    } as Record<RewardedSpot, string>,
     /** The ad break (interstitial) ad block. Empty until it is made in AdMob: live builds then have no ad breaks. */
     interstitial: '',
   },
@@ -13,7 +26,7 @@ export const ADS = {
   // (admob_app_id) and its rewarded ad block id below.
   android: {
     appId: 'ca-app-pub-3940256099942544~3347511713',
-    rewarded: 'ca-app-pub-3940256099942544/5224354917',
+    rewarded: { boost: 'ca-app-pub-3940256099942544/5224354917', plane: '', spin: '', itemBox: '' } as Record<RewardedSpot, string>,
     interstitial: 'ca-app-pub-3940256099942544/1033173712',
   },
   /** Google's public test ad blocks for ad breaks, used in every build that is not a live store build. */
