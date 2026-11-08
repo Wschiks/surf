@@ -587,36 +587,43 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 .plane-prize .coin, .plane-prize .ic { width: 34px; height: 34px; flex: none; }
 .plane-prize b + b { font-size: 20px; color: var(--soft); }
 
-
-/* ================= layout A (branch layout-test): side rails with round buttons, two corner buttons ================= */
-.hud .pill.gear { margin-left: auto; }
-.rail { position: absolute; top: calc(max(62px, env(safe-area-inset-top) + 52px) + 122px); display: flex; flex-direction: column; gap: calc(14px * var(--u)); pointer-events: none; transition: transform 0.25s, opacity 0.25s; }
-.rail.left { left: 10px; align-items: flex-start; }
-.rail.right { right: 10px; align-items: flex-end; }
-.sheet-open .rail.left { transform: translateX(-90px); opacity: 0; }
+/* ================= layout B (branch layout-test): like the Codigames idle games, only round buttons, no labels ================= */
+.rail { position: absolute; display: flex; gap: calc(12px * var(--u)); pointer-events: none; transition: transform 0.25s, opacity 0.25s; }
+/* left: a row under the quests */
+.rail.left { left: 10px; top: calc(max(62px, env(safe-area-inset-top) + 52px) + 118px); flex-direction: row; }
+/* right: a column just above the bottom-right corner buttons */
+.rail.right { right: 12px; bottom: calc(max(14px, env(safe-area-inset-bottom)) + 96px * var(--u)); flex-direction: column; align-items: center; }
+.sheet-open .rail.left { transform: translateY(-20px); opacity: 0; pointer-events: none; }
 .sheet-open .rail.right { transform: translateX(90px); opacity: 0; }
-.rbtn { pointer-events: auto; position: relative; width: calc(56px * var(--u)); height: calc(56px * var(--u)); border-radius: 50%; display: grid; place-items: center; color: #fff; background: var(--gloss), var(--teal); box-shadow: 0 4px 0 var(--teal-d), 0 6px 10px rgba(8, 36, 60, 0.25); flex: none; }
-.rbtn > .ic { width: 28px; height: 28px; }
-.rbtn:active { transform: translateY(3px); box-shadow: 0 1px 0 rgba(0, 0, 0, 0.25); }
+.rbtn { pointer-events: auto; position: relative; width: calc(52px * var(--u)); height: calc(52px * var(--u)); border-radius: 50%; display: grid; place-items: center; color: #fff; background: var(--gloss), var(--navy); box-shadow: 0 4px 0 var(--navy-d), 0 6px 10px rgba(8, 36, 60, 0.25); flex: none; }
+.rbtn > .ic { width: 26px; height: 26px; }
+.rbtn:active, .cbtn:active { transform: translateY(3px); }
 .rbtn[hidden], .rbtn.gone { display: none; }
-.rbtn .dot { position: absolute; right: -2px; top: -2px; width: 16px; height: 16px; border-radius: 50%; background: #ff3b5c; border: 2px solid #0a2439; }
-.rbtn .dot[hidden] { display: none; }
-.rbtn.pulse { animation: pulse 1.3s ease-in-out infinite; }
+.rbtn .dot, .cbtn .dot { position: absolute; right: -1px; top: -1px; width: 16px; height: 16px; border-radius: 50%; background: #ff3b5c; border: 2px solid #fff; }
+.rbtn .dot[hidden], .cbtn .dot[hidden] { display: none; }
+.rbtn.pulse, .cbtn.pulse { animation: pulse 1.3s ease-in-out infinite; }
 .rbtn.arrive { animation: popIn 0.5s ease-out; }
 .rbtn.skills { background: var(--gloss), #2fbf8a; box-shadow: 0 4px 0 #1b8a63, 0 6px 10px rgba(8, 36, 60, 0.25); }
 .rbtn.expand { background: var(--gloss), var(--coral); box-shadow: 0 4px 0 var(--coral-d), 0 6px 10px rgba(8, 36, 60, 0.25); }
 .rbtn.expand.ready { background: var(--gloss), var(--sun); box-shadow: 0 4px 0 var(--sun-d), 0 6px 10px rgba(8, 36, 60, 0.25); color: var(--ink); }
-.rail .rebirth-btn { position: relative; right: auto; bottom: auto; width: calc(56px * var(--u)); height: calc(56px * var(--u)); border-radius: 50%; }
-.rbtn.shop { background: var(--gloss), var(--sun); box-shadow: 0 4px 0 var(--sun-d), 0 6px 10px rgba(8, 36, 60, 0.25); color: var(--ink); }
-.rail .boost { position: relative; left: auto; right: auto; bottom: auto; width: calc(56px * var(--u)); height: calc(56px * var(--u)); padding: 0; border-radius: 50%; overflow: visible; display: grid; place-items: center; background: var(--gloss), #8a4dff; box-shadow: 0 4px 0 #5a2fc4, 0 6px 10px rgba(8, 36, 60, 0.25); }
-.rail .boost > .ic { width: 26px; height: 26px; display: block; }
-.rail .boost small { position: absolute; left: 50%; bottom: -9px; transform: translateX(-50%); background: #0a2439; color: #fff; font-size: 11px; font-weight: 900; padding: 1px 7px; border-radius: 9px; opacity: 1; white-space: nowrap; }
-.rail .boost.on { background: var(--gloss), var(--sun); color: var(--ink); box-shadow: 0 4px 0 var(--sun-d), 0 6px 10px rgba(8, 36, 60, 0.25); }
-.rail .boost.on > .ic { display: block; }
-.rail .boost.on small { background: var(--sun-d); color: var(--ink); }
-.rail .boost .boost-bar { display: none; }
-.dock { justify-content: space-between; }
-.dock .dock-btn { flex: 0 0 auto; width: calc(92px * var(--u)); }
+.rail .rebirth-btn { position: relative; right: auto; bottom: auto; width: calc(52px * var(--u)); height: calc(52px * var(--u)); border-radius: 50%; background: var(--gloss), #2fbf8a; box-shadow: 0 4px 0 #1b8a63, 0 6px 10px rgba(8, 36, 60, 0.25); }
+.rail .rebirth-btn.ready { background: var(--gloss), var(--sun); box-shadow: 0 4px 0 var(--sun-d), 0 6px 10px rgba(8, 36, 60, 0.25); color: var(--ink); }
+
+/* bottom: two corners, white round buttons with a coloured icon; the big one sits in the very corner */
+.dock { justify-content: space-between; align-items: flex-end; left: 12px; right: 12px; }
+.corner { display: flex; align-items: flex-end; gap: calc(12px * var(--u)); }
+.cbtn { pointer-events: auto; position: relative; width: calc(64px * var(--u)); height: calc(64px * var(--u)); border-radius: 50%; display: grid; place-items: center; background: linear-gradient(#ffffff, #e3eef6); box-shadow: 0 4px 0 #9fb8cc, 0 8px 12px rgba(8, 36, 60, 0.3); color: #2a75a8; flex: none; }
+.cbtn > .ic { width: 32px; height: 32px; }
+.cbtn.big { width: calc(80px * var(--u)); height: calc(80px * var(--u)); }
+.cbtn.big > .ic { width: 40px; height: 40px; }
+.cbtn.shop { background: var(--gloss), var(--sun); box-shadow: 0 4px 0 var(--sun-d), 0 8px 12px rgba(8, 36, 60, 0.3); color: var(--ink); }
+.cbtn.sports { color: #7a5cff; }
+.cbtn.beach { color: #e9a13a; }
+.dock .boost { position: relative; left: auto; right: auto; bottom: auto; padding: 0; overflow: visible; color: #8a4dff; }
+.dock .boost > .ic { width: 30px; height: 30px; display: block; }
+.dock .boost small { position: absolute; left: 50%; bottom: -8px; transform: translateX(-50%); background: #8a4dff; color: #fff; font-size: 12px; font-weight: 900; padding: 1px 8px; border-radius: 9px; opacity: 1; white-space: nowrap; }
+.dock .boost.on { background: var(--gloss), var(--sun); box-shadow: 0 4px 0 var(--sun-d), 0 8px 12px rgba(8, 36, 60, 0.3); color: var(--ink); }
+.dock .boost.on > .ic { display: block; }
+.dock .boost.on small { background: var(--ink); }
+.dock .boost .boost-bar { display: none; }
 .toasts { left: 80px; right: 80px; align-items: center; }
-.rbtn.rebirth-btn { background: var(--gloss), #2fbf8a; box-shadow: 0 4px 0 #1b8a63, 0 6px 10px rgba(8, 36, 60, 0.25); }
-.rbtn.rebirth-btn.ready { background: var(--gloss), var(--sun); box-shadow: 0 4px 0 var(--sun-d), 0 6px 10px rgba(8, 36, 60, 0.25); color: var(--ink); }

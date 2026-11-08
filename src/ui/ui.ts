@@ -118,26 +118,32 @@ export class GameUI {
       <div class="hud">
         <div class="pill coins"><span class="ico">${COIN}</span><span class="cv"><b data-ref="coins">0</b><small data-ref="rate">+0/s</small></span><em class="mult" data-ref="mult" hidden></em></div>
         <button class="pill gems" data-ref="gembtn" aria-label="Skill points"><span class="ico">${icon('gem')}</span><b data-ref="gems">0</b></button>
-        <button class="pill gear" data-ref="gear" aria-label="Menu">${icon('gear')}</button>
       </div>
       <div class="quests" data-ref="quests">
         <div class="q-list" data-ref="qlist">${Array.from({ length: QUEST_SLOTS }, (_, i) => `<div class="q-row" data-q="${i}"><div class="q-body"><span class="q-t"></span><i class="q-bar"><b></b></i><small class="q-n"></small></div><button class="q-claim"></button></div>`).join('')}</div>
       </div>
-      <!-- left rail: progression (each button only shows once it is unlocked) -->
+      <!-- under the quests, left: progression, in a row (each button only shows once it is unlocked) -->
       <div class="rail left" data-ref="railL">
         <button class="rbtn skills gone" data-ref="skills" aria-label="Skills">${icon('tree')}</button>
         <button class="rbtn expand" data-ref="expand" aria-label="Expand" hidden>${icon('expand')}<i class="dot" data-ref="expanddot" hidden></i></button>
         <button class="rbtn rebirth-btn" data-ref="rebirth" aria-label="Rebirth" hidden>${icon('rebirth')}</button>
       </div>
-      <!-- right rail: shop and ads -->
+      <!-- right column above the bottom corner: extras (spin and skins are placeholders for now) -->
       <div class="rail right" data-ref="railR">
-        <button class="rbtn shop" data-ref="shop" aria-label="Shop">${icon('bag')}<i class="dot" data-ref="shopdot" hidden></i></button>
-        <button class="rbtn boost" data-ref="boost" aria-label="Watch ad">${icon('video')}<b data-ref="boostA" hidden></b><small data-ref="boostB">x${BALANCE.boostMult}</small><i class="boost-bar"><u data-ref="boostBar"></u></i></button>
+        <button class="rbtn" data-ref="spin" aria-label="Daily spin">${icon('spin')}</button>
+        <button class="rbtn" data-ref="skins" aria-label="Skins">${icon('skin')}</button>
+        <button class="rbtn" data-ref="gear" aria-label="Menu">${icon('gear')}</button>
       </div>
-      <!-- bottom: only the two main buttons, in the corners; the middle stays free for the map -->
+      <!-- bottom corners: shop + sports left, watch ad + beach right; the middle stays free for the map -->
       <div class="dock">
-        <button class="dock-btn" data-ref="beach">${icon('beach')}<em>Beach</em></button>
-        <button class="dock-btn" data-ref="sports">${icon('sports')}<em>Sports</em></button>
+        <div class="corner left">
+          <button class="cbtn big shop" data-ref="shop" aria-label="Shop">${icon('bag')}<i class="dot" data-ref="shopdot" hidden></i></button>
+          <button class="cbtn sports" data-ref="sports" aria-label="Sports">${icon('sports')}</button>
+        </div>
+        <div class="corner right">
+          <button class="cbtn boost" data-ref="boost" aria-label="Watch ad">${icon('video')}<b data-ref="boostA" hidden></b><small data-ref="boostB">x${BALANCE.boostMult}</small><i class="boost-bar"><u data-ref="boostBar"></u></i></button>
+          <button class="cbtn big beach" data-ref="beach" aria-label="Beach">${icon('beach')}</button>
+        </div>
       </div>
       <div class="sheet" data-ref="sheet"></div>
       <div class="toasts" data-ref="toasts"></div>
