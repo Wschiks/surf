@@ -1,7 +1,8 @@
 import { BALANCE, costFactor, milestoneMult, STATS, STAT_IDS, tierFactor, type StatId } from '../config/balance';
 import { CLUB } from '../config/shop';
-import { EXPANSION_MULT } from '../config/expansions';
-import { FACILITIES, facilityById } from '../config/facilities';
+import { REBIRTH } from '../config/rebirth';
+import { EXPANSION_BONUS, EXPANSIONS } from '../config/expansions';
+import { FACILITIES, facilityById, type FacilityDef } from '../config/facilities';
 import { ZONES, zoneById, type ZoneRef } from '../config/sports';
 import { skillEffects } from './skills';
 import type { GameState, ZoneState } from './state';
@@ -11,9 +12,24 @@ export interface Multipliers {
   speed: number;
 }
 
+/**
+ * The income bonus after `rebirths` rebirths and `expansions` expansions in this round. Nothing is ever lost: every
+ * expansion adds +1 (also the ones of earlier rounds) and the rebirths add +2, +3, +4...
+ */
+export function bonusFor(expansions: number, rebirths: number): number {
+  const fromExpansions = EXPANSION_BONUS * (expansions + rebirths * EXPANSIONS.length);
+  const fromRebirths = rebirths * REBIRTH.firstBonus + (REBIRTH.bonusStep * rebirths * (rebirths - 1)) / 2;
+  return 1 + fromExpansions + fromRebirths;
+}
+
+/** The income bonus now (x1 at the very start). */
+export function bonusMult(state: GameState): number {
+  return bonusFor(state.expansions, state.rebirths ?? 0);
+}
+
 export function multipliers(state: GameState): Multipliers {
   const fx = skillEffects(state);
-  const m: Multipliers = { coins: Math.pow(EXPANSION_MULT, state.expansions) * (1 + fx.allCoins), speed: 1 };
+  const m: Multipliers = { coins: bonusMult(state) * (1 + fx.allCoins), speed: 1 };
   if (state.boost > 0) m.coins *= BALANCE.boostMult;
   if (state.perks.x5) m.coins *= BALANCE.x5Mult;
   if (state.perks.club) m.coins *= CLUB.coinMult;
@@ -45,15 +61,26 @@ export function zoneStats(state: GameState, ref: ZoneRef, z: ZoneState = state.z
   const sp = ref.sport.id;
   const guests = guestsFor(ref, z, fx.guests[sp] ?? 0);
   const pricePerGuest = tierFactor(ref.def.tier) * (1 + BALANCE.priceStep * z.price) * milestoneMult(z.price) * m.coins * (1 + (fx.coins[sp] ?? 0));
-  const duration = ref.def.baseSeconds / ((1 + BALANCE.speedStep * z.speed) * m.speed * (1 + (fx.speed[sp] ?? 0)));
+  const duration = speedSeconds(ref.def.baseSeconds, z.speed) / (m.speed * (1 + (fx.speed[sp] ?? 0)));
   const income = guests * pricePerGuest;
   return { guests, pricePerGuest, duration, income, perSecond: income / duration };
 }
 
+/** A session's time at a Faster turnover level, before skills and boosts: every level takes off the same number of seconds. */
+export function speedSeconds(baseSeconds: number, level: number): number {
+  return baseSeconds * (1 - ((1 - BALANCE.speedEnd) * Math.min(level, STATS.speed.max)) / STATS.speed.max);
+}
+
 /** Cost of the next level of a stat, or Infinity at the maximum. */
-export function statCost(ref: ZoneRef, stat: StatId, level: number, discount = 0): number {
+/** The highest level of a stat after `rebirths` rebirths (Bigger class grows with every rebirth). */
+export function statMax(stat: StatId, rebirths = 0): number {
   const s = STATS[stat];
-  if (level >= s.max) return Infinity;
+  return s.max + (s.perRebirth ?? 0) * rebirths;
+}
+
+export function statCost(ref: ZoneRef, stat: StatId, level: number, discount = 0, max = STATS[stat].max): number {
+  const s = STATS[stat];
+  if (level >= max) return Infinity;
   return Math.ceil(s.baseCost * costFactor(ref.def.tier) * Math.pow(s.growth, level) * (1 + s.surge * level) * (1 - discount) * 100) / 100;
 }
 
@@ -91,24 +118,25 @@ export type BuyMode = number | 'max';
  * What a tap on a buy button buys. A number (x1, x10, x100) is all or nothing: exactly that many levels, if the coins
  * are there. 'max' buys as many as the coins allow.
  */
-export function planBuy(ref: ZoneRef, stat: StatId, level: number, coins: number, mode: BuyMode, discount = 0): { count: number; cost: number } {
-  const limit = mode === 'max' ? STATS[stat].max : mode;
+export function planBuy(ref: ZoneRef, stat: StatId, level: number, coins: number, mode: BuyMode, discount = 0, max = STATS[stat].max): { count: number; cost: number } {
+  // x10 / x100 near the top buy what is left (all or nothing for that), so the last levels can still be bought
+  const limit = mode === 'max' ? max : Math.min(mode, max - level);
   let count = 0;
   let cost = 0;
-  for (let n = level; count < limit && n < STATS[stat].max; n++) {
-    const c = statCost(ref, stat, n, discount);
+  for (let n = level; count < limit && n < max; n++) {
+    const c = statCost(ref, stat, n, discount, max);
     if (cost + c > coins) break;
     cost += c;
     count++;
   }
-  if (mode !== 'max' && count < limit) return { count: 0, cost: 0 };
+  if (mode !== 'max' && (count < limit || count === 0)) return { count: 0, cost: 0 };
   return { count, cost };
 }
 
 /** What `count` levels of a stat cost together, starting at `level` (stops at the top level). Works even when the coins are not there. */
-export function costOf(ref: ZoneRef, stat: StatId, level: number, count: number, discount = 0): number {
+export function costOf(ref: ZoneRef, stat: StatId, level: number, count: number, discount = 0, max = STATS[stat].max): number {
   let cost = 0;
-  for (let n = level; n < level + count && n < STATS[stat].max; n++) cost += statCost(ref, stat, n, discount);
+  for (let n = level; n < level + count && n < max; n++) cost += statCost(ref, stat, n, discount, max);
   return cost;
 }
 
@@ -117,7 +145,7 @@ export function buyStat(state: GameState, zoneId: string, stat: StatId, mode: Bu
   const ref = zoneById(zoneId);
   const z = state.zones[zoneId];
   if (!z.owned) return false;
-  const plan = planBuy(ref, stat, z[stat], state.coins, mode, discounts(state, ref.sport.id).stat(stat));
+  const plan = planBuy(ref, stat, z[stat], state.coins, mode, discounts(state, ref.sport.id).stat(stat), statMax(stat, state.rebirths));
   if (plan.count === 0) return false;
   state.coins -= plan.cost;
   z[stat] += plan.count;
@@ -137,7 +165,13 @@ export function buyManager(state: GameState, zoneId: string): boolean {
   return true;
 }
 
+/** Can the facility be built? Its stage of the game must be reached and the zone it needs unlocked. */
+export function facilityOpen(state: GameState, f: FacilityDef): boolean {
+  return f.stage <= state.expansions && !!state.zones[f.needs]?.owned;
+}
+
 export function buyFacility(state: GameState, id: string): boolean {
+  if (!facilityOpen(state, facilityById(id))) return false;
   const lvl = state.facilities[id] ?? 0;
   const cost = facilityCost(id, lvl, skillEffects(state).facilityCost);
   if (!isFinite(cost) || state.coins < cost) return false;
@@ -254,17 +288,27 @@ export interface OfflineReport {
   /** Real seconds away. */
   away: number;
   capped: boolean;
+  /** Coins earned while away (the away share of the normal income). */
   coins: number;
+  /** What the same time would have earned at the full rate (gems in the welcome-back dialog make it this). */
+  full: number;
   /** Zones without a manager that finished a session and wait for you. */
   waiting: number;
 }
 
-/** Earnings for time spent away. Zones with a manager earn, others finish one session and wait. */
+/**
+ * Earnings for time spent away. Zones with a manager earn, at `BALANCE.offlineRate` of the normal income; others
+ * finish one session and wait (that session keeps its full coins, to collect on return).
+ */
 export function applyOffline(state: GameState, awaySeconds: number): OfflineReport {
   const cap = offlineCap(state);
   const seconds = Math.max(0, Math.min(awaySeconds, cap));
   const before = { coins: state.coins };
   if (seconds > 0) tick(state, seconds);
+  const full = state.coins - before.coins;
+  const kept = full * BALANCE.offlineRate;
+  state.coins = before.coins + kept;
+  state.totalCoins -= full - kept;
   const waiting = ZONES.filter((r) => {
     const z = state.zones[r.id];
     return z.owned && !z.manager && z.phase === 'ready';
@@ -273,9 +317,22 @@ export function applyOffline(state: GameState, awaySeconds: number): OfflineRepo
     seconds,
     away: awaySeconds,
     capped: awaySeconds > cap,
-    coins: state.coins - before.coins,
+    coins: kept,
+    full,
     waiting,
   };
+}
+
+/**
+ * In the welcome-back dialog the player can raise the away earnings: an ad to `BALANCE.offlineAdRate`,
+ * gems to 100%. Adds only the difference to what applyOffline already gave. Returns the coins added.
+ */
+export function topUpOffline(state: GameState, rep: OfflineReport, rate: number): number {
+  const extra = Math.max(0, rep.full * Math.min(1, rate) - rep.coins);
+  state.coins += extra;
+  state.totalCoins += extra;
+  rep.coins += extra;
+  return extra;
 }
 
 /** Coins per second from zones with a manager (what you earn while away). */

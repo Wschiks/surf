@@ -12,31 +12,31 @@ Every zone (a "level" of a sport: 6 sports x 4 levels = 24 zones) has three boug
 ```
 guests          = baseGuests + capacity                    (+ skill guests)
 pricePerGuest   = tierScale^tier x (1 + priceStep x price) x milestoneMult(price) x coinMultiplier
-duration        = baseSeconds / ((1 + speedStep x speed) x speedMultiplier)
+duration        = baseSeconds x (1 - (1 - speedEnd) x speed / maxSpeed) / speedMultiplier
 incomePerSession = guests x pricePerGuest
 coinsPerSecond   = incomePerSession / duration
 ```
-with tierScale = **5**, priceStep = **0.05** (each Level up adds +5% of the *base* price, i.e. linear, not compounding), speedStep = **0.02** (each Faster turnover adds +2% of base speed).
+with tierScale = **5**, priceStep = **0.05** (each Level up adds +5% of the *base* price, i.e. linear, not compounding), speedEnd = **0.333** (every Faster turnover level takes off the same number of seconds; at the top level a session takes 1/3 of its base time).
 
 So the three stats are **multiplicative with each other** but each one is **linear in its own level**:
-`coinsPerSecond = tierScale^tier x (baseGuests + capacity) x (1 + 0.05 x price) x milestoneMult(price) x (1 + 0.02 x speed) / baseSeconds`
+`coinsPerSecond = tierScale^tier x (baseGuests + capacity) x (1 + 0.05 x price) x milestoneMult(price) / (baseSeconds x (1 - (2/3) x speed / 100))`
 
 ### Cost of an upgrade
 ```
 cost(stat, level) = baseCost(stat) x costScale^tier x growth(stat)^level x (1 + surge(stat) x level) x (1 - discount)
 ```
-costScale = **8.3** (bigger than tierScale = 5 on purpose: each tier earns 5x more but costs 8.3x more, so higher tiers are slower to climb, a factor 1.66 per tier). `level` is the number already bought, so the first purchase uses level 0. Discounts come from skills and are capped at 70%.
+costScale = **7.85** (bigger than tierScale = 5 on purpose: each tier earns 5x more but costs 7.85x more, so higher tiers are slower to climb, a factor 1.57 per tier). `level` is the number already bought, so the first purchase uses level 0. Discounts come from skills and are capped at 70%.
 
 | stat | UI name | baseCost | growth (per level) | surge | max level | effect of one level |
 |---|---|---|---|---|---|---|
 | price | Level up | 6 | x1.03 | 0 | 1000 | +5% of base price per guest (linear) |
-| capacity | Bigger class | 25 | x2.5 | 0.06 | 40 | +1 guest |
-| speed | Faster turnover | 80 | x1.085 | 0.1 | 100 | +2% of base speed (session time = base / (1 + 0.02 x level)) |
+| capacity | Bigger class | 25 | x3 | 0 | 10 | +1 guest |
+| speed | Faster turnover | 80 | x1.336 | 0 | 100 | -0.67% of the base time per level, the same every level |
 
 What that means, in words:
 * **Level up** is the cheap, long ladder: cost grows only 3% per level (level 100 costs 19.2x the first level, level 1000 6.67Tx) while every level adds the same flat +5% of the base price. It is the "always something to buy" engine of the game and the only stat with a deep ladder (max 1000) and milestone bonuses.
-* **Bigger class** costs **x2.5 per level** (plus a small surge): level 10 costs 15.3Kx the first level, level 25 22.2Bx. One more guest is worth 1/(baseGuests + capacity) of the income, so the very first one is the best deal in the game (+33% on 3 guests) and every next one is dearer *and* worth less. Realistically a player buys a couple of dozen per zone, and only once the coins are huge (the bot ends with 13-30).
-* **Faster turnover** compounds x1.085 per level with a surge of 0.1 per level on top (level 50 costs 354.5x the first level, level 100 -x). Its base cost (80) is the highest, so it is the last of the three to be worth buying early, but each level is +2% of base speed forever and it reaches a **hard cap at level 100: sessions take 1/3 of the base time (x3 faster)**. The bot maxes it in every zone.
+* **Bigger class** costs **x3 per level** (plus a small surge): level 10 costs -x the first level, level 25 -x. One more guest is worth 1/(baseGuests + capacity) of the income, so the very first one is the best deal in the game (+33% on 3 guests) and every next one is dearer *and* worth less. Realistically a player buys a couple of dozen per zone, and only once the coins are huge (the bot ends with 13-30).
+* **Faster turnover** compounds x1.336 per level with a surge of 0 per level on top (level 50 costs 1.95Mx the first level, level 100 -x). Its base cost (80) is the highest, so it is the last of the three to be worth buying early, every level takes the same number of seconds off and it reaches a **hard cap at level 100: sessions take 1/3 of the base time (x3 faster)**. The bot maxes it in every zone.
 
 ### Level-up milestones (bonus multiplier on the income of that zone)
 | at Level up level | multiplier | cumulative |
@@ -60,15 +60,15 @@ Level 2/3/4 of a sport also need **12 / 30 / 60 upgrade levels** bought on the l
 
 ### Worked example (Wave surfing, Beginner class, tier 0)
 Start: 3 guests x 1 coins = **3** per session, 6 s per session = **0.5 coins/s**.
-After 2 Bigger class, 10 Level up, 5 Faster turnover (cost 736.6 coins in total): guests = 3 + 2 = 5; price per guest = 5^0 x (1 + 0.05 x 10) = 1.5; session = 6 / (1 + 0.02 x 5) = 5.5 s; income = 5 x 1.5 = 7.5; **1.38 coins/s** (2.75x the start).
+After 2 Bigger class, 10 Level up, 5 Faster turnover (cost 944.2 coins in total): guests = 3 + 2 = 5; price per guest = 5^0 x (1 + 0.05 x 10) = 1.5; session = 6 x (1 - (2/3) x 5 / 100) = 5.8 s; income = 5 x 1.5 = 7.5; **1.29 coins/s** (2.59x the start).
 
 ## 2. Progression rules that make the numbers matter
 
 * Sports and levels get **more expensive by tier** (`costScale^tier`) but also **earn more** (`tierScale^tier`). A tier is a "rung" of the whole game; every zone has one (0 for Beginner class up to 11.8 for the Offshore regatta).
-* **Expansion 1 and 2** need Level 4 of every sport in the open areas and reset coins, zones, upgrades and beach buildings, but give **income x3 each, for good**, and open the next area (Sea, then Ocean). Skills stay. Expansions no longer pay skill points (gems come from quests only).
+* **Expansion 1 and 2** need Level 4 of every sport in the open areas and reset coins, zones, upgrades and beach buildings, but add **+1 to the income bonus each, for good** (x1, x2, x3), and open the next area (Sea, then Ocean). Skills stay. Expansions no longer pay skill points (gems come from quests only).
 ```
-expansion 1: opens sea, needs Level 4 of every open sport, costs 220M coins, income x3
-expansion 2: opens ocean, needs Level 4 of every open sport, costs 700B coins, income x3
+expansion 1: opens sea, needs Level 4 of every open sport, costs 160M coins, income bonus +1
+expansion 2: opens ocean, needs Level 4 of every open sport, costs 400B coins, income bonus +1
 ```
 * The **balance bot** (`scripts/simulate.ts`, an active but patient player who taps every waiting zone and always buys the best payback) is the referee. Target: the whole game in roughly 4-14 hours. Whenever a number in this document changes, re-run it.
 
@@ -78,16 +78,16 @@ Every sport uses exactly the same formulas. What makes a sport different is its 
 
 ### Wave surfing
 
-Area **wave**. Open from the start. The four levels sit on tiers 0 / 1.6 / 3.2 / 4.8: each next level earns 13.1x and costs 29.5x per tier step of the first gap.
+Area **wave**. Open from the start. The four levels sit on tiers 0 / 1.6 / 3.2 / 4.8: each next level earns 13.1x and costs 27x per tier step of the first gap.
 
 | zone | tier | guests x sec | income/session | coins/s at start | manager | unlock coins | needs upgrades on previous level | coins/s with 10 cap, 50 price, 25 speed | its cost |
 |---|---|---|---|---|---|---|---|---|---|
-| Beginner class (wave-1) | 0 | 3 x 6s | 3 | 0.5 | 60 | free | - | 15 | 255K |
-| Longboarders (wave-2) | 1.6 | 4 x 8s | 52.5 | 6.57 | 1.77K | 270 | 12 | 159.3 | 7.55M |
-| Reef (wave-3) | 3.2 | 3 x 10s | 517.4 | 51.7 | 52.4K | 180K | 30 | 1.55K | 223M |
-| Nazaré (wave-4) | 4.8 | 2 x 12s | 4.53K | 377.5 | 1.55M | 12.0M | 60 | 15.7K | 6.59B |
+| Beginner class (wave-1) | 0 | 3 x 6s | 3 | 0.5 | 60 | free | - | 12 | 1.07M |
+| Longboarders (wave-2) | 1.6 | 4 x 8s | 52.5 | 6.57 | 1.62K | 240 | 12 | 127.4 | 28.9M |
+| Reef (wave-3) | 3.2 | 3 x 10s | 517.4 | 51.7 | 43.8K | 150K | 30 | 1.24K | 782M |
+| Nazaré (wave-4) | 4.8 | 2 x 12s | 4.53K | 377.5 | 1.18M | 8.90M | 60 | 12.6K | 21.1B |
 
-First buy in Beginner class: Capacity pays back in 2.5 min, Level up pays back in 4 min, Speed pays back in 2.2 h. So the opening move is **Capacity**.
+First buy in Beginner class: Capacity pays back in 2.5 min, Level up pays back in 4 min, Speed pays back in 6.6 h. So the opening move is **Capacity**.
 
 #### Wave surfing, level 1: Beginner class (tier 0)
 
@@ -101,858 +101,786 @@ Base 3 guests, 6 s, tierScale^0 = 1 coins per guest, cost factor costScale^0 = 1
 | Level up (price per guest) | 100 | 3.64K | 115.3 | 62.4 | 6 s | 10.4 | +0.8% |
 | Level up (price per guest) | 200 | 73.7K | 2.22K | 228.7 | 6 s | 38.1 | +0.5% |
 | Level up (price per guest) | 500 | 524M | 15.7M | 4.32K | 6 s | 720.7 | +0.2% |
-| Level up (price per guest) | 1000 | 1.37Qa | - | 271K | 6 s | 45.2K | max |
-| Bigger class (guests) | 5 | 1.94K | 3.17K | 8 | 6 s | 1.33 | +12.5% |
-| Bigger class (guests) | 10 | 238K | 381K | 13 | 6 s | 2.17 | +7.7% |
-| Bigger class (guests) | 20 | 3.18B | 5.00B | 23 | 6 s | 3.83 | +4.3% |
-| Bigger class (guests) | 30 | 39.0T | 60.7T | 33 | 6 s | 5.5 | +3.0% |
-| Bigger class (guests) | 40 | 455Qa | - | 43 | 6 s | 7.17 | max |
-| Faster turnover (session time) | 10 | 1.80K | 361.8 | 3 | 5 s | 0.6 | +1.7% |
-| Faster turnover (session time) | 25 | 16.3K | 2.15K | 3 | 4 s | 0.75 | +1.3% |
-| Faster turnover (session time) | 50 | 263K | 28.4K | 3 | 3 s | 1 | +1.0% |
-| Faster turnover (session time) | 100 | 32.0M | - | 3 | 2 s | 1.5 | max |
+| Level up (price per guest) | 1000 | 1.37aa | - | 271K | 6 s | 45.2K | max |
+| Bigger class (guests) | 5 | 3.02K | 6.08K | 8 | 6 s | 1.33 | +12.5% |
+| Bigger class (guests) | 10 | 738K | - | 13 | 6 s | 2.17 | max |
+| Faster turnover (session time) | 10 | 4.08K | 1.45K | 3 | 5.6 s | 0.54 | +0.7% |
+| Faster turnover (session time) | 25 | 332K | 112K | 3 | 5 s | 0.6 | +0.8% |
+| Faster turnover (session time) | 50 | 465M | 156M | 3 | 4 s | 0.75 | +1.0% |
+| Faster turnover (session time) | 100 | 907T | - | 3 | 2 s | 1.5 | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 67.6 coins/s, 258K coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 54.1 coins/s, 1.07M coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 115.3 | 68.1 | +0.8% | 3.4 min |
-| Bigger class (guests) | 381K | 72.8 | +7.7% | 20.4 h |
-| Faster turnover (session time) | 2.15K | 68.5 | +1.3% | 39.8 min |
+| Level up (price per guest) | 115.3 | 54.5 | +0.8% | 4.3 min |
+| Bigger class (guests) | - | 58.2 | +7.7% | - |
+| Faster turnover (session time) | 112K | 54.5 | +0.8% | 3 days |
 
-Everything maxed (100 / 1000 / 100): 43 guests x 90.5K = 3.89M per 2 s = **1.95M coins/s**, for 456Qa coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 13 guests x 90.5K = 1.18M per 2 s = **588K coins/s**, for 2.28aa coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 #### Wave surfing, level 2: Longboarders (tier 1.6)
 
-Base 4 guests, 8 s, tierScale^1.6 = 13.1 coins per guest, cost factor costScale^1.6 = 29.5. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 4 guests, 8 s, tierScale^1.6 = 13.1 coins per guest, cost factor costScale^1.6 = 27. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 2.03K | 238.3 | 78.8 | 8 s | 9.85 | +3.3% |
-| Level up (price per guest) | 25 | 6.46K | 371.2 | 130 | 8 s | 16.3 | +2.2% |
-| Level up (price per guest) | 50 | 20.0K | 777.2 | 242.7 | 8 s | 30.3 | +1.4% |
-| Level up (price per guest) | 100 | 108K | 3.41K | 1.09K | 8 s | 136.5 | +0.8% |
-| Level up (price per guest) | 200 | 2.18M | 65.5K | 4.00K | 8 s | 500.6 | +0.5% |
-| Level up (price per guest) | 500 | 15.5B | 465M | 75.7K | 8 s | 9.46K | +0.2% |
-| Level up (price per guest) | 1000 | 40.6Qa | - | 4.75M | 8 s | 594K | max |
-| Bigger class (guests) | 5 | 57.3K | 93.8K | 118.2 | 8 s | 14.8 | +11.1% |
-| Bigger class (guests) | 10 | 7.04M | 11.3M | 183.9 | 8 s | 23 | +7.1% |
-| Bigger class (guests) | 20 | 94.1B | 148B | 315.2 | 8 s | 39.4 | +4.2% |
-| Bigger class (guests) | 30 | 1.15Qa | 1.79Qa | 446.5 | 8 s | 55.8 | +2.9% |
-| Bigger class (guests) | 40 | 13.4Qi | - | 577.8 | 8 s | 72.2 | max |
-| Faster turnover (session time) | 10 | 53.2K | 10.7K | 52.5 | 6.7 s | 7.88 | +1.7% |
-| Faster turnover (session time) | 25 | 483K | 63.6K | 52.5 | 5.3 s | 9.85 | +1.3% |
-| Faster turnover (session time) | 50 | 7.77M | 838K | 52.5 | 4 s | 13.1 | +1.0% |
-| Faster turnover (session time) | 100 | 944M | - | 52.5 | 2.7 s | 19.7 | max |
+| Level up (price per guest) | 10 | 1.86K | 217.9 | 78.8 | 8 s | 9.85 | +3.3% |
+| Level up (price per guest) | 25 | 5.91K | 339.5 | 130 | 8 s | 16.3 | +2.2% |
+| Level up (price per guest) | 50 | 18.3K | 710.9 | 242.7 | 8 s | 30.3 | +1.4% |
+| Level up (price per guest) | 100 | 98.5K | 3.12K | 1.09K | 8 s | 136.5 | +0.8% |
+| Level up (price per guest) | 200 | 1.99M | 59.9K | 4.00K | 8 s | 500.6 | +0.5% |
+| Level up (price per guest) | 500 | 14.2B | 425M | 75.7K | 8 s | 9.46K | +0.2% |
+| Level up (price per guest) | 1000 | 37.2aa | - | 4.75M | 8 s | 594K | max |
+| Bigger class (guests) | 5 | 81.8K | 164K | 118.2 | 8 s | 14.8 | +11.1% |
+| Bigger class (guests) | 10 | 19.9M | - | 183.9 | 8 s | 23 | max |
+| Faster turnover (session time) | 10 | 110K | 39.2K | 52.5 | 7.5 s | 7.04 | +0.7% |
+| Faster turnover (session time) | 25 | 8.98M | 3.02M | 52.5 | 6.7 s | 7.88 | +0.8% |
+| Faster turnover (session time) | 50 | 12.6B | 4.22B | 52.5 | 5.3 s | 9.85 | +1.0% |
+| Faster turnover (session time) | 100 | 24.5aa | - | 52.5 | 2.7 s | 19.7 | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 716.7 coins/s, 7.63M coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 573.4 coins/s, 29.0M coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 3.41K | 722.7 | +0.8% | 9.5 min |
-| Bigger class (guests) | 11.3M | 767.9 | +7.1% | 2.5 days |
-| Faster turnover (session time) | 63.6K | 726.3 | +1.3% | 1.8 h |
+| Level up (price per guest) | 3.12K | 578.1 | +0.8% | 10.9 min |
+| Bigger class (guests) | - | 614.3 | +7.1% | - |
+| Faster turnover (session time) | 3.02M | 578 | +0.8% | 7.6 days |
 
-Everything maxed (100 / 1000 / 100): 44 guests x 1.19M = 52.3M per 2.7 s = **19.6M coins/s**, for 13.5Qi coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 14 guests x 1.19M = 16.6M per 2.7 s = **6.24M coins/s**, for 61.7aa coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 #### Wave surfing, level 3: Reef (tier 3.2)
 
-Base 3 guests, 10 s, tierScale^3.2 = 172.5 coins per guest, cost factor costScale^3.2 = 873.1. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 3 guests, 10 s, tierScale^3.2 = 172.5 coins per guest, cost factor costScale^3.2 = 730.4. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 60.1K | 7.04K | 776.1 | 10 s | 77.6 | +3.3% |
-| Level up (price per guest) | 25 | 191K | 11.0K | 1.28K | 10 s | 128.1 | +2.2% |
-| Level up (price per guest) | 50 | 591K | 23.0K | 2.39K | 10 s | 239 | +1.4% |
-| Level up (price per guest) | 100 | 3.18M | 101K | 10.8K | 10 s | 1.08K | +0.8% |
-| Level up (price per guest) | 200 | 64.3M | 1.93M | 39.4K | 10 s | 3.94K | +0.5% |
-| Level up (price per guest) | 500 | 458B | 13.7B | 746K | 10 s | 74.6K | +0.2% |
-| Level up (price per guest) | 1000 | 1.20Qi | - | 46.8M | 10 s | 4.68M | max |
-| Bigger class (guests) | 5 | 1.69M | 2.77M | 1.38K | 10 s | 138 | +12.5% |
-| Bigger class (guests) | 10 | 208M | 333M | 2.24K | 10 s | 224.2 | +7.7% |
-| Bigger class (guests) | 20 | 2.78T | 4.37T | 3.97K | 10 s | 396.7 | +4.3% |
-| Bigger class (guests) | 30 | 34.1Qa | 53.0Qa | 5.69K | 10 s | 569.1 | +3.0% |
-| Bigger class (guests) | 40 | 397Qi | - | 7.42K | 10 s | 741.6 | max |
-| Faster turnover (session time) | 10 | 1.57M | 316K | 517.4 | 8.3 s | 62.1 | +1.7% |
-| Faster turnover (session time) | 25 | 14.3M | 1.88M | 517.4 | 6.7 s | 77.6 | +1.3% |
-| Faster turnover (session time) | 50 | 230M | 24.8M | 517.4 | 5 s | 103.5 | +1.0% |
-| Faster turnover (session time) | 100 | 27.9B | - | 517.4 | 3.3 s | 155.2 | max |
+| Level up (price per guest) | 10 | 50.2K | 5.89K | 776.1 | 10 s | 77.6 | +3.3% |
+| Level up (price per guest) | 25 | 160K | 9.18K | 1.28K | 10 s | 128.1 | +2.2% |
+| Level up (price per guest) | 50 | 494K | 19.2K | 2.39K | 10 s | 239 | +1.4% |
+| Level up (price per guest) | 100 | 2.66M | 84.2K | 10.8K | 10 s | 1.08K | +0.8% |
+| Level up (price per guest) | 200 | 53.8M | 1.62M | 39.4K | 10 s | 3.94K | +0.5% |
+| Level up (price per guest) | 500 | 383B | 11.5B | 746K | 10 s | 74.6K | +0.2% |
+| Level up (price per guest) | 1000 | 1.00bb | - | 46.8M | 10 s | 4.68M | max |
+| Bigger class (guests) | 5 | 2.21M | 4.44M | 1.38K | 10 s | 138 | +12.5% |
+| Bigger class (guests) | 10 | 539M | - | 2.24K | 10 s | 224.2 | max |
+| Faster turnover (session time) | 10 | 2.98M | 1.06M | 517.4 | 9.3 s | 55.4 | +0.7% |
+| Faster turnover (session time) | 25 | 243M | 81.6M | 517.4 | 8.3 s | 62.1 | +0.8% |
+| Faster turnover (session time) | 50 | 339B | 114B | 517.4 | 6.7 s | 77.6 | +1.0% |
+| Faster turnover (session time) | 100 | 662aa | - | 517.4 | 3.3 s | 155.2 | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 6.99K coins/s, 226M coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 5.59K coins/s, 785M coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 101K | 7.05K | +0.8% | 28.8 min |
-| Bigger class (guests) | 333M | 7.53K | +7.7% | 7.2 days |
-| Faster turnover (session time) | 1.88M | 7.09K | +1.3% | 5.6 h |
+| Level up (price per guest) | 84.2K | 5.64K | +0.8% | 30.1 min |
+| Bigger class (guests) | - | 6.02K | +7.7% | - |
+| Faster turnover (session time) | 81.6M | 5.64K | +0.8% | 20.9 days |
 
-Everything maxed (100 / 1000 / 100): 43 guests x 15.6M = 671M per 3.3 s = **201M coins/s**, for 398Qi coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 13 guests x 15.6M = 203M per 3.3 s = **60.9M coins/s**, for 1.67bb coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 #### Wave surfing, level 4: Nazaré (tier 4.8)
 
-Base 2 guests, 12 s, tierScale^4.8 = 2.26K coins per guest, cost factor costScale^4.8 = 25.8K. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 2 guests, 12 s, tierScale^4.8 = 2.26K coins per guest, cost factor costScale^4.8 = 19.7K. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 1.77M | 208K | 6.79K | 12 s | 566.2 | +3.3% |
-| Level up (price per guest) | 25 | 5.64M | 324K | 11.2K | 12 s | 934.3 | +2.2% |
-| Level up (price per guest) | 50 | 17.5M | 679K | 20.9K | 12 s | 1.74K | +1.4% |
-| Level up (price per guest) | 100 | 94.0M | 2.97M | 94.2K | 12 s | 7.85K | +0.8% |
-| Level up (price per guest) | 200 | 1.90B | 57.2M | 345K | 12 s | 28.8K | +0.5% |
-| Level up (price per guest) | 500 | 13.5T | 406B | 6.53M | 12 s | 544K | +0.2% |
-| Level up (price per guest) | 1000 | 35.5Qi | - | 410M | 12 s | 34.2M | max |
-| Bigger class (guests) | 5 | 50.0M | 81.9M | 15.9K | 12 s | 1.32K | +14.3% |
-| Bigger class (guests) | 10 | 6.15B | 9.84B | 27.2K | 12 s | 2.26K | +8.3% |
-| Bigger class (guests) | 20 | 82.1T | 129T | 49.8K | 12 s | 4.15K | +4.5% |
-| Bigger class (guests) | 30 | 1.01Qi | 1.57Qi | 72.5K | 12 s | 6.04K | +3.1% |
-| Bigger class (guests) | 40 | 11.7Sx | - | 95.1K | 12 s | 7.93K | max |
-| Faster turnover (session time) | 10 | 46.4M | 9.33M | 4.53K | 10 s | 453 | +1.7% |
-| Faster turnover (session time) | 25 | 422M | 55.5M | 4.53K | 8 s | 566.2 | +1.3% |
-| Faster turnover (session time) | 50 | 6.78B | 732M | 4.53K | 6 s | 755 | +1.0% |
-| Faster turnover (session time) | 100 | 824B | - | 4.53K | 4 s | 1.13K | max |
+| Level up (price per guest) | 10 | 1.36M | 159K | 6.79K | 12 s | 566.2 | +3.3% |
+| Level up (price per guest) | 25 | 4.32M | 248K | 11.2K | 12 s | 934.3 | +2.2% |
+| Level up (price per guest) | 50 | 13.4M | 519K | 20.9K | 12 s | 1.74K | +1.4% |
+| Level up (price per guest) | 100 | 71.9M | 2.28M | 94.2K | 12 s | 7.85K | +0.8% |
+| Level up (price per guest) | 200 | 1.45B | 43.7M | 345K | 12 s | 28.8K | +0.5% |
+| Level up (price per guest) | 500 | 10.4T | 311B | 6.53M | 12 s | 544K | +0.2% |
+| Level up (price per guest) | 1000 | 27.1bb | - | 410M | 12 s | 34.2M | max |
+| Bigger class (guests) | 5 | 59.7M | 120M | 15.9K | 12 s | 1.32K | +14.3% |
+| Bigger class (guests) | 10 | 14.6B | - | 27.2K | 12 s | 2.26K | max |
+| Faster turnover (session time) | 10 | 80.5M | 28.6M | 4.53K | 11.2 s | 404.5 | +0.7% |
+| Faster turnover (session time) | 25 | 6.56B | 2.21B | 4.53K | 10 s | 453 | +0.8% |
+| Faster turnover (session time) | 50 | 9.17T | 3.08T | 4.53K | 8 s | 566.2 | +1.0% |
+| Faster turnover (session time) | 100 | 17.9bb | - | 4.53K | 4 s | 1.13K | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 70.6K coins/s, 6.67B coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 56.5K coins/s, 21.2B coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 2.97M | 71.2K | +0.8% | 84.2 min |
-| Bigger class (guests) | 9.84B | 76.5K | +8.3% | 19.4 days |
-| Faster turnover (session time) | 55.5M | 71.6K | +1.3% | 16.4 h |
+| Level up (price per guest) | 2.28M | 57.0K | +0.8% | 80.6 min |
+| Bigger class (guests) | - | 61.2K | +8.3% | - |
+| Faster turnover (session time) | 2.21B | 57.0K | +0.8% | 56 days |
 
-Everything maxed (100 / 1000 / 100): 42 guests x 205M = 8.61B per 4 s = **2.15B coins/s**, for 11.8Sx coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 12 guests x 205M = 2.46B per 4 s = **615M coins/s**, for 45.0bb coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 ### Skimboarding
 
-Area **wave**. Unlock: own **Level 2 of Wave surfing** and pay **5.30K** coins (after the beach expansion that opens its area it is open from the start). The four levels sit on tiers 0.4 / 1.4 / 2.6 / 4: each next level earns 5x and costs 8.3x per tier step of the first gap.
+Area **wave**. Unlock: own **Level 2 of Wave surfing** and pay **810** coins (after the beach expansion that opens its area it is open from the start). The four levels sit on tiers 0.4 / 1.4 / 2.6 / 4: each next level earns 5x and costs 7.85x per tier step of the first gap.
 
 | zone | tier | guests x sec | income/session | coins/s at start | manager | unlock coins | needs upgrades on previous level | coins/s with 10 cap, 50 price, 25 speed | its cost |
 |---|---|---|---|---|---|---|---|---|---|
-| Shallows (skimboarding-1) | 0.4 | 4 x 7s | 7.61 | 1.09 | 140 | 5.30K | - | 26.4 | 596K |
-| Flatland (skimboarding-2) | 1.4 | 4 x 8s | 38.1 | 4.76 | 1.16K | 1.50K | 12 | 115.4 | 4.94M |
-| Shore break (skimboarding-3) | 2.6 | 3 x 9s | 197 | 21.9 | 14.7K | 52.0K | 30 | 657.3 | 62.6M |
-| Big shore break (skimboarding-4) | 4 | 2 x 11s | 1.25K | 113.6 | 285K | 2.10M | 60 | 4.72K | 1.21B |
+| Shallows (skimboarding-1) | 0.4 | 4 x 7s | 7.61 | 1.09 | 137 | 810 | - | 21.1 | 2.44M |
+| Flatland (skimboarding-2) | 1.4 | 4 x 8s | 38.1 | 4.76 | 1.07K | 1.30K | 12 | 92.3 | 19.2M |
+| Shore break (skimboarding-3) | 2.6 | 3 x 9s | 197 | 21.9 | 12.7K | 45.0K | 30 | 525.8 | 227M |
+| Big shore break (skimboarding-4) | 4 | 2 x 11s | 1.25K | 113.6 | 228K | 1.70M | 60 | 3.78K | 4.07B |
 
-First buy in Shallows: Capacity pays back in 3.6 min, Level up pays back in 4.3 min, Speed pays back in 2.4 h. So the opening move is **Capacity**.
+First buy in Shallows: Capacity pays back in 3.5 min, Level up pays back in 4.2 min, Speed pays back in 6.9 h. So the opening move is **Capacity**.
 
 #### Skimboarding, level 1: Shallows (tier 0.4)
 
-Base 4 guests, 7 s, tierScale^0.4 = 1.9 coins per guest, cost factor costScale^0.4 = 2.33. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 4 guests, 7 s, tierScale^0.4 = 1.9 coins per guest, cost factor costScale^0.4 = 2.28. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 160.4 | 18.8 | 11.4 | 7 s | 1.63 | +3.3% |
-| Level up (price per guest) | 25 | 510.1 | 29.3 | 18.8 | 7 s | 2.69 | +2.2% |
-| Level up (price per guest) | 50 | 1.58K | 61.3 | 35.2 | 7 s | 5.03 | +1.4% |
-| Level up (price per guest) | 100 | 8.50K | 268.9 | 158.3 | 7 s | 22.6 | +0.8% |
-| Level up (price per guest) | 200 | 172K | 5.17K | 580.5 | 7 s | 82.9 | +0.5% |
-| Level up (price per guest) | 500 | 1.22B | 36.7M | 11.0K | 7 s | 1.57K | +0.2% |
-| Level up (price per guest) | 1000 | 3.21Qa | - | 689K | 7 s | 98.4K | max |
-| Bigger class (guests) | 5 | 4.52K | 7.40K | 17.1 | 7 s | 2.45 | +11.1% |
-| Bigger class (guests) | 10 | 556K | 889K | 26.7 | 7 s | 3.81 | +7.1% |
-| Bigger class (guests) | 20 | 7.42B | 11.7B | 45.7 | 7 s | 6.53 | +4.2% |
-| Bigger class (guests) | 30 | 91.0T | 142T | 64.7 | 7 s | 9.25 | +2.9% |
-| Bigger class (guests) | 40 | 1.06Qi | - | 83.8 | 7 s | 12 | max |
-| Faster turnover (session time) | 10 | 4.20K | 843.4 | 7.61 | 5.8 s | 1.31 | +1.7% |
-| Faster turnover (session time) | 25 | 38.1K | 5.02K | 7.61 | 4.7 s | 1.63 | +1.3% |
-| Faster turnover (session time) | 50 | 613K | 66.1K | 7.61 | 3.5 s | 2.18 | +1.0% |
-| Faster turnover (session time) | 100 | 74.5M | - | 7.61 | 2.3 s | 3.26 | max |
+| Level up (price per guest) | 10 | 156.9 | 18.4 | 11.4 | 7 s | 1.63 | +3.3% |
+| Level up (price per guest) | 25 | 498.9 | 28.7 | 18.8 | 7 s | 2.69 | +2.2% |
+| Level up (price per guest) | 50 | 1.54K | 60 | 35.2 | 7 s | 5.03 | +1.4% |
+| Level up (price per guest) | 100 | 8.31K | 262.9 | 158.3 | 7 s | 22.6 | +0.8% |
+| Level up (price per guest) | 200 | 168K | 5.05K | 580.5 | 7 s | 82.9 | +0.5% |
+| Level up (price per guest) | 500 | 1.20B | 35.9M | 11.0K | 7 s | 1.57K | +0.2% |
+| Level up (price per guest) | 1000 | 3.13aa | - | 689K | 7 s | 98.4K | max |
+| Bigger class (guests) | 5 | 6.90K | 13.9K | 17.1 | 7 s | 2.45 | +11.1% |
+| Bigger class (guests) | 10 | 1.68M | - | 26.7 | 7 s | 3.81 | max |
+| Faster turnover (session time) | 10 | 9.29K | 3.30K | 7.61 | 6.5 s | 1.17 | +0.7% |
+| Faster turnover (session time) | 25 | 758K | 255K | 7.61 | 5.8 s | 1.31 | +0.8% |
+| Faster turnover (session time) | 50 | 1.06B | 356M | 7.61 | 4.7 s | 1.63 | +1.0% |
+| Faster turnover (session time) | 100 | 2.07aa | - | 7.61 | 2.3 s | 3.26 | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 118.7 coins/s, 602K coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 95 coins/s, 2.45M coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 268.9 | 119.7 | +0.8% | 4.5 min |
-| Bigger class (guests) | 889K | 127.2 | +7.1% | 29.1 h |
-| Faster turnover (session time) | 5.02K | 120.3 | +1.3% | 52.8 min |
+| Level up (price per guest) | 262.9 | 95.8 | +0.8% | 5.5 min |
+| Bigger class (guests) | - | 101.8 | +7.1% | - |
+| Faster turnover (session time) | 255K | 95.8 | +0.8% | 3.8 days |
 
-Everything maxed (100 / 1000 / 100): 44 guests x 172K = 7.58M per 2.3 s = **3.25M coins/s**, for 1.06Qi coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 14 guests x 172K = 2.41M per 2.3 s = **1.03M coins/s**, for 5.20aa coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 #### Skimboarding, level 2: Flatland (tier 1.4)
 
-Base 4 guests, 8 s, tierScale^1.4 = 9.52 coins per guest, cost factor costScale^1.4 = 19.4. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 4 guests, 8 s, tierScale^1.4 = 9.52 coins per guest, cost factor costScale^1.4 = 17.9. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 1.33K | 156 | 57.1 | 8 s | 7.14 | +3.3% |
-| Level up (price per guest) | 25 | 4.23K | 243.1 | 94.2 | 8 s | 11.8 | +2.2% |
-| Level up (price per guest) | 50 | 13.1K | 509 | 175.9 | 8 s | 22 | +1.4% |
-| Level up (price per guest) | 100 | 70.5K | 2.23K | 791.5 | 8 s | 98.9 | +0.8% |
-| Level up (price per guest) | 200 | 1.43M | 42.9K | 2.90K | 8 s | 362.8 | +0.5% |
-| Level up (price per guest) | 500 | 10.1B | 304M | 54.9K | 8 s | 6.86K | +0.2% |
-| Level up (price per guest) | 1000 | 26.6Qa | - | 3.44M | 8 s | 431K | max |
-| Bigger class (guests) | 5 | 37.5K | 61.4K | 85.7 | 8 s | 10.7 | +11.1% |
-| Bigger class (guests) | 10 | 4.61M | 7.38M | 133.3 | 8 s | 16.7 | +7.1% |
-| Bigger class (guests) | 20 | 61.6B | 96.8B | 228.4 | 8 s | 28.6 | +4.2% |
-| Bigger class (guests) | 30 | 755T | 1.17Qa | 323.6 | 8 s | 40.5 | +2.9% |
-| Bigger class (guests) | 40 | 8.80Qi | - | 418.8 | 8 s | 52.4 | max |
-| Faster turnover (session time) | 10 | 34.8K | 7.00K | 38.1 | 6.7 s | 5.71 | +1.7% |
-| Faster turnover (session time) | 25 | 316K | 41.6K | 38.1 | 5.3 s | 7.14 | +1.3% |
-| Faster turnover (session time) | 50 | 5.09M | 549K | 38.1 | 4 s | 9.52 | +1.0% |
-| Faster turnover (session time) | 100 | 618M | - | 38.1 | 2.7 s | 14.3 | max |
+| Level up (price per guest) | 10 | 1.23K | 144.3 | 57.1 | 8 s | 7.14 | +3.3% |
+| Level up (price per guest) | 25 | 3.92K | 224.9 | 94.2 | 8 s | 11.8 | +2.2% |
+| Level up (price per guest) | 50 | 12.1K | 470.8 | 175.9 | 8 s | 22 | +1.4% |
+| Level up (price per guest) | 100 | 65.2K | 2.06K | 791.5 | 8 s | 98.9 | +0.8% |
+| Level up (price per guest) | 200 | 1.32M | 39.7K | 2.90K | 8 s | 362.8 | +0.5% |
+| Level up (price per guest) | 500 | 9.39B | 282M | 54.9K | 8 s | 6.86K | +0.2% |
+| Level up (price per guest) | 1000 | 24.6aa | - | 3.44M | 8 s | 431K | max |
+| Bigger class (guests) | 5 | 54.1K | 109K | 85.7 | 8 s | 10.7 | +11.1% |
+| Bigger class (guests) | 10 | 13.2M | - | 133.3 | 8 s | 16.7 | max |
+| Faster turnover (session time) | 10 | 72.9K | 25.9K | 38.1 | 7.5 s | 5.1 | +0.7% |
+| Faster turnover (session time) | 25 | 5.95M | 2.00M | 38.1 | 6.7 s | 5.71 | +0.8% |
+| Faster turnover (session time) | 50 | 8.32B | 2.79B | 38.1 | 5.3 s | 7.14 | +1.0% |
+| Faster turnover (session time) | 100 | 16.2aa | - | 38.1 | 2.7 s | 14.3 | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 519.4 coins/s, 5.00M coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 415.6 coins/s, 19.2M coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 2.23K | 523.8 | +0.8% | 8.6 min |
-| Bigger class (guests) | 7.38M | 556.6 | +7.1% | 2.3 days |
-| Faster turnover (session time) | 41.6K | 526.4 | +1.3% | 1.7 h |
+| Level up (price per guest) | 2.06K | 419 | +0.8% | 9.9 min |
+| Bigger class (guests) | - | 445.2 | +7.1% | - |
+| Faster turnover (session time) | 2.00M | 418.9 | +0.8% | 6.9 days |
 
-Everything maxed (100 / 1000 / 100): 44 guests x 861K = 37.9M per 2.7 s = **14.2M coins/s**, for 8.83Qi coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 14 guests x 861K = 12.1M per 2.7 s = **4.52M coins/s**, for 40.8aa coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 #### Skimboarding, level 3: Shore break (tier 2.6)
 
-Base 3 guests, 9 s, tierScale^2.6 = 65.7 coins per guest, cost factor costScale^2.6 = 245.2. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 3 guests, 9 s, tierScale^2.6 = 65.7 coins per guest, cost factor costScale^2.6 = 212.2. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 16.9K | 1.98K | 295.5 | 9 s | 32.8 | +3.3% |
-| Level up (price per guest) | 25 | 53.6K | 3.08K | 487.5 | 9 s | 54.2 | +2.2% |
-| Level up (price per guest) | 50 | 166K | 6.45K | 910.1 | 9 s | 101.1 | +1.4% |
-| Level up (price per guest) | 100 | 894K | 28.3K | 4.10K | 9 s | 455 | +0.8% |
-| Level up (price per guest) | 200 | 18.1M | 543K | 15.0K | 9 s | 1.67K | +0.5% |
-| Level up (price per guest) | 500 | 129B | 3.86B | 284K | 9 s | 31.5K | +0.2% |
-| Level up (price per guest) | 1000 | 337Qa | - | 17.8M | 9 s | 1.98M | max |
-| Bigger class (guests) | 5 | 475K | 778K | 525.3 | 9 s | 58.4 | +12.5% |
-| Bigger class (guests) | 10 | 58.5M | 93.6M | 853.6 | 9 s | 94.8 | +7.7% |
-| Bigger class (guests) | 20 | 781B | 1.23T | 1.51K | 9 s | 167.8 | +4.3% |
-| Bigger class (guests) | 30 | 9.57Qa | 14.9Qa | 2.17K | 9 s | 240.8 | +3.0% |
-| Bigger class (guests) | 40 | 112Qi | - | 2.82K | 9 s | 313.7 | max |
-| Faster turnover (session time) | 10 | 441K | 88.7K | 197 | 7.5 s | 26.3 | +1.7% |
-| Faster turnover (session time) | 25 | 4.01M | 528K | 197 | 6 s | 32.8 | +1.3% |
-| Faster turnover (session time) | 50 | 64.5M | 6.96M | 197 | 4.5 s | 43.8 | +1.0% |
-| Faster turnover (session time) | 100 | 7.84B | - | 197 | 3 s | 65.7 | max |
+| Level up (price per guest) | 10 | 14.6K | 1.71K | 295.5 | 9 s | 32.8 | +3.3% |
+| Level up (price per guest) | 25 | 46.4K | 2.67K | 487.5 | 9 s | 54.2 | +2.2% |
+| Level up (price per guest) | 50 | 144K | 5.58K | 910.1 | 9 s | 101.1 | +1.4% |
+| Level up (price per guest) | 100 | 773K | 24.5K | 4.10K | 9 s | 455 | +0.8% |
+| Level up (price per guest) | 200 | 15.6M | 470K | 15.0K | 9 s | 1.67K | +0.5% |
+| Level up (price per guest) | 500 | 111B | 3.34B | 284K | 9 s | 31.5K | +0.2% |
+| Level up (price per guest) | 1000 | 292aa | - | 17.8M | 9 s | 1.98M | max |
+| Bigger class (guests) | 5 | 642K | 1.29M | 525.3 | 9 s | 58.4 | +12.5% |
+| Bigger class (guests) | 10 | 157M | - | 853.6 | 9 s | 94.8 | max |
+| Faster turnover (session time) | 10 | 865K | 307K | 197 | 8.4 s | 23.5 | +0.7% |
+| Faster turnover (session time) | 25 | 70.5M | 23.7M | 197 | 7.5 s | 26.3 | +0.8% |
+| Faster turnover (session time) | 50 | 98.6B | 33.1B | 197 | 6 s | 32.8 | +1.0% |
+| Faster turnover (session time) | 100 | 192aa | - | 197 | 3 s | 65.7 | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 2.96K coins/s, 63.4M coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 2.37K coins/s, 228M coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 28.3K | 2.98K | +0.8% | 19.1 min |
-| Bigger class (guests) | 93.6M | 3.19K | +7.7% | 4.8 days |
-| Faster turnover (session time) | 528K | 3.00K | +1.3% | 3.7 h |
+| Level up (price per guest) | 24.5K | 2.39K | +0.8% | 20.7 min |
+| Bigger class (guests) | - | 2.55K | +7.7% | - |
+| Faster turnover (session time) | 23.7M | 2.39K | +0.8% | 14.4 days |
 
-Everything maxed (100 / 1000 / 100): 43 guests x 5.94M = 255M per 3 s = **85.2M coins/s**, for 112Qi coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 13 guests x 5.94M = 77.2M per 3 s = **25.7M coins/s**, for 484aa coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 #### Skimboarding, level 4: Big shore break (tier 4)
 
-Base 2 guests, 11 s, tierScale^4 = 625 coins per guest, cost factor costScale^4 = 4.75K. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 2 guests, 11 s, tierScale^4 = 625 coins per guest, cost factor costScale^4 = 3.80K. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 326K | 38.3K | 1.88K | 11 s | 170.5 | +3.3% |
-| Level up (price per guest) | 25 | 1.04M | 59.6K | 3.09K | 11 s | 281.3 | +2.2% |
-| Level up (price per guest) | 50 | 3.21M | 125K | 5.78K | 11 s | 525 | +1.4% |
-| Level up (price per guest) | 100 | 17.3M | 547K | 26.0K | 11 s | 2.36K | +0.8% |
-| Level up (price per guest) | 200 | 350M | 10.5M | 95.3K | 11 s | 8.66K | +0.5% |
-| Level up (price per guest) | 500 | 2.49T | 74.7B | 1.80M | 11 s | 164K | +0.2% |
-| Level up (price per guest) | 1000 | 6.52Qi | - | 113M | 11 s | 10.3M | max |
-| Bigger class (guests) | 5 | 9.20M | 15.1M | 4.38K | 11 s | 397.7 | +14.3% |
-| Bigger class (guests) | 10 | 1.13B | 1.81B | 7.50K | 11 s | 681.8 | +8.3% |
-| Bigger class (guests) | 20 | 15.1T | 23.7T | 13.8K | 11 s | 1.25K | +4.5% |
-| Bigger class (guests) | 30 | 185Qa | 288Qa | 20.0K | 11 s | 1.82K | +3.1% |
-| Bigger class (guests) | 40 | 2.16Sx | - | 26.3K | 11 s | 2.39K | max |
-| Faster turnover (session time) | 10 | 8.54M | 1.72M | 1.25K | 9.2 s | 136.4 | +1.7% |
-| Faster turnover (session time) | 25 | 77.6M | 10.2M | 1.25K | 7.3 s | 170.5 | +1.3% |
-| Faster turnover (session time) | 50 | 1.25B | 135M | 1.25K | 5.5 s | 227.3 | +1.0% |
-| Faster turnover (session time) | 100 | 152B | - | 1.25K | 3.7 s | 340.9 | max |
+| Level up (price per guest) | 10 | 261K | 30.6K | 1.88K | 11 s | 170.5 | +3.3% |
+| Level up (price per guest) | 25 | 831K | 47.7K | 3.09K | 11 s | 281.3 | +2.2% |
+| Level up (price per guest) | 50 | 2.57M | 99.9K | 5.78K | 11 s | 525 | +1.4% |
+| Level up (price per guest) | 100 | 13.8M | 438K | 26.0K | 11 s | 2.36K | +0.8% |
+| Level up (price per guest) | 200 | 280M | 8.42M | 95.3K | 11 s | 8.66K | +0.5% |
+| Level up (price per guest) | 500 | 1.99T | 59.7B | 1.80M | 11 s | 164K | +0.2% |
+| Level up (price per guest) | 1000 | 5.22bb | - | 113M | 11 s | 10.3M | max |
+| Bigger class (guests) | 5 | 11.5M | 23.1M | 4.38K | 11 s | 397.7 | +14.3% |
+| Bigger class (guests) | 10 | 2.80B | - | 7.50K | 11 s | 681.8 | max |
+| Faster turnover (session time) | 10 | 15.5M | 5.50M | 1.25K | 10.3 s | 121.8 | +0.7% |
+| Faster turnover (session time) | 25 | 1.26B | 424M | 1.25K | 9.2 s | 136.4 | +0.8% |
+| Faster turnover (session time) | 50 | 1.76T | 593B | 1.25K | 7.3 s | 170.5 | +1.0% |
+| Faster turnover (session time) | 100 | 3.44bb | - | 1.25K | 3.7 s | 340.9 | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 21.3K coins/s, 1.23B coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 17.0K coins/s, 4.08B coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 547K | 21.4K | +0.8% | 51.5 min |
-| Bigger class (guests) | 1.81B | 23.0K | +8.3% | 11.8 days |
-| Faster turnover (session time) | 10.2M | 21.5K | +1.3% | 10 h |
+| Level up (price per guest) | 438K | 17.2K | +0.8% | 51.5 min |
+| Bigger class (guests) | - | 18.4K | +8.3% | - |
+| Faster turnover (session time) | 424M | 17.1K | +0.8% | 35.8 days |
 
-Everything maxed (100 / 1000 / 100): 42 guests x 56.5M = 2.38B per 3.7 s = **648M coins/s**, for 2.17Sx coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 12 guests x 56.5M = 679M per 3.7 s = **185M coins/s**, for 8.66bb coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 ### Windsurfing
 
-Area **sea**. Unlock: own **Level 2 of Skimboarding** and pay **2.00M** coins (after the beach expansion that opens its area it is open from the start). The four levels sit on tiers 4.4 / 5.4 / 6.6 / 7.8: each next level earns 5x and costs 8.3x per tier step of the first gap.
+Area **sea**. Unlock: own **Level 2 of Skimboarding** and pay **1.60M** coins (after the beach expansion that opens its area it is open from the start). The four levels sit on tiers 4.4 / 5.4 / 6.6 / 7.8: each next level earns 5x and costs 7.85x per tier step of the first gap.
 
 | zone | tier | guests x sec | income/session | coins/s at start | manager | unlock coins | needs upgrades on previous level | coins/s with 10 cap, 50 price, 25 speed | its cost |
 |---|---|---|---|---|---|---|---|---|---|
-| Beginner class (windsurfing-1) | 4.4 | 4 x 7s | 4.76K | 679.9 | 664K | 2.00M | - | 16.5K | 2.83B |
-| Freeride (windsurfing-2) | 5.4 | 4 x 8s | 23.8K | 2.97K | 5.51M | 6.90M | 12 | 72.1K | 23.5B |
-| Speed and freestyle (windsurfing-3) | 6.6 | 3 x 9s | 123K | 13.7K | 69.8M | 240M | 30 | 411K | 297B |
-| Wave zone (windsurfing-4) | 7.8 | 2 x 11s | 566K | 51.5K | 885M | 6.60B | 60 | 2.14M | 3.77T |
+| Beginner class (windsurfing-1) | 4.4 | 4 x 7s | 4.76K | 679.9 | 519K | 1.60M | - | 13.2K | 9.27B |
+| Freeride (windsurfing-2) | 5.4 | 4 x 8s | 23.8K | 2.97K | 4.08M | 5.10M | 12 | 57.7K | 72.8B |
+| Speed and freestyle (windsurfing-3) | 6.6 | 3 x 9s | 123K | 13.7K | 48.3M | 170M | 30 | 329K | 863B |
+| Wave zone (windsurfing-4) | 7.8 | 2 x 11s | 566K | 51.5K | 573M | 4.30B | 60 | 1.71M | 10.2T |
 
-First buy in Beginner class: Capacity pays back in 27.1 min, Level up pays back in 32.5 min, Speed pays back in 18.1 h. So the opening move is **Capacity**.
+First buy in Beginner class: Capacity pays back in 21.2 min, Level up pays back in 25.5 min, Speed pays back in 42.2 h. So the opening move is **Capacity**.
 
 #### Windsurfing, level 1: Beginner class (tier 4.4)
 
-Base 4 guests, 7 s, tierScale^4.4 = 1.19K coins per guest, cost factor costScale^4.4 = 11.1K. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 4 guests, 7 s, tierScale^4.4 = 1.19K coins per guest, cost factor costScale^4.4 = 8.66K. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 761K | 89.2K | 7.14K | 7 s | 1.02K | +3.3% |
-| Level up (price per guest) | 25 | 2.42M | 139K | 11.8K | 7 s | 1.68K | +2.2% |
-| Level up (price per guest) | 50 | 7.49M | 291K | 22.0K | 7 s | 3.14K | +1.4% |
-| Level up (price per guest) | 100 | 40.3M | 1.28M | 98.9K | 7 s | 14.1K | +0.8% |
-| Level up (price per guest) | 200 | 815M | 24.5M | 363K | 7 s | 51.8K | +0.5% |
-| Level up (price per guest) | 500 | 5.80T | 174B | 6.86M | 7 s | 980K | +0.2% |
-| Level up (price per guest) | 1000 | 15.2Qi | - | 431M | 7 s | 61.5M | max |
-| Bigger class (guests) | 5 | 21.4M | 35.1M | 10.7K | 7 s | 1.53K | +11.1% |
-| Bigger class (guests) | 10 | 2.64B | 4.22B | 16.7K | 7 s | 2.38K | +7.1% |
-| Bigger class (guests) | 20 | 35.2T | 55.3T | 28.6K | 7 s | 4.08K | +4.2% |
-| Bigger class (guests) | 30 | 432Qa | 672Qa | 40.5K | 7 s | 5.78K | +2.9% |
-| Bigger class (guests) | 40 | 5.03Sx | - | 52.4K | 7 s | 7.48K | max |
-| Faster turnover (session time) | 10 | 19.9M | 4.00M | 4.76K | 5.8 s | 815.9 | +1.7% |
-| Faster turnover (session time) | 25 | 181M | 23.8M | 4.76K | 4.7 s | 1.02K | +1.3% |
-| Faster turnover (session time) | 50 | 2.91B | 314M | 4.76K | 3.5 s | 1.36K | +1.0% |
-| Faster turnover (session time) | 100 | 354B | - | 4.76K | 2.3 s | 2.04K | max |
+| Level up (price per guest) | 10 | 596K | 69.8K | 7.14K | 7 s | 1.02K | +3.3% |
+| Level up (price per guest) | 25 | 1.89M | 109K | 11.8K | 7 s | 1.68K | +2.2% |
+| Level up (price per guest) | 50 | 5.86M | 228K | 22.0K | 7 s | 3.14K | +1.4% |
+| Level up (price per guest) | 100 | 31.5M | 998K | 98.9K | 7 s | 14.1K | +0.8% |
+| Level up (price per guest) | 200 | 638M | 19.2M | 363K | 7 s | 51.8K | +0.5% |
+| Level up (price per guest) | 500 | 4.54T | 136B | 6.86M | 7 s | 980K | +0.2% |
+| Level up (price per guest) | 1000 | 11.9bb | - | 431M | 7 s | 61.5M | max |
+| Bigger class (guests) | 5 | 26.2M | 52.6M | 10.7K | 7 s | 1.53K | +11.1% |
+| Bigger class (guests) | 10 | 6.39B | - | 16.7K | 7 s | 2.38K | max |
+| Faster turnover (session time) | 10 | 35.3M | 12.5M | 4.76K | 6.5 s | 728.4 | +0.7% |
+| Faster turnover (session time) | 25 | 2.88B | 968M | 4.76K | 5.8 s | 815.9 | +0.8% |
+| Faster turnover (session time) | 50 | 4.02T | 1.35T | 4.76K | 4.7 s | 1.02K | +1.0% |
+| Faster turnover (session time) | 100 | 7.85bb | - | 4.76K | 2.3 s | 2.04K | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 74.2K coins/s, 2.86B coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 59.4K coins/s, 9.30B coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 1.28M | 74.8K | +0.8% | 34.4 min |
-| Bigger class (guests) | 4.22B | 79.5K | +7.1% | 9.2 days |
-| Faster turnover (session time) | 23.8M | 75.2K | +1.3% | 6.7 h |
+| Level up (price per guest) | 998K | 59.9K | +0.8% | 33.6 min |
+| Bigger class (guests) | - | 63.6K | +7.1% | - |
+| Faster turnover (session time) | 968M | 59.8K | +0.8% | 23.4 days |
 
-Everything maxed (100 / 1000 / 100): 44 guests x 108M = 4.74B per 2.3 s = **2.03B coins/s**, for 5.05Sx coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 14 guests x 108M = 1.51B per 2.3 s = **646M coins/s**, for 19.8bb coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 #### Windsurfing, level 2: Freeride (tier 5.4)
 
-Base 4 guests, 8 s, tierScale^5.4 = 5.95K coins per guest, cost factor costScale^5.4 = 91.8K. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 4 guests, 8 s, tierScale^5.4 = 5.95K coins per guest, cost factor costScale^5.4 = 68.0K. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 6.32M | 741K | 35.7K | 8 s | 4.46K | +3.3% |
-| Level up (price per guest) | 25 | 20.1M | 1.15M | 58.9K | 8 s | 7.36K | +2.2% |
-| Level up (price per guest) | 50 | 62.2M | 2.42M | 110K | 8 s | 13.7K | +1.4% |
-| Level up (price per guest) | 100 | 335M | 10.6M | 495K | 8 s | 61.8K | +0.8% |
-| Level up (price per guest) | 200 | 6.77B | 204M | 1.81M | 8 s | 227K | +0.5% |
-| Level up (price per guest) | 500 | 48.2T | 1.44T | 34.3M | 8 s | 4.29M | +0.2% |
-| Level up (price per guest) | 1000 | 126Qi | - | 2.15B | 8 s | 269M | max |
-| Bigger class (guests) | 5 | 178M | 291M | 53.5K | 8 s | 6.69K | +11.1% |
-| Bigger class (guests) | 10 | 21.9B | 35.0B | 83.3K | 8 s | 10.4K | +7.1% |
-| Bigger class (guests) | 20 | 292T | 459T | 143K | 8 s | 17.8K | +4.2% |
-| Bigger class (guests) | 30 | 3.58Qi | 5.58Qi | 202K | 8 s | 25.3K | +2.9% |
-| Bigger class (guests) | 40 | 41.8Sx | - | 262K | 8 s | 32.7K | max |
-| Faster turnover (session time) | 10 | 165M | 33.2M | 23.8K | 6.7 s | 3.57K | +1.7% |
-| Faster turnover (session time) | 25 | 1.50B | 198M | 23.8K | 5.3 s | 4.46K | +1.3% |
-| Faster turnover (session time) | 50 | 24.1B | 2.60B | 23.8K | 4 s | 5.95K | +1.0% |
-| Faster turnover (session time) | 100 | 2.93T | - | 23.8K | 2.7 s | 8.92K | max |
+| Level up (price per guest) | 10 | 4.67M | 548K | 35.7K | 8 s | 4.46K | +3.3% |
+| Level up (price per guest) | 25 | 14.9M | 854K | 58.9K | 8 s | 7.36K | +2.2% |
+| Level up (price per guest) | 50 | 46.0M | 1.79M | 110K | 8 s | 13.7K | +1.4% |
+| Level up (price per guest) | 100 | 248M | 7.84M | 495K | 8 s | 61.8K | +0.8% |
+| Level up (price per guest) | 200 | 5.01B | 151M | 1.81M | 8 s | 227K | +0.5% |
+| Level up (price per guest) | 500 | 35.6T | 1.07T | 34.3M | 8 s | 4.29M | +0.2% |
+| Level up (price per guest) | 1000 | 93.4bb | - | 2.15B | 8 s | 269M | max |
+| Bigger class (guests) | 5 | 206M | 413M | 53.5K | 8 s | 6.69K | +11.1% |
+| Bigger class (guests) | 10 | 50.2B | - | 83.3K | 8 s | 10.4K | max |
+| Faster turnover (session time) | 10 | 277M | 98.5M | 23.8K | 7.5 s | 3.19K | +0.7% |
+| Faster turnover (session time) | 25 | 22.6B | 7.60B | 23.8K | 6.7 s | 3.57K | +0.8% |
+| Faster turnover (session time) | 50 | 31.6T | 10.6T | 23.8K | 5.3 s | 4.46K | +1.0% |
+| Faster turnover (session time) | 100 | 61.6bb | - | 23.8K | 2.7 s | 8.92K | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 325K coins/s, 23.7B coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 260K coins/s, 73.0B coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 10.6M | 327K | +0.8% | 65.2 min |
-| Bigger class (guests) | 35.0B | 348K | +7.1% | 17.5 days |
-| Faster turnover (session time) | 198M | 329K | +1.3% | 12.7 h |
+| Level up (price per guest) | 7.84M | 262K | +0.8% | 60.4 min |
+| Bigger class (guests) | - | 278K | +7.1% | - |
+| Faster turnover (session time) | 7.60B | 262K | +0.8% | 42 days |
 
-Everything maxed (100 / 1000 / 100): 44 guests x 538M = 23.7B per 2.7 s = **8.88B coins/s**, for 41.9Sx coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 14 guests x 538M = 7.54B per 2.7 s = **2.83B coins/s**, for 155bb coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 #### Windsurfing, level 3: Speed and freestyle (tier 6.6)
 
-Base 3 guests, 9 s, tierScale^6.6 = 41.0K coins per guest, cost factor costScale^6.6 = 1.16M. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 3 guests, 9 s, tierScale^6.6 = 41.0K coins per guest, cost factor costScale^6.6 = 806K. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 80.1M | 9.39M | 185K | 9 s | 20.5K | +3.3% |
-| Level up (price per guest) | 25 | 255M | 14.6M | 305K | 9 s | 33.9K | +2.2% |
-| Level up (price per guest) | 50 | 788M | 30.6M | 569K | 9 s | 63.2K | +1.4% |
-| Level up (price per guest) | 100 | 4.24B | 134M | 2.56M | 9 s | 284K | +0.8% |
-| Level up (price per guest) | 200 | 85.7B | 2.58B | 9.39M | 9 s | 1.04M | +0.5% |
-| Level up (price per guest) | 500 | 610T | 18.3T | 177M | 9 s | 19.7M | +0.2% |
-| Level up (price per guest) | 1000 | 1.60Sx | - | 11.1B | 9 s | 1.24B | max |
-| Bigger class (guests) | 5 | 2.26B | 3.69B | 328K | 9 s | 36.5K | +12.5% |
-| Bigger class (guests) | 10 | 277B | 444B | 534K | 9 s | 59.3K | +7.7% |
-| Bigger class (guests) | 20 | 3.70Qa | 5.82Qa | 944K | 9 s | 105K | +4.3% |
-| Bigger class (guests) | 30 | 45.4Qi | 70.7Qi | 1.35M | 9 s | 150K | +3.0% |
-| Bigger class (guests) | 40 | 530Sx | - | 1.76M | 9 s | 196K | max |
-| Faster turnover (session time) | 10 | 2.09B | 421M | 123K | 7.5 s | 16.4K | +1.7% |
-| Faster turnover (session time) | 25 | 19.0B | 2.51B | 123K | 6 s | 20.5K | +1.3% |
-| Faster turnover (session time) | 50 | 306B | 33.0B | 123K | 4.5 s | 27.4K | +1.0% |
-| Faster turnover (session time) | 100 | 37.2T | - | 123K | 3 s | 41.0K | max |
+| Level up (price per guest) | 10 | 55.4M | 6.50M | 185K | 9 s | 20.5K | +3.3% |
+| Level up (price per guest) | 25 | 176M | 10.1M | 305K | 9 s | 33.9K | +2.2% |
+| Level up (price per guest) | 50 | 545M | 21.2M | 569K | 9 s | 63.2K | +1.4% |
+| Level up (price per guest) | 100 | 2.94B | 92.9M | 2.56M | 9 s | 284K | +0.8% |
+| Level up (price per guest) | 200 | 59.4B | 1.79B | 9.39M | 9 s | 1.04M | +0.5% |
+| Level up (price per guest) | 500 | 422T | 12.7T | 177M | 9 s | 19.7M | +0.2% |
+| Level up (price per guest) | 1000 | 1.11cc | - | 11.1B | 9 s | 1.24B | max |
+| Bigger class (guests) | 5 | 2.44B | 4.89B | 328K | 9 s | 36.5K | +12.5% |
+| Bigger class (guests) | 10 | 595B | - | 534K | 9 s | 59.3K | max |
+| Faster turnover (session time) | 10 | 3.28B | 1.17B | 123K | 8.4 s | 14.7K | +0.7% |
+| Faster turnover (session time) | 25 | 268B | 90.0B | 123K | 7.5 s | 16.4K | +0.8% |
+| Faster turnover (session time) | 50 | 374T | 126T | 123K | 6 s | 20.5K | +1.0% |
+| Faster turnover (session time) | 100 | 730bb | - | 123K | 3 s | 41.0K | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 1.85M coins/s, 301B coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 1.48M coins/s, 865B coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 134M | 1.86M | +0.8% | 2.4 h |
-| Bigger class (guests) | 444B | 1.99M | +7.7% | 36.1 days |
-| Faster turnover (session time) | 2.51B | 1.87M | +1.3% | 28.2 h |
+| Level up (price per guest) | 92.9M | 1.49M | +0.8% | 2.1 h |
+| Bigger class (guests) | - | 1.59M | +7.7% | - |
+| Faster turnover (session time) | 90.0B | 1.49M | +0.8% | 87.4 days |
 
-Everything maxed (100 / 1000 / 100): 43 guests x 3.71B = 160B per 3 s = **53.2B coins/s**, for 531Sx coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 13 guests x 3.71B = 48.3B per 3 s = **16.1B coins/s**, for 1.84cc coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 #### Windsurfing, level 4: Wave zone (tier 7.8)
 
-Base 2 guests, 11 s, tierScale^7.8 = 283K coins per guest, cost factor costScale^7.8 = 14.8M. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 2 guests, 11 s, tierScale^7.8 = 283K coins per guest, cost factor costScale^7.8 = 9.55M. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 1.01B | 119M | 849K | 11 s | 77.2K | +3.3% |
-| Level up (price per guest) | 25 | 3.23B | 185M | 1.40M | 11 s | 127K | +2.2% |
-| Level up (price per guest) | 50 | 9.98B | 388M | 2.62M | 11 s | 238K | +1.4% |
-| Level up (price per guest) | 100 | 53.7B | 1.70B | 11.8M | 11 s | 1.07M | +0.8% |
-| Level up (price per guest) | 200 | 1.09T | 32.7B | 43.2M | 11 s | 3.92M | +0.5% |
-| Level up (price per guest) | 500 | 7.73Qa | 232T | 816M | 11 s | 74.2M | +0.2% |
-| Level up (price per guest) | 1000 | 20.3Sx | - | 51.2B | 11 s | 4.66B | max |
-| Bigger class (guests) | 5 | 28.6B | 46.8B | 1.98M | 11 s | 180K | +14.3% |
-| Bigger class (guests) | 10 | 3.52T | 5.63T | 3.40M | 11 s | 309K | +8.3% |
-| Bigger class (guests) | 20 | 47.0Qa | 73.8Qa | 6.23M | 11 s | 566K | +4.5% |
-| Bigger class (guests) | 30 | 576Qi | 896Qi | 9.06M | 11 s | 824K | +3.1% |
-| Bigger class (guests) | 40 | 6.71Sp | - | 11.9M | 11 s | 1.08M | max |
-| Faster turnover (session time) | 10 | 26.5B | 5.34B | 566K | 9.2 s | 61.8K | +1.7% |
-| Faster turnover (session time) | 25 | 241B | 31.7B | 566K | 7.3 s | 77.2K | +1.3% |
-| Faster turnover (session time) | 50 | 3.88T | 418B | 566K | 5.5 s | 103K | +1.0% |
-| Faster turnover (session time) | 100 | 471T | - | 566K | 3.7 s | 154K | max |
+| Level up (price per guest) | 10 | 657M | 77.0M | 849K | 11 s | 77.2K | +3.3% |
+| Level up (price per guest) | 25 | 2.09B | 120M | 1.40M | 11 s | 127K | +2.2% |
+| Level up (price per guest) | 50 | 6.46B | 251M | 2.62M | 11 s | 238K | +1.4% |
+| Level up (price per guest) | 100 | 34.8B | 1.10B | 11.8M | 11 s | 1.07M | +0.8% |
+| Level up (price per guest) | 200 | 704B | 21.2B | 43.2M | 11 s | 3.92M | +0.5% |
+| Level up (price per guest) | 500 | 5.01aa | 150T | 816M | 11 s | 74.2M | +0.2% |
+| Level up (price per guest) | 1000 | 13.1cc | - | 51.2B | 11 s | 4.66B | max |
+| Bigger class (guests) | 5 | 28.9B | 58.0B | 1.98M | 11 s | 180K | +14.3% |
+| Bigger class (guests) | 10 | 7.05T | - | 3.40M | 11 s | 309K | max |
+| Faster turnover (session time) | 10 | 38.9B | 13.8B | 566K | 10.3 s | 55.2K | +0.7% |
+| Faster turnover (session time) | 25 | 3.17T | 1.07T | 566K | 9.2 s | 61.8K | +0.8% |
+| Faster turnover (session time) | 50 | 4.44aa | 1.49aa | 566K | 7.3 s | 77.2K | +1.0% |
+| Faster turnover (session time) | 100 | 8.66cc | - | 566K | 3.7 s | 154K | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 9.63M coins/s, 3.81T coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 7.71M coins/s, 10.3T coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 1.70B | 9.71M | +0.8% | 5.9 h |
-| Bigger class (guests) | 5.63T | 10.4M | +8.3% | 81.1 days |
-| Faster turnover (session time) | 31.7B | 9.76M | +1.3% | 2.9 days |
+| Level up (price per guest) | 1.10B | 7.77M | +0.8% | 4.8 h |
+| Bigger class (guests) | - | 8.35M | +8.3% | - |
+| Faster turnover (session time) | 1.07T | 7.77M | +0.8% | 198.8 days |
 
-Everything maxed (100 / 1000 / 100): 42 guests x 25.6B = 1.08T per 3.7 s = **293B coins/s**, for 6.73Sp coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 12 guests x 25.6B = 307B per 3.7 s = **83.8B coins/s**, for 21.8cc coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 ### Kitesurfing
 
-Area **sea**. Unlock: own **Level 2 of Windsurfing** and pay **7.10M** coins (after the beach expansion that opens its area it is open from the start). The four levels sit on tiers 5 / 6 / 7.2 / 8.4: each next level earns 5x and costs 8.3x per tier step of the first gap.
+Area **sea**. Unlock: own **Level 2 of Windsurfing** and pay **5.40M** coins (after the beach expansion that opens its area it is open from the start). The four levels sit on tiers 5 / 6 / 7.2 / 8.4: each next level earns 5x and costs 7.85x per tier step of the first gap.
 
 | zone | tier | guests x sec | income/session | coins/s at start | manager | unlock coins | needs upgrades on previous level | coins/s with 10 cap, 50 price, 25 speed | its cost |
 |---|---|---|---|---|---|---|---|---|---|
-| Kite school (kitesurfing-1) | 5 | 4 x 8s | 12.5K | 1.56K | 2.36M | 7.10M | - | 37.9K | 10.1B |
-| Freeride (kitesurfing-2) | 6 | 4 x 8s | 62.5K | 7.81K | 19.6M | 25.0M | 12 | 189K | 83.5B |
-| Freestyle and big air (kitesurfing-3) | 7.2 | 3 x 10s | 323K | 32.3K | 249M | 870M | 30 | 971K | 1.06T |
-| Big air and waves (kitesurfing-4) | 8.4 | 2 x 12s | 1.49M | 124K | 3.15B | 24.0B | 60 | 5.15M | 13.4T |
+| Kite school (kitesurfing-1) | 5 | 4 x 8s | 12.5K | 1.56K | 1.79M | 5.40M | - | 30.3K | 31.9B |
+| Freeride (kitesurfing-2) | 6 | 4 x 8s | 62.5K | 7.81K | 14.0M | 18.0M | 12 | 152K | 251B |
+| Freestyle and big air (kitesurfing-3) | 7.2 | 3 x 10s | 323K | 32.3K | 166M | 580M | 30 | 777K | 2.97T |
+| Big air and waves (kitesurfing-4) | 8.4 | 2 x 12s | 1.49M | 124K | 1.97B | 15.0B | 60 | 4.12M | 35.2T |
 
-First buy in Kite school: Capacity pays back in 42 min, Level up pays back in 50.4 min, Speed pays back in 28 h. So the opening move is **Capacity**.
+First buy in Kite school: Capacity pays back in 31.8 min, Level up pays back in 38.2 min, Speed pays back in 2.6 days. So the opening move is **Capacity**.
 
 #### Kitesurfing, level 1: Kite school (tier 5)
 
-Base 4 guests, 8 s, tierScale^5 = 3.13K coins per guest, cost factor costScale^5 = 39.4K. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 4 guests, 8 s, tierScale^5 = 3.13K coins per guest, cost factor costScale^5 = 29.8K. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 2.71M | 318K | 18.8K | 8 s | 2.34K | +3.3% |
-| Level up (price per guest) | 25 | 8.62M | 495K | 30.9K | 8 s | 3.87K | +2.2% |
-| Level up (price per guest) | 50 | 26.7M | 1.04M | 57.8K | 8 s | 7.22K | +1.4% |
-| Level up (price per guest) | 100 | 144M | 4.54M | 260K | 8 s | 32.5K | +0.8% |
-| Level up (price per guest) | 200 | 2.90B | 87.3M | 953K | 8 s | 119K | +0.5% |
-| Level up (price per guest) | 500 | 20.7T | 620B | 18.0M | 8 s | 2.25M | +0.2% |
-| Level up (price per guest) | 1000 | 54.2Qi | - | 1.13B | 8 s | 141M | max |
-| Bigger class (guests) | 5 | 76.3M | 125M | 28.1K | 8 s | 3.52K | +11.1% |
-| Bigger class (guests) | 10 | 9.39B | 15.0B | 43.8K | 8 s | 5.47K | +7.1% |
-| Bigger class (guests) | 20 | 125T | 197T | 75.0K | 8 s | 9.38K | +4.2% |
-| Bigger class (guests) | 30 | 1.54Qi | 2.39Qi | 106K | 8 s | 13.3K | +2.9% |
-| Bigger class (guests) | 40 | 17.9Sx | - | 138K | 8 s | 17.2K | max |
-| Faster turnover (session time) | 10 | 70.9M | 14.2M | 12.5K | 6.7 s | 1.88K | +1.7% |
-| Faster turnover (session time) | 25 | 644M | 84.8M | 12.5K | 5.3 s | 2.34K | +1.3% |
-| Faster turnover (session time) | 50 | 10.4B | 1.12B | 12.5K | 4 s | 3.13K | +1.0% |
-| Faster turnover (session time) | 100 | 1.26T | - | 12.5K | 2.7 s | 4.69K | max |
+| Level up (price per guest) | 10 | 2.05M | 240K | 18.8K | 8 s | 2.34K | +3.3% |
+| Level up (price per guest) | 25 | 6.52M | 374K | 30.9K | 8 s | 3.87K | +2.2% |
+| Level up (price per guest) | 50 | 20.2M | 784K | 57.8K | 8 s | 7.22K | +1.4% |
+| Level up (price per guest) | 100 | 109M | 3.44M | 260K | 8 s | 32.5K | +0.8% |
+| Level up (price per guest) | 200 | 2.20B | 66.1M | 953K | 8 s | 119K | +0.5% |
+| Level up (price per guest) | 500 | 15.6T | 469B | 18.0M | 8 s | 2.25M | +0.2% |
+| Level up (price per guest) | 1000 | 41.0bb | - | 1.13B | 8 s | 141M | max |
+| Bigger class (guests) | 5 | 90.2M | 181M | 28.1K | 8 s | 3.52K | +11.1% |
+| Bigger class (guests) | 10 | 22.0B | - | 43.8K | 8 s | 5.47K | max |
+| Faster turnover (session time) | 10 | 121M | 43.2M | 12.5K | 7.5 s | 1.67K | +0.7% |
+| Faster turnover (session time) | 25 | 9.91B | 3.33B | 12.5K | 6.7 s | 1.88K | +0.8% |
+| Faster turnover (session time) | 50 | 13.8T | 4.65T | 12.5K | 5.3 s | 2.34K | +1.0% |
+| Faster turnover (session time) | 100 | 27.0bb | - | 12.5K | 2.7 s | 4.69K | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 171K coins/s, 10.2B coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 136K coins/s, 32.0B coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 4.54M | 172K | +0.8% | 53.3 min |
-| Bigger class (guests) | 15.0B | 183K | +7.1% | 14.3 days |
-| Faster turnover (session time) | 84.8M | 173K | +1.3% | 10.4 h |
+| Level up (price per guest) | 3.44M | 138K | +0.8% | 50.4 min |
+| Bigger class (guests) | - | 146K | +7.1% | - |
+| Faster turnover (session time) | 3.33B | 138K | +0.8% | 35 days |
 
-Everything maxed (100 / 1000 / 100): 44 guests x 283M = 12.4B per 2.7 s = **4.67B coins/s**, for 18.0Sx coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 14 guests x 283M = 3.96B per 2.7 s = **1.48B coins/s**, for 68.0bb coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 #### Kitesurfing, level 2: Freeride (tier 6)
 
-Base 4 guests, 8 s, tierScale^6 = 15.6K coins per guest, cost factor costScale^6 = 327K. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 4 guests, 8 s, tierScale^6 = 15.6K coins per guest, cost factor costScale^6 = 234K. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 22.5M | 2.64M | 93.8K | 8 s | 11.7K | +3.3% |
-| Level up (price per guest) | 25 | 71.5M | 4.11M | 155K | 8 s | 19.3K | +2.2% |
-| Level up (price per guest) | 50 | 221M | 8.60M | 289K | 8 s | 36.1K | +1.4% |
-| Level up (price per guest) | 100 | 1.19B | 37.7M | 1.30M | 8 s | 162K | +0.8% |
-| Level up (price per guest) | 200 | 24.1B | 725M | 4.76M | 8 s | 596K | +0.5% |
-| Level up (price per guest) | 500 | 171T | 5.14T | 90.1M | 8 s | 11.3M | +0.2% |
-| Level up (price per guest) | 1000 | 449Qi | - | 5.65B | 8 s | 707M | max |
-| Bigger class (guests) | 5 | 634M | 1.04B | 141K | 8 s | 17.6K | +11.1% |
-| Bigger class (guests) | 10 | 77.9B | 125B | 219K | 8 s | 27.3K | +7.1% |
-| Bigger class (guests) | 20 | 1.04Qa | 1.64Qa | 375K | 8 s | 46.9K | +4.2% |
-| Bigger class (guests) | 30 | 12.8Qi | 19.9Qi | 531K | 8 s | 66.4K | +2.9% |
-| Bigger class (guests) | 40 | 149Sx | - | 688K | 8 s | 85.9K | max |
-| Faster turnover (session time) | 10 | 588M | 118M | 62.5K | 6.7 s | 9.38K | +1.7% |
-| Faster turnover (session time) | 25 | 5.34B | 704M | 62.5K | 5.3 s | 11.7K | +1.3% |
-| Faster turnover (session time) | 50 | 86.0B | 9.27B | 62.5K | 4 s | 15.6K | +1.0% |
-| Faster turnover (session time) | 100 | 10.4T | - | 62.5K | 2.7 s | 23.4K | max |
+| Level up (price per guest) | 10 | 16.1M | 1.89M | 93.8K | 8 s | 11.7K | +3.3% |
+| Level up (price per guest) | 25 | 51.2M | 2.94M | 155K | 8 s | 19.3K | +2.2% |
+| Level up (price per guest) | 50 | 158M | 6.16M | 289K | 8 s | 36.1K | +1.4% |
+| Level up (price per guest) | 100 | 853M | 27.0M | 1.30M | 8 s | 162K | +0.8% |
+| Level up (price per guest) | 200 | 17.2B | 519M | 4.76M | 8 s | 596K | +0.5% |
+| Level up (price per guest) | 500 | 123T | 3.68T | 90.1M | 8 s | 11.3M | +0.2% |
+| Level up (price per guest) | 1000 | 322bb | - | 5.65B | 8 s | 707M | max |
+| Bigger class (guests) | 5 | 708M | 1.42B | 141K | 8 s | 17.6K | +11.1% |
+| Bigger class (guests) | 10 | 173B | - | 219K | 8 s | 27.3K | max |
+| Faster turnover (session time) | 10 | 954M | 339M | 62.5K | 7.5 s | 8.37K | +0.7% |
+| Faster turnover (session time) | 25 | 77.8B | 26.1B | 62.5K | 6.7 s | 9.38K | +0.8% |
+| Faster turnover (session time) | 50 | 109T | 36.5T | 62.5K | 5.3 s | 11.7K | +1.0% |
+| Faster turnover (session time) | 100 | 212bb | - | 62.5K | 2.7 s | 23.4K | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 853K coins/s, 84.5B coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 682K coins/s, 251B coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 37.7M | 860K | +0.8% | 88.4 min |
-| Bigger class (guests) | 125B | 914K | +7.1% | 23.7 days |
-| Faster turnover (session time) | 704M | 864K | +1.3% | 17.2 h |
+| Level up (price per guest) | 27.0M | 688K | +0.8% | 79.1 min |
+| Bigger class (guests) | - | 731K | +7.1% | - |
+| Faster turnover (session time) | 26.1B | 688K | +0.8% | 55 days |
 
-Everything maxed (100 / 1000 / 100): 44 guests x 1.41B = 62.2B per 2.7 s = **23.3B coins/s**, for 149Sx coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 14 guests x 1.41B = 19.8B per 2.7 s = **7.42B coins/s**, for 534bb coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 #### Kitesurfing, level 3: Freestyle and big air (tier 7.2)
 
-Base 3 guests, 10 s, tierScale^7.2 = 108K coins per guest, cost factor costScale^7.2 = 4.14M. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 3 guests, 10 s, tierScale^7.2 = 108K coins per guest, cost factor costScale^7.2 = 2.77M. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 285M | 33.4M | 485K | 10 s | 48.5K | +3.3% |
-| Level up (price per guest) | 25 | 906M | 52.1M | 800K | 10 s | 80.0K | +2.2% |
-| Level up (price per guest) | 50 | 2.80B | 109M | 1.49M | 10 s | 149K | +1.4% |
-| Level up (price per guest) | 100 | 15.1B | 478M | 6.72M | 10 s | 672K | +0.8% |
-| Level up (price per guest) | 200 | 305B | 9.18B | 24.7M | 10 s | 2.47M | +0.5% |
-| Level up (price per guest) | 500 | 2.17Qa | 65.2T | 466M | 10 s | 46.6M | +0.2% |
-| Level up (price per guest) | 1000 | 5.70Sx | - | 29.3B | 10 s | 2.93B | max |
-| Bigger class (guests) | 5 | 8.03B | 13.2B | 862K | 10 s | 86.2K | +12.5% |
-| Bigger class (guests) | 10 | 988B | 1.58T | 1.40M | 10 s | 140K | +7.7% |
-| Bigger class (guests) | 20 | 13.2Qa | 20.7Qa | 2.48M | 10 s | 248K | +4.3% |
-| Bigger class (guests) | 30 | 162Qi | 252Qi | 3.56M | 10 s | 356K | +3.0% |
-| Bigger class (guests) | 40 | 1.89Sp | - | 4.64M | 10 s | 464K | max |
-| Faster turnover (session time) | 10 | 7.46B | 1.50B | 323K | 8.3 s | 38.8K | +1.7% |
-| Faster turnover (session time) | 25 | 67.7B | 8.92B | 323K | 6.7 s | 48.5K | +1.3% |
-| Faster turnover (session time) | 50 | 1.09T | 118B | 323K | 5 s | 64.7K | +1.0% |
-| Faster turnover (session time) | 100 | 132T | - | 323K | 3.3 s | 97.0K | max |
+| Level up (price per guest) | 10 | 191M | 22.4M | 485K | 10 s | 48.5K | +3.3% |
+| Level up (price per guest) | 25 | 607M | 34.8M | 800K | 10 s | 80.0K | +2.2% |
+| Level up (price per guest) | 50 | 1.88B | 73.0M | 1.49M | 10 s | 149K | +1.4% |
+| Level up (price per guest) | 100 | 10.1B | 320M | 6.72M | 10 s | 672K | +0.8% |
+| Level up (price per guest) | 200 | 204B | 6.15B | 24.7M | 10 s | 2.47M | +0.5% |
+| Level up (price per guest) | 500 | 1.45aa | 43.6T | 466M | 10 s | 46.6M | +0.2% |
+| Level up (price per guest) | 1000 | 3.81cc | - | 29.3B | 10 s | 2.93B | max |
+| Bigger class (guests) | 5 | 8.39B | 16.9B | 862K | 10 s | 86.2K | +12.5% |
+| Bigger class (guests) | 10 | 2.05T | - | 1.40M | 10 s | 140K | max |
+| Faster turnover (session time) | 10 | 11.3B | 4.02B | 323K | 9.3 s | 34.6K | +0.7% |
+| Faster turnover (session time) | 25 | 922B | 310B | 323K | 8.3 s | 38.8K | +0.8% |
+| Faster turnover (session time) | 50 | 1.29aa | 433T | 323K | 6.7 s | 48.5K | +1.0% |
+| Faster turnover (session time) | 100 | 2.51cc | - | 323K | 3.3 s | 97.0K | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 4.37M coins/s, 1.07T coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 3.50M coins/s, 2.98T coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 478M | 4.41M | +0.8% | 3.6 h |
-| Bigger class (guests) | 1.58T | 4.71M | +7.7% | 54.4 days |
-| Faster turnover (session time) | 8.92B | 4.43M | +1.3% | 42.5 h |
+| Level up (price per guest) | 320M | 3.53M | +0.8% | 3 h |
+| Bigger class (guests) | - | 3.76M | +7.7% | - |
+| Faster turnover (session time) | 310B | 3.52M | +0.8% | 127.3 days |
 
-Everything maxed (100 / 1000 / 100): 43 guests x 9.75B = 419B per 3.3 s = **126B coins/s**, for 1.89Sp coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 13 guests x 9.75B = 127B per 3.3 s = **38.0B coins/s**, for 6.33cc coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 #### Kitesurfing, level 4: Big air and waves (tier 8.4)
 
-Base 2 guests, 12 s, tierScale^8.4 = 744K coins per guest, cost factor costScale^8.4 = 52.5M. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 2 guests, 12 s, tierScale^8.4 = 744K coins per guest, cost factor costScale^8.4 = 32.9M. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 3.61B | 423M | 2.23M | 12 s | 186K | +3.3% |
-| Level up (price per guest) | 25 | 11.5B | 660M | 3.68M | 12 s | 307K | +2.2% |
-| Level up (price per guest) | 50 | 35.5B | 1.38B | 6.87M | 12 s | 573K | +1.4% |
-| Level up (price per guest) | 100 | 191B | 6.06B | 30.9M | 12 s | 2.58M | +0.8% |
-| Level up (price per guest) | 200 | 3.87T | 116B | 113M | 12 s | 9.45M | +0.5% |
-| Level up (price per guest) | 500 | 27.5Qa | 826T | 2.14B | 12 s | 179M | +0.2% |
-| Level up (price per guest) | 1000 | 72.2Sx | - | 135B | 12 s | 11.2B | max |
-| Bigger class (guests) | 5 | 102B | 167B | 5.21M | 12 s | 434K | +14.3% |
-| Bigger class (guests) | 10 | 12.5T | 20.0T | 8.92M | 12 s | 744K | +8.3% |
-| Bigger class (guests) | 20 | 167Qa | 263Qa | 16.4M | 12 s | 1.36M | +4.5% |
-| Bigger class (guests) | 30 | 2.05Sx | 3.19Sx | 23.8M | 12 s | 1.98M | +3.1% |
-| Bigger class (guests) | 40 | 23.9Sp | - | 31.2M | 12 s | 2.60M | max |
-| Faster turnover (session time) | 10 | 94.5B | 19.0B | 1.49M | 10 s | 149K | +1.7% |
-| Faster turnover (session time) | 25 | 858B | 113B | 1.49M | 8 s | 186K | +1.3% |
-| Faster turnover (session time) | 50 | 13.8T | 1.49T | 1.49M | 6 s | 248K | +1.0% |
-| Faster turnover (session time) | 100 | 1.68Qa | - | 1.49M | 4 s | 372K | max |
+| Level up (price per guest) | 10 | 2.26B | 265M | 2.23M | 12 s | 186K | +3.3% |
+| Level up (price per guest) | 25 | 7.19B | 413M | 3.68M | 12 s | 307K | +2.2% |
+| Level up (price per guest) | 50 | 22.3B | 865M | 6.87M | 12 s | 573K | +1.4% |
+| Level up (price per guest) | 100 | 120B | 3.79B | 30.9M | 12 s | 2.58M | +0.8% |
+| Level up (price per guest) | 200 | 2.42T | 72.9B | 113M | 12 s | 9.45M | +0.5% |
+| Level up (price per guest) | 500 | 17.2aa | 517T | 2.14B | 12 s | 179M | +0.2% |
+| Level up (price per guest) | 1000 | 45.2cc | - | 135B | 12 s | 11.2B | max |
+| Bigger class (guests) | 5 | 99.5B | 200B | 5.21M | 12 s | 434K | +14.3% |
+| Bigger class (guests) | 10 | 24.3T | - | 8.92M | 12 s | 744K | max |
+| Faster turnover (session time) | 10 | 134B | 47.6B | 1.49M | 11.2 s | 133K | +0.7% |
+| Faster turnover (session time) | 25 | 10.9T | 3.67T | 1.49M | 10 s | 149K | +0.8% |
+| Faster turnover (session time) | 50 | 15.3aa | 5.13aa | 1.49M | 8 s | 186K | +1.0% |
+| Faster turnover (session time) | 100 | 29.8cc | - | 1.49M | 4 s | 372K | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 23.2M coins/s, 13.6T coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 18.6M coins/s, 35.3T coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 6.06B | 23.4M | +0.8% | 8.7 h |
-| Bigger class (guests) | 20.0T | 25.1M | +8.3% | 120 days |
-| Faster turnover (session time) | 113B | 23.5M | +1.3% | 4.2 days |
+| Level up (price per guest) | 3.79B | 18.7M | +0.8% | 6.8 h |
+| Bigger class (guests) | - | 20.1M | +8.3% | - |
+| Faster turnover (session time) | 3.67T | 18.7M | +0.8% | 284.2 days |
 
-Everything maxed (100 / 1000 / 100): 42 guests x 67.3B = 2.83T per 4 s = **706B coins/s**, for 24.0Sp coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 12 guests x 67.3B = 807B per 4 s = **202B coins/s**, for 75.0cc coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 ### Foil and wing
 
-Area **sea**. Unlock: own **Level 2 of Kitesurfing** and pay **25.0M** coins (after the beach expansion that opens its area it is open from the start). The four levels sit on tiers 5.6 / 6.6 / 7.8 / 9: each next level earns 5x and costs 8.3x per tier step of the first gap.
+Area **sea**. Unlock: own **Level 2 of Kitesurfing** and pay **18.0M** coins (after the beach expansion that opens its area it is open from the start). The four levels sit on tiers 5.6 / 6.6 / 7.8 / 9: each next level earns 5x and costs 7.85x per tier step of the first gap.
 
 | zone | tier | guests x sec | income/session | coins/s at start | manager | unlock coins | needs upgrades on previous level | coins/s with 10 cap, 50 price, 25 speed | its cost |
 |---|---|---|---|---|---|---|---|---|---|
-| Foil school (foil-1) | 5.6 | 4 x 9s | 32.8K | 3.65K | 8.41M | 25.0M | - | 88.5K | 35.8B |
-| Wing freeride (foil-2) | 6.6 | 4 x 9s | 164K | 18.2K | 69.8M | 87.0M | 12 | 442K | 297B |
-| Downwind (foil-3) | 7.8 | 3 x 11s | 849K | 77.2K | 885M | 3.10B | 30 | 2.32M | 3.77T |
-| Pro arena (foil-4) | 9 | 2 x 13s | 3.91M | 300K | 11.2B | 84.0B | 60 | 12.5M | 47.7T |
+| Foil school (foil-1) | 5.6 | 4 x 9s | 32.8K | 3.65K | 6.16M | 18.0M | - | 70.8K | 110B |
+| Wing freeride (foil-2) | 6.6 | 4 x 9s | 164K | 18.2K | 48.3M | 60.0M | 12 | 354K | 863B |
+| Downwind (foil-3) | 7.8 | 3 x 11s | 849K | 77.2K | 573M | 2.00B | 30 | 1.85M | 10.2T |
+| Pro arena (foil-4) | 9 | 2 x 13s | 3.91M | 300K | 6.79B | 51.0B | 60 | 10.00M | 121T |
 
-First buy in Foil school: Capacity pays back in 64.1 min, Level up pays back in 76.9 min, Speed pays back in 42.7 h. So the opening move is **Capacity**.
+First buy in Foil school: Capacity pays back in 46.9 min, Level up pays back in 56.3 min, Speed pays back in 3.9 days. So the opening move is **Capacity**.
 
 #### Foil and wing, level 1: Foil school (tier 5.6)
 
-Base 4 guests, 9 s, tierScale^5.6 = 8.21K coins per guest, cost factor costScale^5.6 = 140K. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 4 guests, 9 s, tierScale^5.6 = 8.21K coins per guest, cost factor costScale^5.6 = 103K. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 9.65M | 1.13M | 49.2K | 9 s | 5.47K | +3.3% |
-| Level up (price per guest) | 25 | 30.7M | 1.76M | 81.3K | 9 s | 9.03K | +2.2% |
-| Level up (price per guest) | 50 | 94.9M | 3.69M | 152K | 9 s | 16.9K | +1.4% |
-| Level up (price per guest) | 100 | 511M | 16.2M | 683K | 9 s | 75.8K | +0.8% |
-| Level up (price per guest) | 200 | 10.3B | 311M | 2.50M | 9 s | 278K | +0.5% |
-| Level up (price per guest) | 500 | 73.5T | 2.21T | 47.3M | 9 s | 5.26M | +0.2% |
-| Level up (price per guest) | 1000 | 193Qi | - | 2.97B | 9 s | 330M | max |
-| Bigger class (guests) | 5 | 272M | 445M | 73.9K | 9 s | 8.21K | +11.1% |
-| Bigger class (guests) | 10 | 33.4B | 53.5B | 115K | 9 s | 12.8K | +7.1% |
-| Bigger class (guests) | 20 | 446T | 701T | 197K | 9 s | 21.9K | +4.2% |
-| Bigger class (guests) | 30 | 5.47Qi | 8.51Qi | 279K | 9 s | 31.0K | +2.9% |
-| Bigger class (guests) | 40 | 63.8Sx | - | 361K | 9 s | 40.1K | max |
-| Faster turnover (session time) | 10 | 252M | 50.7M | 32.8K | 7.5 s | 4.38K | +1.7% |
-| Faster turnover (session time) | 25 | 2.29B | 302M | 32.8K | 6 s | 5.47K | +1.3% |
-| Faster turnover (session time) | 50 | 36.9B | 3.98B | 32.8K | 4.5 s | 7.30K | +1.0% |
-| Faster turnover (session time) | 100 | 4.48T | - | 32.8K | 3 s | 10.9K | max |
+| Level up (price per guest) | 10 | 7.06M | 828K | 49.2K | 9 s | 5.47K | +3.3% |
+| Level up (price per guest) | 25 | 22.5M | 1.29M | 81.3K | 9 s | 9.03K | +2.2% |
+| Level up (price per guest) | 50 | 69.5M | 2.70M | 152K | 9 s | 16.9K | +1.4% |
+| Level up (price per guest) | 100 | 374M | 11.8M | 683K | 9 s | 75.8K | +0.8% |
+| Level up (price per guest) | 200 | 7.56B | 227M | 2.50M | 9 s | 278K | +0.5% |
+| Level up (price per guest) | 500 | 53.8T | 1.61T | 47.3M | 9 s | 5.26M | +0.2% |
+| Level up (price per guest) | 1000 | 141bb | - | 2.97B | 9 s | 330M | max |
+| Bigger class (guests) | 5 | 310M | 623M | 73.9K | 9 s | 8.21K | +11.1% |
+| Bigger class (guests) | 10 | 75.8B | - | 115K | 9 s | 12.8K | max |
+| Faster turnover (session time) | 10 | 418M | 149M | 32.8K | 8.4 s | 3.91K | +0.7% |
+| Faster turnover (session time) | 25 | 34.1B | 11.5B | 32.8K | 7.5 s | 4.38K | +0.8% |
+| Faster turnover (session time) | 50 | 47.7T | 16.0T | 32.8K | 6 s | 5.47K | +1.0% |
+| Faster turnover (session time) | 100 | 93.0bb | - | 32.8K | 3 s | 10.9K | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 398K coins/s, 36.2B coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 319K coins/s, 110B coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 16.2M | 401K | +0.8% | 81.2 min |
-| Bigger class (guests) | 53.5B | 427K | +7.1% | 21.8 days |
-| Faster turnover (session time) | 302M | 403K | +1.3% | 15.8 h |
+| Level up (price per guest) | 11.8M | 321K | +0.8% | 74.3 min |
+| Bigger class (guests) | - | 341K | +7.1% | - |
+| Faster turnover (session time) | 11.5B | 321K | +0.8% | 51.7 days |
 
-Everything maxed (100 / 1000 / 100): 44 guests x 743M = 32.7B per 3 s = **10.9B coins/s**, for 64.0Sx coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 14 guests x 743M = 10.4B per 3 s = **3.47B coins/s**, for 234bb coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 #### Foil and wing, level 2: Wing freeride (tier 6.6)
 
-Base 4 guests, 9 s, tierScale^6.6 = 41.0K coins per guest, cost factor costScale^6.6 = 1.16M. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 4 guests, 9 s, tierScale^6.6 = 41.0K coins per guest, cost factor costScale^6.6 = 806K. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 80.1M | 9.39M | 246K | 9 s | 27.4K | +3.3% |
-| Level up (price per guest) | 25 | 255M | 14.6M | 406K | 9 s | 45.1K | +2.2% |
-| Level up (price per guest) | 50 | 788M | 30.6M | 758K | 9 s | 84.3K | +1.4% |
-| Level up (price per guest) | 100 | 4.24B | 134M | 3.41M | 9 s | 379K | +0.8% |
-| Level up (price per guest) | 200 | 85.7B | 2.58B | 12.5M | 9 s | 1.39M | +0.5% |
-| Level up (price per guest) | 500 | 610T | 18.3T | 237M | 9 s | 26.3M | +0.2% |
-| Level up (price per guest) | 1000 | 1.60Sx | - | 14.9B | 9 s | 1.65B | max |
-| Bigger class (guests) | 5 | 2.26B | 3.69B | 369K | 9 s | 41.0K | +11.1% |
-| Bigger class (guests) | 10 | 277B | 444B | 575K | 9 s | 63.8K | +7.1% |
-| Bigger class (guests) | 20 | 3.70Qa | 5.82Qa | 985K | 9 s | 109K | +4.2% |
-| Bigger class (guests) | 30 | 45.4Qi | 70.7Qi | 1.40M | 9 s | 155K | +2.9% |
-| Bigger class (guests) | 40 | 530Sx | - | 1.81M | 9 s | 201K | max |
-| Faster turnover (session time) | 10 | 2.09B | 421M | 164K | 7.5 s | 21.9K | +1.7% |
-| Faster turnover (session time) | 25 | 19.0B | 2.51B | 164K | 6 s | 27.4K | +1.3% |
-| Faster turnover (session time) | 50 | 306B | 33.0B | 164K | 4.5 s | 36.5K | +1.0% |
-| Faster turnover (session time) | 100 | 37.2T | - | 164K | 3 s | 54.7K | max |
+| Level up (price per guest) | 10 | 55.4M | 6.50M | 246K | 9 s | 27.4K | +3.3% |
+| Level up (price per guest) | 25 | 176M | 10.1M | 406K | 9 s | 45.1K | +2.2% |
+| Level up (price per guest) | 50 | 545M | 21.2M | 758K | 9 s | 84.3K | +1.4% |
+| Level up (price per guest) | 100 | 2.94B | 92.9M | 3.41M | 9 s | 379K | +0.8% |
+| Level up (price per guest) | 200 | 59.4B | 1.79B | 12.5M | 9 s | 1.39M | +0.5% |
+| Level up (price per guest) | 500 | 422T | 12.7T | 237M | 9 s | 26.3M | +0.2% |
+| Level up (price per guest) | 1000 | 1.11cc | - | 14.9B | 9 s | 1.65B | max |
+| Bigger class (guests) | 5 | 2.44B | 4.89B | 369K | 9 s | 41.0K | +11.1% |
+| Bigger class (guests) | 10 | 595B | - | 575K | 9 s | 63.8K | max |
+| Faster turnover (session time) | 10 | 3.28B | 1.17B | 164K | 8.4 s | 19.5K | +0.7% |
+| Faster turnover (session time) | 25 | 268B | 90.0B | 164K | 7.5 s | 21.9K | +0.8% |
+| Faster turnover (session time) | 50 | 374T | 126T | 164K | 6 s | 27.4K | +1.0% |
+| Faster turnover (session time) | 100 | 730bb | - | 164K | 3 s | 54.7K | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 1.99M coins/s, 301B coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 1.59M coins/s, 865B coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 134M | 2.01M | +0.8% | 2.2 h |
-| Bigger class (guests) | 444B | 2.13M | +7.1% | 36.1 days |
-| Faster turnover (session time) | 2.51B | 2.02M | +1.3% | 26.2 h |
+| Level up (price per guest) | 92.9M | 1.61M | +0.8% | 1.9 h |
+| Bigger class (guests) | - | 1.71M | +7.1% | - |
+| Faster turnover (session time) | 90.0B | 1.61M | +0.8% | 81.1 days |
 
-Everything maxed (100 / 1000 / 100): 44 guests x 3.71B = 163B per 3 s = **54.5B coins/s**, for 531Sx coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 14 guests x 3.71B = 52.0B per 3 s = **17.3B coins/s**, for 1.84cc coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 #### Foil and wing, level 3: Downwind (tier 7.8)
 
-Base 3 guests, 11 s, tierScale^7.8 = 283K coins per guest, cost factor costScale^7.8 = 14.8M. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 3 guests, 11 s, tierScale^7.8 = 283K coins per guest, cost factor costScale^7.8 = 9.55M. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 1.01B | 119M | 1.27M | 11 s | 116K | +3.3% |
-| Level up (price per guest) | 25 | 3.23B | 185M | 2.10M | 11 s | 191K | +2.2% |
-| Level up (price per guest) | 50 | 9.98B | 388M | 3.92M | 11 s | 357K | +1.4% |
-| Level up (price per guest) | 100 | 53.7B | 1.70B | 17.7M | 11 s | 1.61M | +0.8% |
-| Level up (price per guest) | 200 | 1.09T | 32.7B | 64.7M | 11 s | 5.89M | +0.5% |
-| Level up (price per guest) | 500 | 7.73Qa | 232T | 1.22B | 11 s | 111M | +0.2% |
-| Level up (price per guest) | 1000 | 20.3Sx | - | 76.8B | 11 s | 6.99B | max |
-| Bigger class (guests) | 5 | 28.6B | 46.8B | 2.26M | 11 s | 206K | +12.5% |
-| Bigger class (guests) | 10 | 3.52T | 5.63T | 3.68M | 11 s | 335K | +7.7% |
-| Bigger class (guests) | 20 | 47.0Qa | 73.8Qa | 6.51M | 11 s | 592K | +4.3% |
-| Bigger class (guests) | 30 | 576Qi | 896Qi | 9.34M | 11 s | 849K | +3.0% |
-| Bigger class (guests) | 40 | 6.71Sp | - | 12.2M | 11 s | 1.11M | max |
-| Faster turnover (session time) | 10 | 26.5B | 5.34B | 849K | 9.2 s | 92.7K | +1.7% |
-| Faster turnover (session time) | 25 | 241B | 31.7B | 849K | 7.3 s | 116K | +1.3% |
-| Faster turnover (session time) | 50 | 3.88T | 418B | 849K | 5.5 s | 154K | +1.0% |
-| Faster turnover (session time) | 100 | 471T | - | 849K | 3.7 s | 232K | max |
+| Level up (price per guest) | 10 | 657M | 77.0M | 1.27M | 11 s | 116K | +3.3% |
+| Level up (price per guest) | 25 | 2.09B | 120M | 2.10M | 11 s | 191K | +2.2% |
+| Level up (price per guest) | 50 | 6.46B | 251M | 3.92M | 11 s | 357K | +1.4% |
+| Level up (price per guest) | 100 | 34.8B | 1.10B | 17.7M | 11 s | 1.61M | +0.8% |
+| Level up (price per guest) | 200 | 704B | 21.2B | 64.7M | 11 s | 5.89M | +0.5% |
+| Level up (price per guest) | 500 | 5.01aa | 150T | 1.22B | 11 s | 111M | +0.2% |
+| Level up (price per guest) | 1000 | 13.1cc | - | 76.8B | 11 s | 6.99B | max |
+| Bigger class (guests) | 5 | 28.9B | 58.0B | 2.26M | 11 s | 206K | +12.5% |
+| Bigger class (guests) | 10 | 7.05T | - | 3.68M | 11 s | 335K | max |
+| Faster turnover (session time) | 10 | 38.9B | 13.8B | 849K | 10.3 s | 82.7K | +0.7% |
+| Faster turnover (session time) | 25 | 3.17T | 1.07T | 849K | 9.2 s | 92.7K | +0.8% |
+| Faster turnover (session time) | 50 | 4.44aa | 1.49aa | 849K | 7.3 s | 116K | +1.0% |
+| Faster turnover (session time) | 100 | 8.66cc | - | 849K | 3.7 s | 232K | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 10.4M coins/s, 3.81T coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 8.35M coins/s, 10.3T coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 1.70B | 10.5M | +0.8% | 5.4 h |
-| Bigger class (guests) | 5.63T | 11.2M | +7.7% | 81.1 days |
-| Faster turnover (session time) | 31.7B | 10.6M | +1.3% | 2.6 days |
+| Level up (price per guest) | 1.10B | 8.42M | +0.8% | 4.4 h |
+| Bigger class (guests) | - | 8.99M | +7.7% | - |
+| Faster turnover (session time) | 1.07T | 8.41M | +0.8% | 183.5 days |
 
-Everything maxed (100 / 1000 / 100): 43 guests x 25.6B = 1.10T per 3.7 s = **300B coins/s**, for 6.73Sp coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 13 guests x 25.6B = 333B per 3.7 s = **90.8B coins/s**, for 21.8cc coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 #### Foil and wing, level 4: Pro arena (tier 9)
 
-Base 2 guests, 13 s, tierScale^9 = 1.95M coins per guest, cost factor costScale^9 = 187M. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 2 guests, 13 s, tierScale^9 = 1.95M coins per guest, cost factor costScale^9 = 113M. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 12.9B | 1.51B | 5.86M | 13 s | 451K | +3.3% |
-| Level up (price per guest) | 25 | 40.9B | 2.35B | 9.67M | 13 s | 744K | +2.2% |
-| Level up (price per guest) | 50 | 127B | 4.92B | 18.0M | 13 s | 1.39M | +1.4% |
-| Level up (price per guest) | 100 | 681B | 21.6B | 81.2M | 13 s | 6.25M | +0.8% |
-| Level up (price per guest) | 200 | 13.8T | 414B | 298M | 13 s | 22.9M | +0.5% |
-| Level up (price per guest) | 500 | 98.0Qa | 2.94Qa | 5.63B | 13 s | 433M | +0.2% |
-| Level up (price per guest) | 1000 | 257Sx | - | 353B | 13 s | 27.2B | max |
-| Bigger class (guests) | 5 | 362B | 593B | 13.7M | 13 s | 1.05M | +14.3% |
-| Bigger class (guests) | 10 | 44.6T | 71.3T | 23.4M | 13 s | 1.80M | +8.3% |
-| Bigger class (guests) | 20 | 595Qa | 935Qa | 43.0M | 13 s | 3.31M | +4.5% |
-| Bigger class (guests) | 30 | 7.30Sx | 11.4Sx | 62.5M | 13 s | 4.81M | +3.1% |
-| Bigger class (guests) | 40 | 85.0Sp | - | 82.0M | 13 s | 6.31M | max |
-| Faster turnover (session time) | 10 | 336B | 67.6B | 3.91M | 10.8 s | 361K | +1.7% |
-| Faster turnover (session time) | 25 | 3.06T | 402B | 3.91M | 8.7 s | 451K | +1.3% |
-| Faster turnover (session time) | 50 | 49.2T | 5.30T | 3.91M | 6.5 s | 601K | +1.0% |
-| Faster turnover (session time) | 100 | 5.97Qa | - | 3.91M | 4.3 s | 901K | max |
+| Level up (price per guest) | 10 | 7.79B | 913M | 5.86M | 13 s | 451K | +3.3% |
+| Level up (price per guest) | 25 | 24.8B | 1.42B | 9.67M | 13 s | 744K | +2.2% |
+| Level up (price per guest) | 50 | 76.6B | 2.98B | 18.0M | 13 s | 1.39M | +1.4% |
+| Level up (price per guest) | 100 | 412B | 13.1B | 81.2M | 13 s | 6.25M | +0.8% |
+| Level up (price per guest) | 200 | 8.34T | 251B | 298M | 13 s | 22.9M | +0.5% |
+| Level up (price per guest) | 500 | 59.4aa | 1.78aa | 5.63B | 13 s | 433M | +0.2% |
+| Level up (price per guest) | 1000 | 156cc | - | 353B | 13 s | 27.2B | max |
+| Bigger class (guests) | 5 | 342B | 688B | 13.7M | 13 s | 1.05M | +14.3% |
+| Bigger class (guests) | 10 | 83.5T | - | 23.4M | 13 s | 1.80M | max |
+| Faster turnover (session time) | 10 | 461B | 164B | 3.91M | 12.1 s | 322K | +0.7% |
+| Faster turnover (session time) | 25 | 37.6T | 12.6T | 3.91M | 10.8 s | 361K | +0.8% |
+| Faster turnover (session time) | 50 | 52.6aa | 17.7aa | 3.91M | 8.7 s | 451K | +1.0% |
+| Faster turnover (session time) | 100 | 103cc | - | 3.91M | 4.3 s | 901K | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 56.2M coins/s, 48.3T coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 45.0M coins/s, 122T coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 21.6B | 56.7M | +0.8% | 12.8 h |
-| Bigger class (guests) | 71.3T | 60.9M | +8.3% | 176.2 days |
-| Faster turnover (session time) | 402B | 57.0M | +1.3% | 6.2 days |
+| Level up (price per guest) | 13.1B | 45.4M | +0.8% | 9.7 h |
+| Bigger class (guests) | - | 48.7M | +8.3% | - |
+| Faster turnover (session time) | 12.6T | 45.3M | +0.8% | 1.1e+0 years |
 
-Everything maxed (100 / 1000 / 100): 42 guests x 177B = 7.42T per 4.3 s = **1.71T coins/s**, for 85.3Sp coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 12 guests x 177B = 2.12T per 4.3 s = **489B coins/s**, for 258cc coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 ### Sailing
 
-Area **ocean**. Unlock: own **Level 2 of Foil and wing** and pay **6.20B** coins (after the beach expansion that opens its area it is open from the start). The four levels sit on tiers 8.2 / 9.4 / 10.6 / 11.8: each next level earns 6.9x and costs 12.7x per tier step of the first gap.
+Area **ocean**. Unlock: own **Level 2 of Foil and wing** and pay **3.90B** coins (after the beach expansion that opens its area it is open from the start). The four levels sit on tiers 8.2 / 9.4 / 10.6 / 11.8: each next level earns 6.9x and costs 11.9x per tier step of the first gap.
 
 | zone | tier | guests x sec | income/session | coins/s at start | manager | unlock coins | needs upgrades on previous level | coins/s with 10 cap, 50 price, 25 speed | its cost |
 |---|---|---|---|---|---|---|---|---|---|
-| Sailing school (sailing-1) | 8.2 | 4 x 8s | 2.16M | 269K | 2.06B | 6.20B | - | 6.54M | 8.78T |
-| Boat hire (sailing-2) | 9.4 | 4 x 10s | 14.9M | 1.49M | 26.2B | 33.0B | 12 | 36.1M | 111T |
-| Club racing (sailing-3) | 10.6 | 3 x 12s | 76.9M | 6.41M | 331B | 1.20T | 30 | 193M | 1.41Qa |
-| Offshore regatta (sailing-4) | 11.8 | 2 x 14s | 354M | 25.3M | 4.20T | 32.0T | 60 | 1.05B | 17.9Qa |
+| Sailing school (sailing-1) | 8.2 | 4 x 8s | 2.16M | 269K | 1.31B | 3.90B | - | 5.23M | 23.3T |
+| Boat hire (sailing-2) | 9.4 | 4 x 10s | 14.9M | 1.49M | 15.5B | 19.0B | 12 | 28.9M | 276T |
+| Club racing (sailing-3) | 10.6 | 3 x 12s | 76.9M | 6.41M | 184B | 640B | 30 | 154M | 3.28aa |
+| Offshore regatta (sailing-4) | 11.8 | 2 x 14s | 354M | 25.3M | 2.18T | 16.0T | 60 | 841M | 38.8aa |
 
-First buy in Sailing school: Capacity pays back in 3.5 h, Level up pays back in 4.3 h, Speed pays back in 5.9 days. So the opening move is **Capacity**.
+First buy in Sailing school: Capacity pays back in 2.2 h, Level up pays back in 2.7 h, Speed pays back in 11.1 days. So the opening move is **Capacity**.
 
 #### Sailing, level 1: Sailing school (tier 8.2)
 
-Base 4 guests, 8 s, tierScale^8.2 = 539K coins per guest, cost factor costScale^8.2 = 34.4M. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 4 guests, 8 s, tierScale^8.2 = 539K coins per guest, cost factor costScale^8.2 = 21.8M. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 2.37B | 277M | 3.23M | 8 s | 404K | +3.3% |
-| Level up (price per guest) | 25 | 7.52B | 432M | 5.34M | 8 s | 667K | +2.2% |
-| Level up (price per guest) | 50 | 23.3B | 905M | 9.96M | 8 s | 1.24M | +1.4% |
-| Level up (price per guest) | 100 | 125B | 3.97B | 44.8M | 8 s | 5.60M | +0.8% |
-| Level up (price per guest) | 200 | 2.53T | 76.2B | 164M | 8 s | 20.5M | +0.5% |
-| Level up (price per guest) | 500 | 18.0Qa | 541T | 3.11B | 8 s | 388M | +0.2% |
-| Level up (price per guest) | 1000 | 47.3Sx | - | 195B | 8 s | 24.4B | max |
-| Bigger class (guests) | 5 | 66.7B | 109B | 4.85M | 8 s | 606K | +11.1% |
-| Bigger class (guests) | 10 | 8.20T | 13.1T | 7.55M | 8 s | 943K | +7.1% |
-| Bigger class (guests) | 20 | 109Qa | 172Qa | 12.9M | 8 s | 1.62M | +4.2% |
-| Bigger class (guests) | 30 | 1.34Sx | 2.09Sx | 18.3M | 8 s | 2.29M | +2.9% |
-| Bigger class (guests) | 40 | 15.6Sp | - | 23.7M | 8 s | 2.96M | max |
-| Faster turnover (session time) | 10 | 61.9B | 12.4B | 2.16M | 6.7 s | 323K | +1.7% |
-| Faster turnover (session time) | 25 | 562B | 74.0B | 2.16M | 5.3 s | 404K | +1.3% |
-| Faster turnover (session time) | 50 | 9.04T | 975B | 2.16M | 4 s | 539K | +1.0% |
-| Faster turnover (session time) | 100 | 1.10Qa | - | 2.16M | 2.7 s | 808K | max |
+| Level up (price per guest) | 10 | 1.50B | 176M | 3.23M | 8 s | 404K | +3.3% |
+| Level up (price per guest) | 25 | 4.76B | 274M | 5.34M | 8 s | 667K | +2.2% |
+| Level up (price per guest) | 50 | 14.7B | 573M | 9.96M | 8 s | 1.24M | +1.4% |
+| Level up (price per guest) | 100 | 79.3B | 2.51B | 44.8M | 8 s | 5.60M | +0.8% |
+| Level up (price per guest) | 200 | 1.60T | 48.3B | 164M | 8 s | 20.5M | +0.5% |
+| Level up (price per guest) | 500 | 11.4aa | 343T | 3.11B | 8 s | 388M | +0.2% |
+| Level up (price per guest) | 1000 | 29.9cc | - | 195B | 8 s | 24.4B | max |
+| Bigger class (guests) | 5 | 65.9B | 132B | 4.85M | 8 s | 606K | +11.1% |
+| Bigger class (guests) | 10 | 16.1T | - | 7.55M | 8 s | 943K | max |
+| Faster turnover (session time) | 10 | 88.7B | 31.6B | 2.16M | 7.5 s | 289K | +0.7% |
+| Faster turnover (session time) | 25 | 7.24T | 2.43T | 2.16M | 6.7 s | 323K | +0.8% |
+| Faster turnover (session time) | 50 | 10.1aa | 3.40aa | 2.16M | 5.3 s | 404K | +1.0% |
+| Faster turnover (session time) | 100 | 19.7cc | - | 2.16M | 2.7 s | 808K | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 29.4M coins/s, 8.89T coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 23.5M coins/s, 23.4T coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 3.97B | 29.7M | +0.8% | 4.5 h |
-| Bigger class (guests) | 13.1T | 31.5M | +7.1% | 72.3 days |
-| Faster turnover (session time) | 74.0B | 29.8M | +1.3% | 2.2 days |
+| Level up (price per guest) | 2.51B | 23.7M | +0.8% | 3.6 h |
+| Bigger class (guests) | - | 25.2M | +7.1% | - |
+| Faster turnover (session time) | 2.43T | 23.7M | +0.8% | 148.4 days |
 
-Everything maxed (100 / 1000 / 100): 44 guests x 48.8B = 2.15T per 2.7 s = **805B coins/s**, for 15.7Sp coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 14 guests x 48.8B = 683B per 2.7 s = **256B coins/s**, for 49.7cc coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 #### Sailing, level 2: Boat hire (tier 9.4)
 
-Base 4 guests, 10 s, tierScale^9.4 = 3.72M coins per guest, cost factor costScale^9.4 = 436M. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 4 guests, 10 s, tierScale^9.4 = 3.72M coins per guest, cost factor costScale^9.4 = 258M. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 30.0B | 3.51B | 22.3M | 10 s | 2.23M | +3.3% |
-| Level up (price per guest) | 25 | 95.3B | 5.48B | 36.8M | 10 s | 3.68M | +2.2% |
-| Level up (price per guest) | 50 | 295B | 11.5B | 68.7M | 10 s | 6.87M | +1.4% |
-| Level up (price per guest) | 100 | 1.59T | 50.3B | 309M | 10 s | 30.9M | +0.8% |
-| Level up (price per guest) | 200 | 32.1T | 966B | 1.13B | 10 s | 113M | +0.5% |
-| Level up (price per guest) | 500 | 229Qa | 6.86Qa | 21.4B | 10 s | 2.14B | +0.2% |
-| Level up (price per guest) | 1000 | 599Sx | - | 1.35T | 10 s | 135B | max |
-| Bigger class (guests) | 5 | 845B | 1.38T | 33.5M | 10 s | 3.35M | +11.1% |
-| Bigger class (guests) | 10 | 104T | 166T | 52.1M | 10 s | 5.21M | +7.1% |
-| Bigger class (guests) | 20 | 1.39Qi | 2.18Qi | 89.2M | 10 s | 8.92M | +4.2% |
-| Bigger class (guests) | 30 | 17.0Sx | 26.5Sx | 126M | 10 s | 12.6M | +2.9% |
-| Bigger class (guests) | 40 | 198Sp | - | 164M | 10 s | 16.4M | max |
-| Faster turnover (session time) | 10 | 784B | 158B | 14.9M | 8.3 s | 1.78M | +1.7% |
-| Faster turnover (session time) | 25 | 7.12T | 938B | 14.9M | 6.7 s | 2.23M | +1.3% |
-| Faster turnover (session time) | 50 | 115T | 12.4T | 14.9M | 5 s | 2.97M | +1.0% |
-| Faster turnover (session time) | 100 | 13.9Qa | - | 14.9M | 3.3 s | 4.46M | max |
+| Level up (price per guest) | 10 | 17.8B | 2.08B | 22.3M | 10 s | 2.23M | +3.3% |
+| Level up (price per guest) | 25 | 56.5B | 3.24B | 36.8M | 10 s | 3.68M | +2.2% |
+| Level up (price per guest) | 50 | 175B | 6.79B | 68.7M | 10 s | 6.87M | +1.4% |
+| Level up (price per guest) | 100 | 940B | 29.8B | 309M | 10 s | 30.9M | +0.8% |
+| Level up (price per guest) | 200 | 19.0T | 572B | 1.13B | 10 s | 113M | +0.5% |
+| Level up (price per guest) | 500 | 135aa | 4.06aa | 21.4B | 10 s | 2.14B | +0.2% |
+| Level up (price per guest) | 1000 | 355cc | - | 1.35T | 10 s | 135B | max |
+| Bigger class (guests) | 5 | 781B | 1.57T | 33.5M | 10 s | 3.35M | +11.1% |
+| Bigger class (guests) | 10 | 190T | - | 52.1M | 10 s | 5.21M | max |
+| Faster turnover (session time) | 10 | 1.05T | 374B | 14.9M | 9.3 s | 1.59M | +0.7% |
+| Faster turnover (session time) | 25 | 85.8T | 28.8T | 14.9M | 8.3 s | 1.78M | +0.8% |
+| Faster turnover (session time) | 50 | 120aa | 40.3aa | 14.9M | 6.7 s | 2.23M | +1.0% |
+| Faster turnover (session time) | 100 | 234cc | - | 14.9M | 3.3 s | 4.46M | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 162M coins/s, 113T coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 130M coins/s, 277T coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 50.3B | 164M | +0.8% | 10.3 h |
-| Bigger class (guests) | 166T | 174M | +7.1% | 166 days |
-| Faster turnover (session time) | 938B | 164M | +1.3% | 5 days |
+| Level up (price per guest) | 29.8B | 131M | +0.8% | 7.6 h |
+| Bigger class (guests) | - | 139M | +7.1% | - |
+| Faster turnover (session time) | 28.8T | 131M | +0.8% | 318.8 days |
 
-Everything maxed (100 / 1000 / 100): 44 guests x 336B = 14.8T per 3.3 s = **4.44T coins/s**, for 199Sp coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 14 guests x 336B = 4.71T per 3.3 s = **1.41T coins/s**, for 589cc coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 #### Sailing, level 3: Club racing (tier 10.6)
 
-Base 3 guests, 12 s, tierScale^10.6 = 25.6M coins per guest, cost factor costScale^10.6 = 5.52B. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 3 guests, 12 s, tierScale^10.6 = 25.6M coins per guest, cost factor costScale^10.6 = 3.06B. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 380B | 44.5B | 115M | 12 s | 9.62M | +3.3% |
-| Level up (price per guest) | 25 | 1.21T | 69.4B | 190M | 12 s | 15.9M | +2.2% |
-| Level up (price per guest) | 50 | 3.74T | 145B | 356M | 12 s | 29.6M | +1.4% |
-| Level up (price per guest) | 100 | 20.1T | 637B | 1.60B | 12 s | 133M | +0.8% |
-| Level up (price per guest) | 200 | 407T | 12.2T | 5.87B | 12 s | 489M | +0.5% |
-| Level up (price per guest) | 500 | 2.90Qi | 86.9Qa | 111B | 12 s | 9.24B | +0.2% |
-| Level up (price per guest) | 1000 | 7.59Sp | - | 6.96T | 12 s | 580B | max |
-| Bigger class (guests) | 5 | 10.7T | 17.5T | 205M | 12 s | 17.1M | +12.5% |
-| Bigger class (guests) | 10 | 1.32Qa | 2.11Qa | 333M | 12 s | 27.8M | +7.7% |
-| Bigger class (guests) | 20 | 17.6Qi | 27.6Qi | 590M | 12 s | 49.2M | +4.3% |
-| Bigger class (guests) | 30 | 216Sx | 335Sx | 846M | 12 s | 70.5M | +3.0% |
-| Bigger class (guests) | 40 | 2.51Oc | - | 1.10B | 12 s | 91.9M | max |
-| Faster turnover (session time) | 10 | 9.94T | 2.00T | 76.9M | 10 s | 7.69M | +1.7% |
-| Faster turnover (session time) | 25 | 90.3T | 11.9T | 76.9M | 8 s | 9.62M | +1.3% |
-| Faster turnover (session time) | 50 | 1.45Qa | 157T | 76.9M | 6 s | 12.8M | +1.0% |
-| Faster turnover (session time) | 100 | 176Qa | - | 76.9M | 4 s | 19.2M | max |
+| Level up (price per guest) | 10 | 210B | 24.7B | 115M | 12 s | 9.62M | +3.3% |
+| Level up (price per guest) | 25 | 669B | 38.4B | 190M | 12 s | 15.9M | +2.2% |
+| Level up (price per guest) | 50 | 2.07T | 80.5B | 356M | 12 s | 29.6M | +1.4% |
+| Level up (price per guest) | 100 | 11.1T | 353B | 1.60B | 12 s | 133M | +0.8% |
+| Level up (price per guest) | 200 | 225T | 6.78T | 5.87B | 12 s | 489M | +0.5% |
+| Level up (price per guest) | 500 | 1.60bb | 48.1aa | 111B | 12 s | 9.24B | +0.2% |
+| Level up (price per guest) | 1000 | 4.21dd | - | 6.96T | 12 s | 580B | max |
+| Bigger class (guests) | 5 | 9.25T | 18.6T | 205M | 12 s | 17.1M | +12.5% |
+| Bigger class (guests) | 10 | 2.26aa | - | 333M | 12 s | 27.8M | max |
+| Faster turnover (session time) | 10 | 12.5T | 4.43T | 76.9M | 11.2 s | 6.87M | +0.7% |
+| Faster turnover (session time) | 25 | 1.02aa | 342T | 76.9M | 10 s | 7.69M | +0.8% |
+| Faster turnover (session time) | 50 | 1.42bb | 478aa | 76.9M | 8 s | 9.62M | +1.0% |
+| Faster turnover (session time) | 100 | 2.77dd | - | 76.9M | 4 s | 19.2M | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 867M coins/s, 1.43Qa coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 693M coins/s, 3.29aa coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 637B | 874M | +0.8% | 24.5 h |
-| Bigger class (guests) | 2.11Qa | 933M | +7.7% | 1.0e+0 years |
-| Faster turnover (session time) | 11.9T | 878M | +1.3% | 11.9 days |
+| Level up (price per guest) | 353B | 699M | +0.8% | 17 h |
+| Bigger class (guests) | - | 747M | +7.7% | - |
+| Faster turnover (session time) | 342T | 699M | +0.8% | 1.9e+0 years |
 
-Everything maxed (100 / 1000 / 100): 43 guests x 2.32T = 99.8T per 4 s = **24.9T coins/s**, for 2.52Oc coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 13 guests x 2.32T = 30.2T per 4 s = **7.54T coins/s**, for 6.98dd coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 #### Sailing, level 4: Offshore regatta (tier 11.8)
 
-Base 2 guests, 14 s, tierScale^11.8 = 177M coins per guest, cost factor costScale^11.8 = 70.0B. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
+Base 2 guests, 14 s, tierScale^11.8 = 177M coins per guest, cost factor costScale^11.8 = 36.3B. One stat at a time (the other two at 0, so this shows the *shape* of each ladder):
 
 | stat | level | total cost so far | cost of next level | income/session | session time | coins/s | next level adds |
 |---|---|---|---|---|---|---|---|
-| Level up (price per guest) | 10 | 4.82T | 564B | 531M | 14 s | 37.9M | +3.3% |
-| Level up (price per guest) | 25 | 15.3T | 879B | 876M | 14 s | 62.6M | +2.2% |
-| Level up (price per guest) | 50 | 47.4T | 1.84T | 1.64B | 14 s | 117M | +1.4% |
-| Level up (price per guest) | 100 | 255T | 8.07T | 7.36B | 14 s | 526M | +0.8% |
-| Level up (price per guest) | 200 | 5.16Qa | 155T | 27.0B | 14 s | 1.93B | +0.5% |
-| Level up (price per guest) | 500 | 36.7Qi | 1.10Qi | 510B | 14 s | 36.4B | +0.2% |
-| Level up (price per guest) | 1000 | 96.2Sp | - | 32.0T | 14 s | 2.29T | max |
-| Bigger class (guests) | 5 | 136T | 222T | 1.24B | 14 s | 88.5M | +14.3% |
-| Bigger class (guests) | 10 | 16.7Qa | 26.7Qa | 2.12B | 14 s | 152M | +8.3% |
-| Bigger class (guests) | 20 | 223Qi | 350Qi | 3.89B | 14 s | 278M | +4.5% |
-| Bigger class (guests) | 30 | 2.73Sp | 4.25Sp | 5.66B | 14 s | 404M | +3.1% |
-| Bigger class (guests) | 40 | 31.8Oc | - | 7.43B | 14 s | 531M | max |
-| Faster turnover (session time) | 10 | 126T | 25.3T | 354M | 11.7 s | 30.3M | +1.7% |
-| Faster turnover (session time) | 25 | 1.14Qa | 151T | 354M | 9.3 s | 37.9M | +1.3% |
-| Faster turnover (session time) | 50 | 18.4Qa | 1.99Qa | 354M | 7 s | 50.6M | +1.0% |
-| Faster turnover (session time) | 100 | 2.24Qi | - | 354M | 4.7 s | 75.8M | max |
+| Level up (price per guest) | 10 | 2.49T | 292B | 531M | 14 s | 37.9M | +3.3% |
+| Level up (price per guest) | 25 | 7.93T | 456B | 876M | 14 s | 62.6M | +2.2% |
+| Level up (price per guest) | 50 | 24.5T | 954B | 1.64B | 14 s | 117M | +1.4% |
+| Level up (price per guest) | 100 | 132T | 4.18T | 7.36B | 14 s | 526M | +0.8% |
+| Level up (price per guest) | 200 | 2.67aa | 80.4T | 27.0B | 14 s | 1.93B | +0.5% |
+| Level up (price per guest) | 500 | 19.0bb | 570aa | 510B | 14 s | 36.4B | +0.2% |
+| Level up (price per guest) | 1000 | 49.9dd | - | 32.0T | 14 s | 2.29T | max |
+| Bigger class (guests) | 5 | 110T | 220T | 1.24B | 14 s | 88.5M | +14.3% |
+| Bigger class (guests) | 10 | 26.8aa | - | 2.12B | 14 s | 152M | max |
+| Faster turnover (session time) | 10 | 148T | 52.6T | 354M | 13.1 s | 27.1M | +0.7% |
+| Faster turnover (session time) | 25 | 12.1aa | 4.05aa | 354M | 11.7 s | 30.3M | +0.8% |
+| Faster turnover (session time) | 50 | 16.8bb | 5.66bb | 354M | 9.3 s | 37.9M | +1.0% |
+| Faster turnover (session time) | 100 | 32.9dd | - | 354M | 4.7 s | 75.8M | max |
 
-**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 4.73B coins/s, 18.1Qa coins invested), one more level of each:
+**Which buy is best right now?** In a typical mid-build (Bigger class 10, Level up 100, Faster 25: 3.78B coins/s, 38.9aa coins invested), one more level of each:
 
 | stat | cost | coins/s after | gain | payback |
 |---|---|---|---|---|
-| Level up (price per guest) | 8.07T | 4.77B | +0.8% | 2.4 days |
-| Bigger class (guests) | 26.7Qa | 5.12B | +8.3% | 2.1e+0 years |
-| Faster turnover (session time) | 151T | 4.79B | +1.3% | 27.7 days |
+| Level up (price per guest) | 4.18T | 3.82B | +0.8% | 36.8 h |
+| Bigger class (guests) | - | 4.10B | +8.3% | - |
+| Faster turnover (session time) | 4.05aa | 3.81B | +0.8% | 4.2e+0 years |
 
-Everything maxed (100 / 1000 / 100): 42 guests x 16.0T = 672T per 4.7 s = **144T coins/s**, for 31.9Oc coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
+Everything maxed (100 / 1000 / 100): 12 guests x 16.0T = 192T per 4.7 s = **41.2T coins/s**, for 82.7dd coins of upgrades. (For comparison the bot ends the game with about 13-30 capacity, 400-1000 price and ~100 speed per zone.)
 
 ## 4. Reading the ladders: what to look for when tuning
 
 Payback time of the next upgrade is the number that shapes how the game *feels*: short paybacks (seconds to a minute) keep the player tapping; long ones (hours) mean it is time for the next zone/sport/expansion. The rules of thumb the current numbers follow:
 * **Early**: Level up pays back in seconds, Bigger class in tens of seconds, Faster turnover in minutes. All three feel worth buying.
-* **The gap between Level up and the others is deliberate**: Level up 1.03x per level vs Bigger class 2.5x and Faster 1.085x + surge. Level up is the "always something to buy" engine; the other two are occasional bigger steps.
+* **The gap between Level up and the others is deliberate**: Level up 1.03x per level vs Bigger class 3x and Faster 1.336x + surge. Level up is the "always something to buy" engine; the other two are occasional bigger steps.
 * **Milestones create a rhythm**: right before level 25/50/75/100/200/300 the payback of Level up looks bad, right after the multiplier lands it looks great. The bot (and a good player) buys straight through those.
-* **Tier gap**: the cost of a new zone grows 8.3x per tier while its income grows 5x, and a zone's own upgrades cost 8.3x more too. A brand-new higher-tier zone is therefore always a better investment than pushing an old zone's expensive tail, which is why the bot alternates between "unlock the next thing" and "top up".
+* **Tier gap**: the cost of a new zone grows 7.85x per tier while its income grows 5x, and a zone's own upgrades cost 7.85x more too. A brand-new higher-tier zone is therefore always a better investment than pushing an old zone's expensive tail, which is why the bot alternates between "unlock the next thing" and "top up".
 
 ## 5. Multipliers that sit on top (they multiply the numbers above)
 
@@ -964,12 +892,13 @@ Skills also add per sport: +% coins, +% speed, +guests, -% upgrade cost (capped 
 
 | beach building | effect | per level | max level | base cost | growth |
 |---|---|---|---|---|---|
-| Rental shop | coins | +10% | 8 | 5.00K | x5.2 |
-| Beach café | coins | +10% | 8 | 12.0K | x5.4 |
-| Showers | speed | +6% | 8 | 25.0K | x5.3 |
-| Lifeguard tower | coins | +8% | 8 | 18.0K | x5.4 |
+| Rental shop | coins | +10% | 8 | 20.0K | x7 |
+| Lifeguard tower | coins | +8% | 8 | 300K | x7 |
+| Showers | speed | +6% | 8 | 20.0M | x7 |
+| Beach café | coins | +12% | 8 | 10.0M | x7 |
+| Beach hotel | coins | +15% | 8 | 30.0B | x7 |
 
-A fully built beach (all four buildings at level 8) gives about x5.31 coins and x1.48 speed on every sport at once.
+A fully built beach (all four buildings at level 8) gives about x12.73 coins and x1.48 speed on every sport at once.
 
 ## 6. What the balance bot does with all this (pacing check)
 
@@ -978,66 +907,59 @@ Timeline of the active, patient bot (unlocks and expansions only; managers are b
 | time | event |
 |---|---|
 | 0h02m | unlocked Wave surfing level 2 (Longboarders) |
-| 0h11m | unlocked sport Skimboarding |
-| 0h12m | unlocked Skimboarding level 2 (Flatland) |
-| 0h28m | unlocked Skimboarding level 3 (Shore break) |
-| 0h48m | unlocked Wave surfing level 3 (Reef) |
-| 1h23m | unlocked Skimboarding level 4 (Big shore break) |
-| 2h01m | unlocked Wave surfing level 4 (Nazaré) |
-| 3h30m | EXPANSION 1: the big wave. Area opened, everything starts over |
-| 3h32m | unlocked Wave surfing level 2 (Longboarders) |
-| 3h35m | unlocked sport Skimboarding |
-| 3h36m | unlocked Skimboarding level 2 (Flatland) |
-| 3h42m | unlocked Skimboarding level 3 (Shore break) |
-| 3h50m | unlocked Wave surfing level 3 (Reef) |
-| 4h03m | unlocked sport Windsurfing |
-| 4h09m | unlocked Skimboarding level 4 (Big shore break) |
-| 4h16m | unlocked Windsurfing level 2 (Freeride) |
-| 4h19m | unlocked sport Kitesurfing |
-| 4h22m | unlocked Wave surfing level 4 (Nazaré) |
-| 4h28m | unlocked Kitesurfing level 2 (Freeride) |
-| 4h30m | unlocked sport Foil and wing |
-| 4h38m | unlocked Foil and wing level 2 (Wing freeride) |
-| 4h45m | unlocked Windsurfing level 3 (Speed and freestyle) |
-| 4h54m | unlocked Kitesurfing level 3 (Freestyle and big air) |
-| 5h06m | unlocked Foil and wing level 3 (Downwind) |
-| 5h21m | unlocked Windsurfing level 4 (Wave zone) |
-| 5h36m | unlocked Kitesurfing level 4 (Big air and waves) |
-| 5h53m | unlocked Foil and wing level 4 (Pro arena) |
-| 6h40m | EXPANSION 2: the big wave. Area opened, everything starts over |
-| 6h41m | unlocked Wave surfing level 2 (Longboarders) |
-| 6h42m | unlocked sport Skimboarding |
-| 6h42m | unlocked Skimboarding level 2 (Flatland) |
-| 6h44m | unlocked Skimboarding level 3 (Shore break) |
-| 6h47m | unlocked Wave surfing level 3 (Reef) |
-| 6h49m | unlocked sport Windsurfing |
-| 6h53m | unlocked Windsurfing level 2 (Freeride) |
-| 6h54m | unlocked sport Kitesurfing |
-| 6h54m | unlocked Skimboarding level 4 (Big shore break) |
-| 6h56m | unlocked Wave surfing level 4 (Nazaré) |
-| 6h56m | unlocked Kitesurfing level 2 (Freeride) |
-| 6h57m | unlocked sport Foil and wing |
-| 7h00m | unlocked Foil and wing level 2 (Wing freeride) |
-| 7h01m | unlocked Windsurfing level 3 (Speed and freestyle) |
-| 7h04m | unlocked Kitesurfing level 3 (Freestyle and big air) |
-| 7h12m | unlocked sport Sailing |
-| 7h14m | unlocked Foil and wing level 3 (Downwind) |
-| 7h16m | unlocked Windsurfing level 4 (Wave zone) |
-| 7h17m | unlocked Sailing level 2 (Boat hire) |
-| 7h19m | unlocked Kitesurfing level 4 (Big air and waves) |
-| 7h23m | unlocked Foil and wing level 4 (Pro arena) |
-| 7h35m | unlocked Sailing level 3 (Club racing) |
-| 8h36m | unlocked Sailing level 4 (Offshore regatta) |
-| 10h10m | FINISHED: everything unlocked and managed |
+| 0h03m | unlocked sport Skimboarding |
+| 0h06m | unlocked Skimboarding level 2 (Flatland) |
+| 0h22m | unlocked Skimboarding level 3 (Shore break) |
+| 0h41m | unlocked Wave surfing level 3 (Reef) |
+| 1h31m | unlocked Skimboarding level 4 (Big shore break) |
+| 2h29m | unlocked Wave surfing level 4 (Nazaré) |
+| 5h35m | EXPANSION 1: the big wave. Area opened, everything starts over |
+| 5h38m | unlocked Wave surfing level 2 (Longboarders) |
+| 5h39m | unlocked sport Skimboarding |
+| 5h40m | unlocked Skimboarding level 2 (Flatland) |
+| 5h50m | unlocked Skimboarding level 3 (Shore break) |
+| 6h02m | unlocked Wave surfing level 3 (Reef) |
+| 6h32m | unlocked sport Windsurfing |
+| 6h42m | unlocked Skimboarding level 4 (Big shore break) |
+| 7h05m | unlocked Wave surfing level 4 (Nazaré) |
+| 7h18m | unlocked Windsurfing level 2 (Freeride) |
+| 7h22m | unlocked sport Kitesurfing |
+| 7h41m | unlocked Kitesurfing level 2 (Freeride) |
+| 7h45m | unlocked sport Foil and wing |
+| 8h02m | unlocked Foil and wing level 2 (Wing freeride) |
+| 8h16m | unlocked Windsurfing level 3 (Speed and freestyle) |
+| 8h37m | unlocked Kitesurfing level 3 (Freestyle and big air) |
+| 9h20m | unlocked Foil and wing level 3 (Downwind) |
+| 9h55m | unlocked Windsurfing level 4 (Wave zone) |
+| 10h48m | unlocked Kitesurfing level 4 (Big air and waves) |
+| 11h54m | unlocked Foil and wing level 4 (Pro arena) |
+| 13h11m | EXPANSION 2: the big wave. Area opened, everything starts over |
+| 13h12m | unlocked Wave surfing level 2 (Longboarders) |
+| 13h12m | unlocked sport Skimboarding |
+| 13h12m | unlocked Skimboarding level 2 (Flatland) |
+| 13h17m | unlocked Skimboarding level 3 (Shore break) |
+| 13h26m | unlocked Wave surfing level 3 (Reef) |
+| 13h43m | unlocked sport Windsurfing |
+| 13h51m | unlocked Skimboarding level 4 (Big shore break) |
+| 14h05m | unlocked Wave surfing level 4 (Nazaré) |
+| 14h13m | unlocked Windsurfing level 2 (Freeride) |
+| 14h16m | unlocked sport Kitesurfing |
+| 14h25m | unlocked Kitesurfing level 2 (Freeride) |
+| 14h28m | unlocked sport Foil and wing |
+| 14h40m | unlocked Foil and wing level 2 (Wing freeride) |
+| 14h49m | unlocked Windsurfing level 3 (Speed and freestyle) |
+| 15h06m | unlocked Kitesurfing level 3 (Freestyle and big air) |
+| 15h40m | unlocked sport Sailing |
+| 15h48m | unlocked Foil and wing level 3 (Downwind) |
 
-Finished (everything unlocked and managed): **10h10m**, longest wait between purchases 0h55m, 19310 purchases. A relaxed player who only checks in now and then takes several times longer; away time (2 h, more with skills) and ads speed that up.
+Finished (everything unlocked and managed): **not within 16 h**, longest wait between purchases 2h11m, 10003 purchases. A relaxed player who only checks in now and then takes several times longer; away time (2 h, more with skills) and ads speed that up.
 
 ## 7. What the numbers imply (worth knowing when tuning)
 
-* **Bigger class's 40 cap is close to what a player can actually reach**, not a decorative far-off number: at x2.5 per level, level 30 in the first zone already costs 39.0T and the full 40 costs 455Qa. With 1 trillion coins to spend on it in a tier-0 zone a player reaches level 26; with 1 quadrillion, level 33. Higher tiers cost costScale^tier more, so their practical ceiling is lower still.
-* **Level up is the workhorse.** Its cost only rises 3% per level, so the 1000-level ladder is reachable (total 1.37Qa in tier 0) and the milestones (x1774.08 in total at level 1000) reward it. The bot ends near 400-1000 Level ups per zone.
-* **Faster turnover is a fixed, finite bonus** (x3 at level 100, total 32.0M in tier 0). Because it multiplies everything else it is worth buying, but it is capped, so it can never run away.
-* **Per-zone income at the end (all three maxed, tier 0 vs the last zone):** 4.66M coins/s vs 350T coins/s, before any expansion (x3 each), skill or building multiplier.
+* **Bigger class's 10 cap is close to what a player can actually reach**, not a decorative far-off number: at x3 per level, level 30 in the first zone already costs 738K and the full 10 costs 738K. With 1 trillion coins to spend on it in a tier-0 zone a player reaches level 10; with 1 quadrillion, level 10. Higher tiers cost costScale^tier more, so their practical ceiling is lower still.
+* **Level up is the workhorse.** Its cost only rises 3% per level, so the 1000-level ladder is reachable (total 1.37aa in tier 0) and the milestones (x1774.08 in total at level 1000) reward it. The bot ends near 400-1000 Level ups per zone.
+* **Faster turnover is a fixed, finite bonus** (x3 at level 100, total 907T in tier 0). Because it multiplies everything else it is worth buying, but it is capped, so it can never run away.
+* **Per-zone income at the end (all three maxed, tier 0 vs the last zone):** 4.66M coins/s vs 350T coins/s, before any expansion bonus (+1 each), skill or building multiplier.
 
 ---
 *Change `src/config/balance.ts`, `sports.ts` or `expansions.ts`, then run `npm run docs:economy` and `npx tsx scripts/simulate.ts` to see what moved.*

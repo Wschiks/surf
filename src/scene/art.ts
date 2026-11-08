@@ -1063,6 +1063,37 @@ export function bakeBuildings(scene: Phaser.Scene) {
     ctx.fillStyle = '#ffd23f';
     ctx.fillRect(54, 0, 10, 6);
   });
+  bake(scene, 'b-hotel', S.w, S.h, 3, (ctx) => {
+    shadow(ctx);
+    // three floors, cream walls, a teal roof, balconies and a striped awning over the door
+    ctx.fillStyle = '#f6eedc';
+    ctx.fillRect(16, 22, 78, 70);
+    ctx.fillStyle = '#e6d6b4';
+    ctx.fillRect(16, 22, 78, 4);
+    ctx.fillStyle = '#35bfae';
+    ctx.fillRect(12, 14, 86, 10);
+    ctx.fillStyle = '#27998c';
+    ctx.fillRect(12, 22, 86, 3);
+    for (let f = 0; f < 3; f++) {
+      for (let k = 0; k < 4; k++) {
+        ctx.fillStyle = '#7ec8e3';
+        ctx.fillRect(22 + k * 18, 30 + f * 18, 11, 10);
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        ctx.fillRect(23 + k * 18, 31 + f * 18, 3, 8);
+      }
+      if (f < 2) {
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(18, 41 + f * 18, 74, 3);
+      }
+    }
+    ctx.fillStyle = '#8b5a2b';
+    ctx.fillRect(48, 74, 14, 18);
+    awning(ctx, 40, 68, 30, '#e8483d', '#ffffff', 4);
+    ctx.fillStyle = '#fff';
+    ctx.font = 'bold 8px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('HOTEL', 55, 22);
+  });
 }
 
 /** The skimboarding cove: clear shallows, a wet sand bank for flatland. 340 x 320 world px. */

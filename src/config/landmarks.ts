@@ -38,7 +38,7 @@ export interface DecorDef {
 
 /** Palms, umbrellas, towels and starfish on the beach. Fixed positions: nothing is random. */
 export const BEACH_DECOR: DecorDef[] = [
-  ...[0.35, 2.3, 4.6, 7.6, 9.9, 12.3, 14.5, -1.4, 16.4].map((x, i): DecorDef => ({ texture: 'deco-palm', x, y: 0.12 + (i % 2) * 0.04, w: 52 + (i % 3) * 6, h: 84 + (i % 3) * 8, upright: true })),
+  ...[0.35, 2.3, 4.6, 9.0, 9.9, 12.3, 14.5, -1.4, 16.4].map((x, i): DecorDef => ({ texture: 'deco-palm', x, y: 0.12 + (i % 2) * 0.04, w: 52 + (i % 3) * 6, h: 84 + (i % 3) * 8, upright: true })),
   ...(
     [
       [11.2, 1.2, 'a'],

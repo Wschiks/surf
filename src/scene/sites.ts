@@ -57,6 +57,16 @@ export class SiteView {
     }
   }
 
+  /** Take the built sites away again (a rebirth): the empty plots come back. */
+  reset() {
+    for (const site of this.sites) {
+      site.objects.forEach((o) => o.destroy());
+      site.objects = [];
+      site.built = false;
+      site.plot.setVisible(true);
+    }
+  }
+
   private build(site: Site, animate: boolean) {
     const spec = site.sport.beachSite!;
     const r = toWorld(spec.rect);

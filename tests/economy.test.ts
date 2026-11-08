@@ -17,7 +17,7 @@ import {
   tick,
   zoneStats,
 } from './helpers';
-import { startBoost } from '../src/core/economy';
+import { startBoost, topUpOffline } from '../src/core/economy';
 import { BALANCE } from '../src/config/balance';
 import { newGame } from '../src/core/state';
 
@@ -128,9 +128,19 @@ describe('upgrades', () => {
     expect(afterSpeed).toBeGreaterThan(afterPrice);
   });
 
+  it('every Faster turnover level takes off the same seconds, 6 s to 2 s at the top', () => {
+    const s = fresh();
+    s.skills = {};
+    const at = (lv: number) => zoneStats(s, zoneById(W1), { ...s.zones[W1], speed: lv }).duration;
+    expect(at(0)).toBeCloseTo(6, 5);
+    expect(at(1) - at(0)).toBeCloseTo(at(100) - at(99), 9);
+    expect(at(10) - at(0)).toBeCloseTo(at(60) - at(50), 9);
+    expect(at(100)).toBeCloseTo(2, 5);
+  });
+
   it('stops at the maximum level', () => {
     const s = fresh();
-    s.coins = 1e30;
+    s.coins = 1e300;
     for (let i = 0; i < 100; i++) buyStat(s, W1, 'speed');
     expect(s.zones[W1].speed).toBe(STATS.speed.max);
   });
@@ -139,6 +149,8 @@ describe('upgrades', () => {
     const s = fresh();
     const base = zoneStats(s, zoneById(W1)).income;
     s.coins = 1e9;
+    expect(buyFacility(s, 'shop')).toBe(false); // not open yet: it needs Longboarders
+    for (const l of [2, 3, 4]) s.zones[`wave-${l}`].owned = true;
     expect(buyFacility(s, 'shop')).toBe(true);
     expect(multipliers(s).coins).toBeCloseTo(1.1);
     expect(zoneStats(s, zoneById(W1)).income).toBeCloseTo(base * 1.1);
@@ -156,8 +168,9 @@ describe('offline earnings', () => {
     const per = autoIncomePerSecond(s);
     const before = s.coins;
     const rep = applyOffline(s, 3600);
-    expect(rep.coins).toBeCloseTo(per * 3600, 3);
-    expect(s.coins - before).toBeCloseTo(per * 3600, 3);
+    expect(rep.coins).toBeCloseTo(per * 3600 * BALANCE.offlineRate, 3);
+    expect(rep.full).toBeCloseTo(per * 3600, 3);
+    expect(s.coins - before).toBeCloseTo(per * 3600 * BALANCE.offlineRate, 3);
     expect(rep.capped).toBe(false);
   });
 
@@ -179,10 +192,10 @@ describe('offline earnings', () => {
     const rep = applyOffline(s, BALANCE.offlineCapSeconds * 5);
     expect(rep.capped).toBe(true);
     expect(rep.seconds).toBe(BALANCE.offlineCapSeconds);
-    expect(s.coins - before).toBeCloseTo(per * BALANCE.offlineCapSeconds, 2);
+    expect(s.coins - before).toBeCloseTo(per * BALANCE.offlineCapSeconds * BALANCE.offlineRate, 2);
   });
 
-  it('gives the same result as playing the time live', () => {
+  it('earns 30% of what playing the time live earns', () => {
     const a = fresh();
     const b = fresh();
     for (const s of [a, b]) {
@@ -191,7 +204,35 @@ describe('offline earnings', () => {
     }
     applyOffline(a, 1000);
     for (let i = 0; i < 1000; i++) tick(b, 1);
-    expect(a.coins).toBeCloseTo(b.coins, 3);
+    expect(BALANCE.offlineRate).toBe(0.3);
+    expect(a.coins - 1e6 + managerCost(zoneById(W1))).toBeCloseTo((b.coins - 1e6 + managerCost(zoneById(W1))) * BALANCE.offlineRate, 3);
+  });
+});
+
+describe('welcome-back choices', () => {
+  const away = () => {
+    const s = fresh();
+    s.coins = 1e6;
+    buyManager(s, W1);
+    const before = s.coins;
+    const rep = applyOffline(s, 3600);
+    return { s, rep, before };
+  };
+
+  it('an ad doubles the free 30% to 60%', () => {
+    const { s, rep, before } = away();
+    expect(BALANCE.offlineAdRate).toBe(0.6);
+    topUpOffline(s, rep, BALANCE.offlineAdRate);
+    expect(s.coins - before).toBeCloseTo(rep.full * 0.6, 3);
+  });
+
+  it('gems give the full 100%, also after an ad, and never more', () => {
+    const { s, rep, before } = away();
+    topUpOffline(s, rep, BALANCE.offlineAdRate);
+    topUpOffline(s, rep, 1);
+    expect(s.coins - before).toBeCloseTo(rep.full, 3);
+    expect(topUpOffline(s, rep, 1)).toBe(0);
+    expect(s.coins - before).toBeCloseTo(rep.full, 3);
   });
 });
 
@@ -226,8 +267,8 @@ describe('ad boost', () => {
     tick(plain, 400);
     tick(boosted, 400);
     const perSecond = plain.coins / 400;
-    // 40 s at double speed and 360 s at normal speed: 40 seconds of extra income
-    expect(boosted.coins).toBeGreaterThan(plain.coins + perSecond * 30);
-    expect(boosted.coins).toBeLessThan(plain.coins + perSecond * 50);
+    // 120 s at double speed and 280 s at normal speed: 120 seconds of extra income
+    expect(boosted.coins).toBeGreaterThan(plain.coins + perSecond * (BALANCE.boostSeconds - 10));
+    expect(boosted.coins).toBeLessThan(plain.coins + perSecond * (BALANCE.boostSeconds + 10));
   });
 });

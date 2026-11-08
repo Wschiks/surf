@@ -31,6 +31,8 @@ export interface GameState {
   facilities: Record<string, number>;
   /** Beach expansions bought so far. Each one opens an area, multiplies income and restarts the beach. */
   expansions: number;
+  /** Rebirths done: the whole game started over after it was finished. Every one raises income for good. */
+  rebirths: number;
   /** The quests on offer (three at a time) and how many were completed. */
   quests: import('./quests').Quest[];
   questsDone: number;
@@ -42,13 +44,16 @@ export interface GameState {
   /** Seconds left of the ad boost (all coin income x2). It runs down in real time, also while away. */
   boost: number;
   /** Progress in the shop's ad streak: the next reward and when the streak can be used again (ms since 1970). */
-  adShop: { step: number; lockedUntil: number };
+  /** The daily ad streak: next reward, when its day began (the first ad, 0 = none), and when it opens again after all five. */
+  adShop: { step: number; startedAt: number; lockedUntil: number };
   /** When the Surf Club gems can be claimed again (ms since 1970). */
   clubNext: number;
   /** What the player bought. Not saved with the game (see perks.ts): the game fills it in after loading. */
   perks: Perks;
   /** Learned skills. Permanent: they stay when the beach is expanded. */
   skills: Record<string, boolean>;
+  /** One-time pointers the player has already seen (for example "tap the rebirth button"). Never reset, not even by a rebirth. */
+  hints: Record<string, boolean>;
   /** Real time (ms since 1970) when the game was last saved or updated. */
   savedAt: number;
   startedAt: number;
@@ -69,16 +74,18 @@ export function newGame(now: number): GameState {
     zones: {},
     facilities: {},
     expansions: 0,
+    rebirths: 0,
     quests: [],
     questsDone: 0,
     questsMade: 0,
     skillPoints: 0,
     skillEarned: 0,
     boost: 0,
-    adShop: { step: 0, lockedUntil: 0 },
+    adShop: { step: 0, startedAt: 0, lockedUntil: 0 },
     clubNext: 0,
     perks: {},
     skills: rootSkills(),
+    hints: {},
     savedAt: now,
     startedAt: now,
   };
@@ -103,6 +110,7 @@ export function openAreas(state: GameState) {
 
 /** Fill in anything missing (new sports, zones or facilities added since the save was made). */
 export function ensureState(state: GameState): GameState {
+  state.hints ??= {};
   for (const s of SPORTS) state.sports[s.id] ??= false;
   for (const z of ZONES) state.zones[z.id] ??= newZone();
   for (const z of Object.values(state.zones)) {
@@ -111,13 +119,15 @@ export function ensureState(state: GameState): GameState {
   }
   for (const f of FACILITIES) state.facilities[f.id] ??= 0;
   state.expansions ??= 0;
+  state.rebirths ??= 0;
   state.quests ??= [];
   state.questsDone ??= 0;
   state.questsMade ??= 0;
   state.skillPoints ??= 0;
   state.skillEarned ??= 0;
   state.boost ??= 0;
-  state.adShop ??= { step: 0, lockedUntil: 0 };
+  state.adShop ??= { step: 0, startedAt: 0, lockedUntil: 0 };
+  state.adShop.startedAt ??= 0;
   state.clubNext ??= 0;
   state.perks = {}; // never taken from a save
 

@@ -4,7 +4,8 @@ import { unlockCoins } from './balance';
 // Beach expansions. Buying one opens the next part of the map (its sports start at Level 1), multiplies all
 // coin income and wipes the rest of the progress: the player starts over on a bigger beach, faster than before.
 
-export const EXPANSION_MULT = 3;
+/** Every expansion adds this to the income bonus, for good: x1 at the start, x2 after the 1st, x3 after the 2nd. */
+export const EXPANSION_BONUS = 1;
 
 export interface ExpansionDef {
   /** 1 for the first expansion. */

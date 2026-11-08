@@ -2,7 +2,7 @@ import { STATS } from '../config/balance';
 import { FACILITIES, facilityById } from '../config/facilities';
 import { ZONES, zoneById, type ZoneRef } from '../config/sports';
 import { fmt } from '../ui/format';
-import { autoIncomePerSecond, guestsFor, multipliers, zoneStats } from './economy';
+import { autoIncomePerSecond, facilityOpen, statMax, guestsFor, multipliers, zoneStats } from './economy';
 import { addSkillPoints, skillEffects } from './skills';
 import { LUCKY_QUEST_EVERY, LUCKY_QUEST_POINTS, QUEST_POINTS } from '../config/skills';
 import type { GameState } from './state';
@@ -84,10 +84,10 @@ function view(state: GameState, q: Quest): QuestView {
   const gained = (now: number) => Math.max(0, now - (q.base ?? 0));
   switch (q.kind) {
     case 'level':
-      return { text: `Level up ${zone!.def.name} to level ${q.target}`, current: z!.price, target: q.target, done: z!.price >= q.target, reward: 0, points: 0 };
+      return { text: `Level up ${zone!.def.name} to Lv ${q.target}`, current: z!.price, target: q.target, done: z!.price >= q.target, reward: 0, points: 0 };
     case 'sessions': {
       const c = gained(z!.sessions);
-      return { text: `Finish ${q.target} sessions at ${zone!.def.name}`, current: c, target: q.target, done: c >= q.target, reward: 0, points: 0 };
+      return { text: `${q.target} sessions at ${zone!.def.name}`, current: c, target: q.target, done: c >= q.target, reward: 0, points: 0 };
     }
     case 'served': {
       const c = Math.floor(gained(z!.served));
@@ -99,16 +99,16 @@ function view(state: GameState, q: Quest): QuestView {
     }
     case 'guests': {
       const now = guestsFor(zone!, z!, skillEffects(state).guests[zone!.sport.id] ?? 0);
-      return { text: `Get ${q.target} ${zone!.sport.noun} in ${zone!.def.name}`, current: now, target: q.target, done: now >= q.target, reward: 0, points: 0 };
+      return { text: `${q.target} ${zone!.sport.noun} at ${zone!.def.name}`, current: now, target: q.target, done: now >= q.target, reward: 0, points: 0 };
     }
     case 'speed':
-      return { text: `Make ${zone!.def.name} faster: speed level ${q.target}`, current: z!.speed, target: q.target, done: z!.speed >= q.target, reward: 0, points: 0 };
+      return { text: `${zone!.def.name}: speed Lv ${q.target}`, current: z!.speed, target: q.target, done: z!.speed >= q.target, reward: 0, points: 0 };
     case 'unlock': {
       const done = z!.owned;
       return { text: zone!.level === 1 ? `Start ${zone!.sport.name}` : `Unlock ${zone!.def.name}`, current: done ? 1 : 0, target: 1, done, reward: 0, points: 0 };
     }
     case 'manager':
-      return { text: `Hire a manager for ${zone!.def.name}`, current: z!.manager ? 1 : 0, target: 1, done: z!.manager, reward: 0, points: 0 };
+      return { text: `Manager for ${zone!.def.name}`, current: z!.manager ? 1 : 0, target: 1, done: z!.manager, reward: 0, points: 0 };
     case 'facility': {
       const f = facilityById(q.facility!);
       const lvl = state.facilities[f.id] ?? 0;
@@ -189,7 +189,7 @@ function build(state: GameState, slot: number, taken: Quest[]): Quest | null {
         if (r) return { kind, zone: r.id, target: nextMultiple(state.zones[r.id].speed, 10) };
       }
       if (kind === 'facility') {
-        const f = FACILITIES.find((x) => (state.facilities[x.id] ?? 0) < x.max && !taken.some((t) => t.facility === x.id));
+        const f = FACILITIES.find((x) => facilityOpen(state, x) && (state.facilities[x.id] ?? 0) < x.max && !taken.some((t) => t.facility === x.id));
         if (f) return { kind, facility: f.id, target: (state.facilities[f.id] ?? 0) + 1 };
       }
       if (kind === 'expand') {
@@ -204,7 +204,7 @@ function build(state: GameState, slot: number, taken: Quest[]): Quest | null {
   // 5: more guests, but only later on
   tries[5] = () => {
     if (done < 4) return null;
-    const r = pick('guests', (z) => state.zones[z.id].capacity >= STATS.capacity.max, 4);
+    const r = pick('guests', (z) => state.zones[z.id].capacity >= statMax('capacity', state.rebirths), 4);
     return r ? { kind: 'guests', zone: r.id, target: Math.max(10, nextMultiple(guestsFor(r, state.zones[r.id], skillEffects(state).guests[r.sport.id] ?? 0), 5)) } : null;
   };
   return (tries[slot] ?? (() => null))();

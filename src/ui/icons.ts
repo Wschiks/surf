@@ -61,6 +61,8 @@ const SHAPES: Record<string, string> = {
   cafe: '<path d="M4.5 9.5h11V14a4 4 0 01-4 4h-3a4 4 0 01-4-4z" fill="currentColor"/><path d="M15.5 10.8h1.4a2.4 2.4 0 010 4.8h-1.4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 3.5c-1 1.3 1 2.1 0 3.6M12 3.5c-1 1.3 1 2.1 0 3.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" opacity=".65"/>',
   shower: '<path d="M4 21V9.5a5.5 5.5 0 0110.5-2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M12 9h9.5L20 12.6h-6.4z" fill="currentColor"/><path d="M14.5 15.5v2.2M17.2 15.5v3.4M19.9 15.5v2.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
   lifeguard: '<circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="5"/><circle cx="12" cy="12" r="7.5" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="5" stroke-dasharray="5.9 5.9"/>',
+  rebirth: '<path d="M19 12a7 7 0 01-12.2 4.7M5 12a7 7 0 0112.2-4.7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M17.8 3.6v4.3h-4.3M6.2 20.4v-4.3h4.3" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.4" fill="currentColor"/>',
+  hotel: '<rect x="5" y="3.5" width="14" height="17" rx="1.6" fill="currentColor"/><path d="M8 7h2M14 7h2M8 10.5h2M14 10.5h2M8 14h2M14 14h2" stroke="rgba(255,255,255,.8)" stroke-width="1.8" stroke-linecap="round"/><rect x="10.3" y="16.5" width="3.4" height="4" fill="rgba(255,255,255,.8)"/>',
 };
 
 export type IconName = keyof typeof SHAPES;

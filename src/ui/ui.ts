@@ -1,17 +1,23 @@
 import { STATS, STAT_IDS, type StatId } from '../config/balance';
 import { FACILITIES } from '../config/facilities';
-import { SPORTS, sportById, zoneById, zoneId } from '../config/sports';
-import { adsNative, showRewardedAd, type AdResult } from '../ads';
+import { areaById } from '../config/areas';
+import { SPORTS, ZONES, sportById, zoneById, zoneId } from '../config/sports';
+import type { GameState } from '../core/state';
+import { adsNative, interstitialAvailable, showInterstitialAd, showRewardedAd, type AdResult } from '../ads';
+import { AD_BREAK } from '../config/ads';
+import { adBreakDue } from '../core/perks';
 import { BALANCE } from '../config/balance';
-import { autoIncomePerSecond, offlineCap, startBoost, buyFacility, buyManager, buyStat, costOf, discounts, facilityCost, managerCost, planBuy, tapZone, zoneStats, type BuyMode } from '../core/economy';
+import { autoIncomePerSecond, statMax, topUpOffline, bonusFor, bonusMult, facilityOpen, offlineCap, startBoost, buyFacility, buyManager, buyStat, costOf, discounts, facilityCost, managerCost, planBuy, tapZone, zoneStats, type BuyMode } from '../core/economy';
 import { milestoneMult, nextMilestone } from '../config/balance';
 import type { Game } from '../core/game';
 import type { OfflineReport } from '../core/economy';
 import { hasAffordableSkill, skillEffects } from '../core/skills';
-import { canExpand, expand, expansionNeededFor, expansionStatus, unlockZone, zoneUnlockStatus } from '../core/unlocks';
-import { EXPANSION_MULT } from '../config/expansions';
+import { canExpand, canRebirth, expand, expansionNeededFor, expansionReady, expansionStatus, rebirth, rebirthShown, rebirthStatus, unlockZone, zoneMisted, zoneUnlockStatus } from '../core/unlocks';
+import { REBIRTH } from '../config/rebirth';
+import { PLANE } from '../config/plane';
+import { claimPlanePrize, planeDelay, planeUnlocked, rollPlanePrize, type PlanePrize } from '../core/plane';
 import { claimQuest, questView, QUEST_SLOTS } from '../core/quests';
-import { COIN, fmt, fmtSeconds, fmtTime } from './format';
+import { COIN, fmt, fmtClock, fmtDuration, fmtSeconds, fmtTime } from './format';
 import { icon, sportTile, tile } from './icons';
 import { Menu } from './menu';
 import { Shop } from './shop';
@@ -34,6 +40,12 @@ export interface UICallbacks {
   onUnlocked: (zoneId: string, kind: 'level' | 'sport') => void;
   /** A beach expansion was bought at the height of the big wave: the beach starts over. */
   onExpanded: () => void;
+  /** A rebirth: the whole game started over from the very beginning (the mist comes back). */
+  onRebirth: () => void;
+  /** The next expansion just became ready (every open sport at the level it needs): the wind blows the mist back. */
+  onExpandReady: () => void;
+  /** Send the banner plane over the map with this prize on its banner. */
+  flyPlane: (f: { kind: PlanePrize['kind']; text: string; seconds: number; onTap: () => void; onGone: () => void }) => void;
 }
 
 /** Set the HTML of an element only when it changed, so a button is not rebuilt while it is being pressed. */
@@ -42,6 +54,35 @@ function setHtml(el: HTMLElement, html: string) {
     el.innerHTML = html;
     el.dataset.h = html;
   }
+}
+
+/** The zone after this one: the next level of the sport, or after level 4 the first level of the next sport (round and round). */
+/** Step through the zones with the arrows, skipping zones still under the mist. */
+function stepZone(state: GameState, id: string, pick: (id: string) => string): string | null {
+  let cur = id;
+  for (let n = 0; n < ZONES.length; n++) {
+    cur = pick(cur);
+    if (!zoneMisted(state, cur)) return cur;
+  }
+  return null;
+}
+
+function nextZoneId(id: string): string {
+  const ref = zoneById(id);
+  if (ref.level < ref.sport.levels.length) return zoneId(ref.sport.id, ref.level + 1);
+  // after the very last zone it goes round to the first again
+  const i = SPORTS.findIndex((sp) => sp.id === ref.sport.id);
+  return zoneId(SPORTS[(i + 1) % SPORTS.length].id, 1);
+}
+
+/** The zone before this one: the level before, or before level 1 the last level of the sport before (round and round). */
+function prevZoneId(id: string): string {
+  const ref = zoneById(id);
+  if (ref.level > 1) return zoneId(ref.sport.id, ref.level - 1);
+  // before the very first zone it goes round to the last one
+  const i = SPORTS.findIndex((sp) => sp.id === ref.sport.id);
+  const prev = SPORTS[(i - 1 + SPORTS.length) % SPORTS.length];
+  return zoneId(prev.id, prev.levels.length);
 }
 
 type Sheet = { kind: 'zone'; id: string } | { kind: 'beach' } | { kind: 'sports' } | { kind: 'expand' } | null;
@@ -53,6 +94,9 @@ export class GameUI {
   private dockEl: HTMLElement;
   private sheet: Sheet = null;
   private lastFull = 0;
+  /** When the next banner plane comes (ms), null while there is no manager yet. */
+  private planeAt: number | null = null;
+  private planeFlying = false;
   private refs: Record<string, HTMLElement> = {};
   /** Whether the zone sheet that is open was built for an owned zone. */
   private sheetOwned = true;
@@ -72,7 +116,7 @@ export class GameUI {
     this.root.innerHTML = `
       <div class="col">
       <div class="hud">
-        <div class="pill coins"><span class="ico">${COIN}</span><b data-ref="coins">0</b><small data-ref="rate">+0/s</small><em class="mult" data-ref="mult" hidden></em></div>
+        <div class="pill coins"><span class="ico">${COIN}</span><span class="cv"><b data-ref="coins">0</b><small data-ref="rate">+0/s</small></span><em class="mult" data-ref="mult" hidden></em></div>
         <button class="pill gems" data-ref="gembtn" aria-label="Skill points"><span class="ico">${icon('gem')}</span><b data-ref="gems">0</b></button>
         <button class="pill shopbtn" data-ref="shop" aria-label="Shop">${icon('bag')}<i class="dot" data-ref="shopdot" hidden></i></button>
         <button class="pill gear" data-ref="gear" aria-label="Menu">${icon('gear')}</button>
@@ -84,9 +128,10 @@ export class GameUI {
         <button class="dock-btn" data-ref="beach">${icon('beach')}<em>Beach</em></button>
         <button class="dock-btn" data-ref="sports">${icon('sports')}<em>Sports</em></button>
         <button class="dock-btn dock-skills gone" data-ref="skills">${icon('tree')}<em>Skills</em></button>
-        <div class="dock-slot">
+        <div class="dock-slot" data-ref="dockslot">
+          <button class="rebirth-btn" data-ref="rebirth" aria-label="Rebirth" hidden>${icon('rebirth')}</button>
           <button class="boost" data-ref="boost">${icon('video')}<span><b data-ref="boostA">Watch ad</b><small data-ref="boostB">x${BALANCE.boostMult} coins</small></span><i class="boost-bar"><u data-ref="boostBar"></u></i></button>
-          <button class="dock-btn expand" data-ref="expand">${icon('expand')}<em>Expand</em></button>
+          <button class="dock-btn expand" data-ref="expand">${icon('expand')}<em>Expand</em><i class="dot" data-ref="expanddot" hidden></i></button>
         </div>
       </div>
       <div class="sheet" data-ref="sheet"></div>
@@ -107,10 +152,24 @@ export class GameUI {
     this.refs.shop.addEventListener('click', () => this.openShop());
     this.refs.expand.addEventListener('click', () => this.openExpand());
     this.refs.boost.addEventListener('click', () => void this.watchAd());
+    this.refs.rebirth.addEventListener('click', () => this.openExpand());
     // tapping the dark area around a dialog closes it
     this.refs.modal.addEventListener('click', (e) => {
       if (e.target === this.refs.modal) this.closeModal();
     });
+    // tapping a quest (not its claim button) goes to what it is about and opens it
+    this.refs.qlist.querySelectorAll<HTMLElement>('.q-row').forEach((row, i) =>
+      row.addEventListener('click', (e) => {
+        if ((e.target as HTMLElement).closest('.q-claim')) return;
+        const q = this.game.state.quests[i];
+        if (!q) return;
+        sound.tap();
+        if (q.zone) this.openZone(q.zone);
+        else if (q.kind === 'facility') this.openBeach();
+        else if (q.kind === 'expand') this.openExpand();
+        else this.openSports();
+      }),
+    );
     this.refs.qlist.querySelectorAll<HTMLElement>('.q-claim').forEach((b, i) =>
       b.addEventListener('click', () => {
         const got = claimQuest(this.game.state, i);
@@ -136,6 +195,7 @@ export class GameUI {
   }
 
   openZone(id: string) {
+    if (zoneMisted(this.game.state, id)) return this.expandFirst();
     this.sheet = { kind: 'zone', id };
     this.buildSheet();
     this.cb.onSelect(id);
@@ -165,12 +225,59 @@ export class GameUI {
     this.cb.onSelect(null);
   }
 
-  closeSheet() {
+  /** Close the open sheet. `adBreak` false: never an ad break now (the game closes it itself, for an animation). */
+  closeSheet(adBreak = true) {
     if (!this.sheet) return;
     this.sheet = null;
     this.sheetEl.classList.remove('open');
     this.dockEl.classList.remove('hidden');
     this.cb.onSelect(null);
+    if (adBreak) this.maybeAdBreak();
+  }
+
+  // ------------------------------------------------------------ ad breaks
+
+  private sessionStart = performance.now();
+  private lastAdBreak = performance.now();
+
+  /** At a calm moment (coins collected, a sheet closed) an ad break may come: a black "Ad break" screen, then an ad. */
+  maybeAdBreak() {
+    const now = performance.now();
+    const due = adBreakDue({ adFree: adFree(this.game.state.perks), played: (now - this.sessionStart) / 1000, sinceLast: (now - this.lastAdBreak) / 1000 });
+    if (!due || this.adBusy || !this.refs.modal.hidden || document.querySelector('.adbreak') || !interstitialAvailable()) return;
+    this.lastAdBreak = now;
+    this.adBusy = true;
+    const box = document.createElement('div');
+    box.className = 'adbreak';
+    box.innerHTML = `<b>Ad break</b><small data-n>The ad starts in ${AD_BREAK.countdown}</small>`;
+    this.host.appendChild(box);
+    let left = AD_BREAK.countdown;
+    const timer = setInterval(() => {
+      left--;
+      const n = box.querySelector('[data-n]');
+      if (n && left > 0) n.textContent = `The ad starts in ${left}`;
+      if (left > 0) return;
+      clearInterval(timer);
+      void (adsNative ? showInterstitialAd() : this.demoAdBreak()).finally(() => {
+        box.remove();
+        this.adBusy = false;
+        this.game.resync(); // the time in the ad does not count as time away
+      });
+    }, 1000);
+  }
+
+  /** In a browser there is no ad network: a short stand-in for the ad. */
+  private demoAdBreak(): Promise<void> {
+    return new Promise((resolve) => {
+      const back = document.createElement('div');
+      back.className = 'modal-back adbreak-demo';
+      back.innerHTML = `<div class="modal"><h2>Demo ad</h2><p>In the phone app an ad plays here.</p><button class="go big" data-ok>Close</button></div>`;
+      this.host.appendChild(back);
+      back.querySelector('[data-ok]')!.addEventListener('click', () => {
+        back.remove();
+        resolve();
+      });
+    });
   }
 
   private buildSheet() {
@@ -195,12 +302,29 @@ export class GameUI {
       <div class="sheet-head">
         ${owned ? sportTile(ref.sport.icon, ref.sport.color, 48) : tile('lock', '#7d92a3', 48)}
         <div class="sheet-title"><h2>${title}</h2><p>${sub}</p></div>
+        ${stepZone(this.game.state, id, prevZoneId) ? `<button class="zarrow" data-prev aria-label="Level before">${icon('back')}</button>` : ''}
+        ${stepZone(this.game.state, id, nextZoneId) ? `<button class="zarrow" data-next aria-label="Next level">${icon('arrow')}</button>` : ''}
         <button class="x" data-close aria-label="Close">${icon('close')}</button>
       </div>`;
     this.sheetEl.innerHTML = head + (owned ? this.ownedBody(id) : this.lockedBody(id));
     this.sheetEl.querySelector('[data-close]')!.addEventListener('click', () => this.closeSheet());
+    for (const [sel, pick] of [['[data-next]', nextZoneId], ['[data-prev]', prevZoneId]] as const) {
+      this.sheetEl.querySelector(sel)?.addEventListener('click', () => {
+        const to = stepZone(this.game.state, id, pick);
+        if (!to) return;
+        sound.tap();
+        this.openZone(to);
+      });
+    }
     if (!owned) {
       this.sheetEl.querySelector('[data-toexpand]')?.addEventListener('click', () => this.openExpand());
+      this.sheetEl.querySelectorAll<HTMLElement>('[data-goto]').forEach((li) =>
+        li.addEventListener('click', () => {
+          if (li.classList.contains('met')) return;
+          sound.tap();
+          this.openZone(li.dataset.goto!);
+        }),
+      );
       this.sheetEl.querySelector('[data-unlock]')?.addEventListener('click', () => {
         const kind = unlockZone(this.game.state, id);
         if (kind) {
@@ -310,7 +434,7 @@ export class GameUI {
     const mgrRow = `
       <div class="up mgr" data-mgr>
         <div class="up-ico">${icon('manager')}</div>
-        <div class="up-txt"><b>${terms.manager}</b><small>${terms.managerBlurb}</small></div>
+        <div class="up-txt"><b>${terms.manager}</b><small>${icon('check')} auto</small></div>
         <button class="buy" data-buy="manager"></button>
       </div>`;
     // no manager yet: hiring one matters more than any upgrade, so it leads; once hired it settles at the bottom
@@ -319,10 +443,10 @@ export class GameUI {
     return `
       <div data-zone-body>
         <div class="statline">
-          <div><b data-s="guests"></b><small>guests</small></div>
-          <div><b data-s="total"></b><small>${COIN} total</small></div>
-          <div><b data-s="dur"></b><small>per session</small></div>
-          <div><b data-s="rate"></b><small>${COIN} per sec</small></div>
+          <div><b data-s="guests"></b><small>${icon('people')}</small></div>
+          <div><b data-s="total"></b><small>${COIN}</small></div>
+          <div><b data-s="dur"></b><small>${icon('clock')}</small></div>
+          <div><b data-s="rate"></b><small>${COIN}/s</small></div>
         </div>
         <div class="session"><div class="bar"><i data-bar></i></div><button class="go" data-go></button></div>
         <div class="modes" data-modes><span>Buy</span>${modes}</div>
@@ -336,21 +460,20 @@ export class GameUI {
     if (need.kind === 'closed') {
       // same layout as an unlockable zone: what you get, what is blocking it, and the ticked list of what the expansion that opens it needs
       const next = expansionStatus(this.game.state);
-      const items = (next?.requirements ?? []).map((r, i) => `<li data-xreq="${i}"><span class="tick"></span><span class="rt">${r.text}</span><em></em></li>`).join('');
+      const items = next ? SPORTS.filter((sp) => areaById(sp.area).expansion <= this.game.state.expansions).map((sp, i) => `<li data-xreq="${i}"><span class="tick"></span><span class="rt">${icon(sp.icon)} Lv ${next.def.level}</span><em></em></li>`).join('') : '';
       return `
       <div class="unlock-card">
-        <h3>Start ${ref.sport.name}</h3>
-        <p class="get">You get: ${ref.def.starterBuys.join(', ')}</p>
-        <p class="blocked">${need.status.blockedBy}. Expanding starts you over on a bigger beach and all income is ${EXPANSION_MULT} times higher.</p>
+        <h3>${sportTile(ref.sport.icon, ref.sport.color, 30)} ${ref.sport.name}</h3>
+        <p class="blocked">${icon('lock')} ${icon('expand')} ${expansionNeededFor(this.game.state, ref.sport.id) ?? 1}</p>
         <ul class="reqs">${items}</ul>
-        <button class="go" data-toexpand>${icon('expand')} Go to Expand</button>
+        <button class="go" data-toexpand>${icon('expand')} Expand</button>
       </div>`;
     }
-    const reqs = need.status.requirements.map((r, i) => `<li data-req="${i}"><span class="tick"></span><span class="rt">${r.text}</span><em></em></li>`).join('');
+    // a requirement you still have to do is a button: it takes you to the zone where you do it
+    const reqs = need.status.requirements.map((r, i) => `<li data-req="${i}"${r.zone ? ` data-goto="${r.zone}"` : ''}><span class="tick"></span><span class="rt">${r.text}</span><em></em>${r.zone ? `<span class="goto">${icon('arrow')}</span>` : ''}</li>`).join('');
     return `
       <div class="unlock-card">
-        <h3>${need.kind === 'sport' ? `Start ${ref.sport.name}` : `Unlock ${ref.def.name}`}</h3>
-        <p class="get">You get: ${ref.def.starterBuys.join(', ')}</p>
+        <h3>${icon('lock')} ${need.kind === 'sport' ? ref.sport.name : ref.def.name}</h3>
         <p class="blocked" data-blocked hidden></p>
         <ul class="reqs">${reqs}</ul>
         <button class="go" data-unlock></button>
@@ -367,7 +490,6 @@ export class GameUI {
         if (!li) return;
         li.classList.toggle('met', r.met);
         setHtml(li.querySelector('.tick') as HTMLElement, r.met ? icon('check') : '');
-        li.querySelector('em')!.textContent = r.progress;
       });
       return;
     }
@@ -401,7 +523,7 @@ export class GameUI {
     this.sheetEl.innerHTML = `
       <div class="sheet-head">
         ${tile('sports', '#1497b5', 48)}
-        <div class="sheet-title"><h2>Water sports</h2><p>Tap a level to go there</p></div>
+        <div class="sheet-title"><h2>Sports</h2></div>
         <button class="x" data-close aria-label="Close">${icon('close')}</button>
       </div>
       <div class="sports">${rows}</div>`;
@@ -420,7 +542,7 @@ export class GameUI {
       if (unlocked) info = `${sp.area[0].toUpperCase()}${sp.area.slice(1)} area · ${owned} of ${sp.levels.length} levels`;
       else {
         const exp = expansionNeededFor(s, sp.id);
-        info = exp !== null ? `Locked · opens with beach expansion ${exp}` : `Locked · needs Level ${sp.unlock?.level} of ${sportById(sp.unlock!.after).name}`;
+        info = exp !== null ? 'Locked' : `Locked · needs Level ${sp.unlock?.level} of ${sportById(sp.unlock!.after).name}`;
       }
       row.classList.toggle('locked', !unlocked);
       row.querySelector('[data-info]')!.textContent = info;
@@ -433,14 +555,14 @@ export class GameUI {
       (f) => `
       <div class="up" data-fac="${f.id}">
         <div class="up-ico">${icon(f.icon)}</div>
-        <div class="up-txt"><b>${f.name} <em data-lvl></em></b><small>${f.blurb}</small><small data-eff class="eff"></small></div>
+        <div class="up-txt"><b>${f.name} <em data-lvl></em></b><small data-eff class="eff"></small></div>
         <button class="buy" data-buyfac="${f.id}"></button>
       </div>`,
     ).join('');
     this.sheetEl.innerHTML = `
       <div class="sheet-head">
         ${tile('beach', '#e9a13a', 48)}
-        <div class="sheet-title"><h2>Beach facilities</h2><p>Shared buildings that boost every sport</p></div>
+        <div class="sheet-title"><h2>Beach</h2></div>
         <button class="x" data-close aria-label="Close">${icon('close')}</button>
       </div>
       <div class="ups">${rows}</div>`;
@@ -451,8 +573,8 @@ export class GameUI {
   private buildExpandSheet() {
     this.sheetEl.innerHTML = `
       <div class="sheet-head">
-        ${tile('expand', '#ff6a3d', 48)}
-        <div class="sheet-title"><h2>Expand the beach</h2><p>Open a new area, income goes up for good</p></div>
+        ${expansionStatus(this.game.state) ? tile('expand', '#ff6a3d', 48) : tile('rebirth', '#2fbf8a', 48)}
+        <div class="sheet-title"><h2>${expansionStatus(this.game.state) ? 'Expand' : 'Rebirth'}</h2></div>
         <button class="x" data-close aria-label="Close">${icon('close')}</button>
       </div>
       <div class="expand-card" data-expand></div>`;
@@ -465,40 +587,74 @@ export class GameUI {
     if (!card) return;
     const s = this.game.state;
     const st = expansionStatus(s);
-    if (!st) {
-      const html = `<h3>${icon('trophy')} Fully expanded</h3><p class="get">The whole map is open. All income is x${Math.pow(EXPANSION_MULT, s.expansions)}.</p>`;
-      if (card.dataset.h !== html) {
-        card.innerHTML = html;
-        card.dataset.h = html;
-      }
-      return;
-    }
+    if (!st) return this.refreshRebirth(card);
     if (!card.querySelector('[data-xbtn]')) {
+      // one line and one button, nothing shown twice (the author: less is more).
+      // (The expansion only shows itself once every open sport is done, so there is nothing left to list.)
+      const mult = bonusFor(s.expansions + 1, s.rebirths);
       card.innerHTML = `
-        <h3>${icon('beach')} ${st.def.name} ${st.def.n}</h3>
-        <p class="get">${st.def.blurb}</p>
-        <p class="get">All income x${EXPANSION_MULT}. A big wave washes over the beach and you start over, faster than before. Your skills stay.</p>
-        <ul class="reqs">${st.requirements.map((r, i) => `<li data-xreq="${i}"><span class="tick"></span><span class="rt">${r.text}</span><em></em></li>`).join('')}</ul>
+        <p class="xp-line">${icon('rebirth')} Start over · ${COIN} x${mult} forever</p>
         <button class="go" data-xbtn></button>`;
       card.querySelector('[data-xbtn]')!.addEventListener('click', () => this.startExpansion());
     }
-    st.requirements.forEach((r, i) => {
-      const li = card.querySelector<HTMLElement>(`[data-xreq="${i}"]`);
-      if (!li) return;
-      li.classList.toggle('met', r.met);
-      setHtml(li.querySelector('.tick') as HTMLElement, r.met ? icon('check') : '');
-      li.querySelector('em')!.textContent = r.progress;
-    });
     const btn = card.querySelector<HTMLButtonElement>('[data-xbtn]')!;
     const can = canExpand(s);
     btn.disabled = !can;
     btn.className = 'go' + (can ? ' ready' : '');
-    setHtml(btn, `Expand · ${COIN} ${fmt(st.coins)}`);
+    setHtml(btn, `${icon('expand')} ${COIN} ${fmt(st.coins)}`);
+  }
+
+  /** When the whole map is open, the expand sheet offers the rebirth: start the whole game over, stronger. */
+  private refreshRebirth(card: HTMLElement) {
+    const s = this.game.state;
+    const st = rebirthStatus(s)!;
+    if (!card.querySelector('[data-rbtn]')) {
+      card.innerHTML = `
+        <h3>${icon('rebirth')} Rebirth ${st.n}</h3>
+        <div class="rewards"><span class="rw">${COIN}<b>x${bonusFor(0, st.n)}</b></span><span class="rw gem">${icon('gem')}<b>+${REBIRTH.gems}</b></span></div>
+        <ul class="reqs"><li data-rreq="0"><span class="tick"></span><span class="rt">${icon(zoneById(REBIRTH.zone).sport.icon)} ${zoneById(REBIRTH.zone).def.name}</span><em></em></li></ul>
+        <button class="go" data-rbtn></button>`;
+      card.querySelector('[data-rbtn]')!.addEventListener('click', () => this.startRebirth());
+    }
+    st.requirements.forEach((r, i) => {
+      const li = card.querySelector<HTMLElement>(`[data-rreq="${i}"]`);
+      if (!li) return;
+      li.classList.toggle('met', r.met);
+      setHtml(li.querySelector('.tick') as HTMLElement, r.met ? icon('check') : '');
+      li.querySelector('em')!.textContent = `Lv ${r.progress}`;
+    });
+    const btn = card.querySelector<HTMLButtonElement>('[data-rbtn]')!;
+    btn.disabled = !st.canBuy;
+    btn.className = 'go' + (st.canBuy ? ' ready' : '');
+    setHtml(btn, `${icon('rebirth')} ${COIN} ${fmt(st.coins)}`);
+  }
+
+  /** The rebirth: the big wave washes over everything, and behind it the game starts over from the very beginning. */
+  private startRebirth() {
+    if (!canRebirth(this.game.state) || document.querySelector('.tsunami')) return;
+    const n = this.game.state.rebirths + 1;
+    this.bigWave(`Rebirth ${n}`, () => {
+      rebirth(this.game.state);
+      this.game.save();
+      this.cb.onRebirth();
+      this.refreshTop();
+    }, `${icon('rebirth')} Rebirth ${n}! ${COIN} x${bonusFor(0, n)} ${icon('gem')} +${REBIRTH.gems}`);
   }
 
   /** Buy the expansion: the big wave sweeps over the screen and, while everything is hidden, the beach starts over. */
   private startExpansion() {
     if (!canExpand(this.game.state) || document.querySelector('.tsunami')) return;
+    const st = expansionStatus(this.game.state)!;
+    this.bigWave(`${st.def.name} ${st.def.n}`, () => {
+      expand(this.game.state);
+      this.game.save();
+      this.cb.onExpanded();
+      this.refreshTop();
+    }, () => `${icon('expand')} ${COIN} x${bonusMult(this.game.state)}`);
+  }
+
+  /** The big wave sweeps over the screen; `atPeak` runs while everything is hidden, then confetti and a message. */
+  private bigWave(title: string, atPeak: () => void, message: string | (() => string)) {
     sound.unlock();
     const box = document.createElement('div');
     box.className = 'tsunami';
@@ -514,18 +670,13 @@ export class GameUI {
           <circle cx="60" cy="112" r="4" fill="#fff"/><circle cx="150" cy="96" r="3" fill="#fff"/><circle cx="250" cy="106" r="4.5" fill="#fff"/><circle cx="340" cy="88" r="3" fill="#fff"/><circle cx="205" cy="118" r="2.5" fill="#fff"/>
         </svg>
       </div>
-      <div class="ts-title">${icon('beach')}<b>${expansionStatus(this.game.state)!.def.name} ${expansionStatus(this.game.state)!.def.n}</b></div>`;
+      <div class="ts-title">${icon('beach')}<b>${title}</b></div>`;
     this.host.appendChild(box);
-    this.closeSheet();
-    setTimeout(() => {
-      expand(this.game.state);
-      this.game.save();
-      this.cb.onExpanded();
-      this.refreshTop();
-    }, 1500);
+    this.closeSheet(false);
+    setTimeout(atPeak, 1500);
     setTimeout(() => {
       this.confetti();
-      this.toast(`Income x${Math.pow(EXPANSION_MULT, this.game.state.expansions)}. New area open!`);
+      this.toast(typeof message === 'string' ? message : message());
     }, 2500);
     setTimeout(() => box.remove(), 3400);
   }
@@ -540,7 +691,12 @@ export class GameUI {
   }
 
   /** The buy button of a stat: shows how many levels a tap buys and the price. */
-  private setStatBuy(btn: HTMLElement, maxed: boolean, affordable: boolean, count: number, cost: number) {
+  private setStatBuy(btn: HTMLElement, maxed: boolean, affordable: boolean, count: number, cost: number, rebirthMore = false) {
+    if (maxed && rebirthMore) {
+      this.setBuy(btn, Infinity);
+      setHtml(btn, `MAX <span class="more">${icon('lock')}${icon('rebirth')}</span>`);
+      return;
+    }
     if (maxed) return this.setBuy(btn, Infinity);
     btn.classList.remove('maxed');
     btn.toggleAttribute('data-afford', affordable);
@@ -557,10 +713,19 @@ export class GameUI {
       for (const f of FACILITIES) {
         const row = this.sheetEl.querySelector<HTMLElement>(`[data-fac="${f.id}"]`)!;
         const lvl = s.facilities[f.id] ?? 0;
-        row.querySelector('[data-lvl]')!.textContent = `Lv ${lvl}/${f.max}`;
-        const what = f.effect === 'coins' ? 'coins' : 'speed';
-        row.querySelector('[data-eff]')!.textContent = `+${Math.round(f.perLevel * lvl * 100)}% ${what} now, +${Math.round(f.perLevel * 100)}% per level`;
-        this.setBuy(row.querySelector('[data-buyfac]')!, facilityCost(f.id, lvl, skillEffects(s).facilityCost));
+        const open = facilityOpen(s, f);
+        row.classList.toggle('locked', !open);
+        row.querySelector('[data-lvl]')!.textContent = open ? `Lv ${lvl}/${f.max}` : '';
+        const what = f.effect === 'coins' ? COIN : icon('bolt');
+        const need = zoneById(f.needs);
+        setHtml(row.querySelector('[data-eff]') as HTMLElement, open ? `${what} +${Math.round(f.perLevel * lvl * 100)}% <span class="dim">(+${Math.round(f.perLevel * 100)}% / Lv)</span>` : f.stage > s.expansions ? `${icon('lock')} ${icon('expand')} ${f.stage}` : `${icon('lock')} ${icon(need.sport.icon)} ${need.def.name}`);
+        const btn = row.querySelector<HTMLButtonElement>('[data-buyfac]')!;
+        if (open) this.setBuy(btn, facilityCost(f.id, lvl, skillEffects(s).facilityCost));
+        else {
+          btn.disabled = true;
+          btn.removeAttribute('data-afford');
+          setHtml(btn, icon('lock'));
+        }
       }
       return;
     }
@@ -600,24 +765,30 @@ export class GameUI {
       const row = q(`[data-stat="${stat}"]`);
       const lvl = z[stat];
       const disc = discounts(s, ref.sport.id);
-      const plan = planBuy(ref, stat, lvl, s.coins, this.buyMode, disc.stat(stat));
+      const top = statMax(stat, s.rebirths);
+      const plan = planBuy(ref, stat, lvl, s.coins, this.buyMode, disc.stat(stat), top);
       // when the coins are not there yet, still show what the chosen amount would cost
-      const want = this.buyMode === 'max' ? 1 : Math.min(this.buyMode, STATS[stat].max - lvl);
+      const want = this.buyMode === 'max' ? 1 : Math.min(this.buyMode, top - lvl);
       const shown = plan.count > 0 ? plan.count : Math.max(1, want);
       const after = lvl + shown;
       const next = zoneStats(s, ref, { ...z, [stat]: after });
-      const maxed = lvl >= STATS[stat].max;
+      const maxed = lvl >= top;
       let eff = '';
-      if (stat === 'capacity') eff = maxed ? `${st.guests} guests (max)` : `${st.guests} → ${next.guests} guests`;
-      if (stat === 'price') eff = maxed ? `${COIN} ${fmt(st.pricePerGuest)} each (max)` : `${COIN} ${fmt(st.pricePerGuest)} → ${fmt(next.pricePerGuest)} each`;
-      if (stat === 'speed') eff = maxed ? `${fmtSeconds(st.duration)} (max)` : `${fmtSeconds(st.duration)} → ${fmtSeconds(next.duration)} per session`;
+      if (stat === 'capacity') eff = maxed ? `${icon('people')} ${st.guests} ${icon('check')}` : `${icon('people')} ${st.guests} → ${next.guests}`;
+      if (stat === 'price') eff = maxed ? `${COIN} ${fmt(st.pricePerGuest)} (max)` : `${COIN} ${fmt(st.pricePerGuest)} → ${fmt(next.pricePerGuest)}`;
+      if (stat === 'speed') eff = maxed ? `${icon('clock')} ${fmtSeconds(st.duration)} (max)` : `${icon('clock')} ${fmtSeconds(st.duration)} → ${fmtSeconds(next.duration)}`;
       setHtml(row.querySelector('[data-eff]')!, `Lv ${lvl} · ${eff}`);
       if (stat === 'price') {
         const nm = nextMilestone(lvl);
-        setHtml(row.querySelector('[data-ms]')!, `${icon('star', '12px')} Bonus x${fmt(milestoneMult(lvl))} · next x${nm.mult} at level ${nm.level}`);
+        setHtml(row.querySelector('[data-ms]')!, `${icon('star', '12px')} x${fmt(milestoneMult(lvl))} → x${fmt(milestoneMult(lvl) * nm.mult)} at Lv ${nm.level}`);
       }
-      this.setStatBuy(row.querySelector('[data-buy]')!, lvl >= STATS[stat].max, plan.count > 0, shown, plan.count > 0 ? plan.cost : costOf(ref, stat, lvl, shown, disc.stat(stat)));
+      // a full class grows again with the next rebirth: the button says so with icons
+      const rebirthMore = maxed && !!STATS[stat].perRebirth;
+      this.setStatBuy(row.querySelector('[data-buy]')!, maxed, plan.count > 0, shown, plan.count > 0 ? plan.cost : costOf(ref, stat, lvl, shown, disc.stat(stat), top), rebirthMore);
     }
+    // the next arrow glows when the next level can be unlocked right now
+    const nextId = stepZone(s, id, nextZoneId);
+    this.sheetEl.querySelector('[data-next]')?.classList.toggle('ready', !!(nextId && zoneUnlockStatus(s, zoneById(nextId))?.status.canBuy));
     const mgrBtn = q('[data-buy="manager"]');
     if (z.manager) {
       mgrBtn.classList.add('maxed');
@@ -630,21 +801,56 @@ export class GameUI {
 
   // ------------------------------------------------------------ top bar
 
+  /** Beach buildings that could be built at the last check (to say so when a new one opens). */
+  private openFacilities: Set<string> | null = null;
+
   private refreshTop() {
     const s = this.game.state;
+    const open = new Set(FACILITIES.filter((f) => facilityOpen(s, f)).map((f) => f.id));
+    if (this.openFacilities) {
+      for (const id of open) {
+        if (this.openFacilities.has(id)) continue;
+        const f = FACILITIES.find((x) => x.id === id)!;
+        this.toast(`${icon(f.icon)} New: ${f.name}!`);
+        this.refs.beach.classList.add('pulse');
+      }
+    }
+    this.openFacilities = open;
+    if (this.sheet?.kind === 'beach') this.refs.beach.classList.remove('pulse');
     this.refs.coins.textContent = fmt(s.coins);
     this.refs.rate.textContent = `+${fmt(autoIncomePerSecond(s))}/s`;
     this.refs.gems.textContent = String(s.skillPoints);
     const canSeeSkills = s.skillEarned > 0;
     this.refs.skills.classList.toggle('gone', !canSeeSkills);
     this.refs.skills.classList.toggle('pulse', canSeeSkills && hasAffordableSkill(s));
-    const perm = Math.pow(EXPANSION_MULT, s.expansions) * (s.perks.x5 ? BALANCE.x5Mult : 1) * (s.perks.club ? CLUB.coinMult : 1);
+    const perm = bonusMult(s) * (s.perks.x5 ? BALANCE.x5Mult : 1) * (s.perks.club ? CLUB.coinMult : 1);
     this.refs.mult.hidden = perm === 1;
     this.refs.mult.textContent = `x${perm}`;
     this.refreshBoost();
     this.refs.shopdot.hidden = adStreak(s, Date.now()).lockedFor > 0;
-    this.refs.expand.classList.toggle('ready', canExpand(s));
-    this.refs.expand.classList.toggle('pulse', canExpand(s));
+    // the rebirth button shows once the whole game is done, and glows when a rebirth can be bought
+    const showRebirth = rebirthShown(s);
+    (this.refs.rebirth as HTMLButtonElement).hidden = !showRebirth;
+    if (showRebirth && !s.hints.rebirth && !this.coachOpen) this.coachRebirth();
+    this.refs.rebirth.classList.toggle('ready', canRebirth(s));
+    const big = canExpand(s) || canRebirth(s);
+    this.refs.expand.classList.toggle('ready', big);
+    this.refs.expand.classList.toggle('pulse', big);
+    this.refs.expanddot.hidden = !big;
+    // the Expand button is a secret until the next expansion is ready (or, after the last one, the rebirth shows);
+    // until then the Watch ad button takes its place
+    const ready = expansionReady(s);
+    const showExpand = ready; // after the last expansion the round rebirth button takes over
+    if (showExpand && this.refs.dockslot.classList.contains('noexpand') && this.wasExpandReady !== null) {
+      this.refs.expand.classList.add('arrive');
+      setTimeout(() => this.refs.expand.classList.remove('arrive'), 600);
+    }
+    this.refs.dockslot.classList.toggle('noexpand', !showExpand);
+    if (this.wasExpandReady === false && ready) this.cb.onExpandReady();
+    this.wasExpandReady = ready;
+    const reb = canRebirth(s);
+    if (reb && this.wasRebirthReady === false) this.toast(`${icon('rebirth')} Rebirth ready!`, () => this.openExpand());
+    this.wasRebirthReady = reb;
     this.refreshQuests();
   }
 
@@ -677,6 +883,46 @@ export class GameUI {
   // ------------------------------------------------------------ ad boost
 
   private adBusy = false;
+  private coachOpen = false;
+
+  /**
+   * The first time the rebirth button shows: the screen goes dark except for that button, an arrow points at it,
+   * and only tapping it closes this (it opens the rebirth screen). Shown once per save.
+   */
+  private coachRebirth() {
+    const btn = this.refs.rebirth;
+    this.coachOpen = true;
+    this.closeSheet(false);
+    const el = document.createElement('div');
+    el.className = 'coach';
+    el.innerHTML = `<button class="coach-hole" aria-label="Rebirth"></button><div class="coach-tip"><b>${icon('rebirth')} Rebirth!</b><span class="coach-arrow">${icon('arrow')}</span></div>`;
+    this.root.appendChild(el);
+    const hole = el.querySelector<HTMLElement>('.coach-hole')!;
+    const tip = el.querySelector<HTMLElement>('.coach-tip')!;
+    const place = () => {
+      if (!el.isConnected) return;
+      const r = btn.getBoundingClientRect();
+      const o = this.root.getBoundingClientRect();
+      const pad = 8;
+      Object.assign(hole.style, { left: `${r.left - o.left - pad}px`, top: `${r.top - o.top - pad}px`, width: `${r.width + pad * 2}px`, height: `${r.height + pad * 2}px` });
+      Object.assign(tip.style, { right: `${o.right - r.left + 14}px`, top: `${r.top - o.top + r.height / 2}px` });
+      requestAnimationFrame(place);
+    };
+    place();
+    sound.unlock();
+    hole.addEventListener('click', () => {
+      this.game.state.hints.rebirth = true;
+      this.game.save();
+      el.remove();
+      this.coachOpen = false;
+      sound.tap();
+      this.openExpand();
+    });
+  }
+
+  /** Whether the next expansion was ready at the last refresh (null before the first one, so loading a save does not animate). */
+  private wasExpandReady: boolean | null = null;
+  private wasRebirthReady: boolean | null = null;
 
   /** The "watch an ad" button: shows what it gives, then the seconds left while the boost runs. */
   private refreshBoost() {
@@ -687,7 +933,7 @@ export class GameUI {
     btn.classList.toggle('busy', this.adBusy);
     btn.disabled = on || this.adBusy;
     const a = on ? `Coins x${BALANCE.boostMult}` : this.adBusy ? 'Loading...' : 'Watch ad';
-    const b = on ? `${Math.ceil(s.boost)}s left` : `x${BALANCE.boostMult} for ${BALANCE.boostSeconds}s`;
+    const b = on ? `${fmtClock(s.boost)} left` : `x${BALANCE.boostMult} · ${fmtDuration(BALANCE.boostSeconds)}`;
     if (this.refs.boostA.textContent !== a) this.refs.boostA.textContent = a;
     if (this.refs.boostB.textContent !== b) this.refs.boostB.textContent = b;
     this.refs.boostBar.style.width = (on ? Math.min(1, s.boost / BALANCE.boostSeconds) * 100 : 0) + '%';
@@ -703,6 +949,7 @@ export class GameUI {
       return adsNative ? await showRewardedAd() : await this.demoAd();
     } finally {
       this.adBusy = false;
+      this.lastAdBreak = performance.now(); // just watched an ad: no ad break right after it
       this.game.resync(); // the time spent in the ad does not count as time away
     }
   }
@@ -716,7 +963,7 @@ export class GameUI {
       sound.coin();
       this.game.save();
       this.confetti();
-      this.toast(`Coins x${BALANCE.boostMult} for ${BALANCE.boostSeconds} seconds!`);
+      this.toast(`${COIN} x${BALANCE.boostMult} · ${fmtDuration(BALANCE.boostSeconds)}`);
     } else if (result === 'failed') {
       this.toast('No ad is ready right now. Try again in a minute.');
     }
@@ -759,11 +1006,88 @@ export class GameUI {
   update(nowMs: number) {
     if (nowMs - this.lastFull < 100) return;
     this.lastFull = nowMs;
+    this.updatePlane(nowMs);
     this.refreshTop();
     this.refreshSheet();
     this.skillScreen.update();
     this.shop?.update();
     if (this.game.offlineReport) this.showOffline(this.game.offlineReport);
+  }
+
+  // ------------------------------------------------------------ banner plane
+
+  /** Send the banner plane when it is time. It flies whatever is open; missing it is the player's loss. */
+  private updatePlane(nowMs: number) {
+    if (!planeUnlocked(this.game.state)) {
+      if (!this.planeFlying) this.planeAt = null;
+      return;
+    }
+    this.planeAt ??= nowMs + planeDelay('first') * 1000;
+    if (!this.planeFlying && nowMs >= this.planeAt) this.launchPlane();
+  }
+
+  private nextPlane(when: 'claimed' | 'missed') {
+    this.planeAt = Date.now() + planeDelay(when) * 1000;
+  }
+
+  /** The prize in the popup (the plane's banner shows the same, chosen before it appeared). */
+  private prizeHtml(p: PlanePrize): string {
+    if (p.kind === 'coins') return `${COIN}<b>+${fmt(p.coins)}</b>`;
+    if (p.kind === 'gems') return `${icon('gem')}<b>+${p.gems}</b>`;
+    return `${COIN}<b>x2</b><b>· ${fmtDuration(p.seconds)}</b>`;
+  }
+
+  private launchPlane() {
+    const prize = rollPlanePrize(this.game.state);
+    this.planeFlying = true;
+    this.cb.flyPlane({
+      kind: prize.kind,
+      text: prize.kind === 'coins' ? `+${fmt(prize.coins)}` : prize.kind === 'gems' ? `+${prize.gems}` : 'x2',
+      seconds: PLANE.flightSeconds,
+      onTap: () => {
+        this.planeFlying = false;
+        this.openPlane(prize);
+      },
+      onGone: () => {
+        this.planeFlying = false;
+        this.nextPlane('missed');
+      },
+    });
+  }
+
+  /** Tapped the plane: what you get, and one button (watch the ad, or just claim it without ads). */
+  private openPlane(prize: PlanePrize) {
+    sound.tap();
+    const free = adFree(this.game.state.perks);
+    let claimed = false;
+    const m = this.modal(`
+      <button class="x mist-x" data-close aria-label="Close">${icon('close')}</button>
+      <div class="plane-pop">
+        <div class="plane-prize">${this.prizeHtml(prize)}</div>
+        <button class="go big" data-plane>${free ? 'Claim' : `${icon('video')} Watch ad`}</button>
+      </div>`);
+    this.modalClosed = () => {
+      if (!claimed) this.nextPlane('missed');
+    };
+    m.querySelector('[data-close]')!.addEventListener('click', () => this.closeModal());
+    const btn = m.querySelector<HTMLButtonElement>('[data-plane]')!;
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      const result = await this.playAd();
+      if (result === 'rewarded') {
+        claimed = true;
+        claimPlanePrize(this.game.state, prize);
+        this.nextPlane('claimed');
+        sound.coin();
+        this.confetti();
+        this.game.save();
+        this.closeModal();
+        this.refreshTop();
+        return;
+      }
+      btn.disabled = false;
+      if (result === 'failed') this.toast('No ad is ready right now. Try again in a minute.');
+    });
   }
 
   // ------------------------------------------------------------ pop-ups
@@ -788,12 +1112,49 @@ export class GameUI {
     setTimeout(() => box.remove(), 1600);
   }
 
-  toast(text: string) {
+  toast(text: string, onTap?: () => void) {
     const t = document.createElement('div');
-    t.className = 'toast';
-    t.textContent = text;
+    t.className = 'toast' + (onTap ? ' tap' : '');
+    t.innerHTML = text; // our own short texts, with icons
+    if (onTap)
+      t.addEventListener('click', () => {
+        t.remove();
+        onTap();
+      });
     this.refs.toasts.appendChild(t);
     setTimeout(() => t.remove(), 3200);
+  }
+
+  /**
+   * Tapped something still under the mist: a popup that says you can't expand yet and what to do first, with one
+   * button to the next level to unlock. Once the expansion is ready, Expand opens.
+   */
+  expandFirst() {
+    const s = this.game.state;
+    sound.tap();
+    const st = expansionStatus(s);
+    if (!st) return;
+    if (st.ready) return this.openExpand();
+    this.closeSheet(false);
+    const need = st.def.level;
+    // the first sport still short, and its next level to unlock (that is where the work is)
+    const sp = SPORTS.filter((x) => areaById(x.area).expansion <= s.expansions).find((x) => !s.zones[zoneId(x.id, need)]?.owned);
+    let next: string | null = null;
+    if (sp) for (let lv = 1; lv <= need; lv++) if (!s.zones[zoneId(sp.id, lv)]?.owned) { next = zoneId(sp.id, lv); break; }
+    const m = this.modal(`
+      <button class="x mist-x" data-close aria-label="Close">${icon('close')}</button>
+      <div class="mist-pop">
+        ${tile('lock', '#5d7f99', 64)}
+        <h2>You can't expand yet!</h2>
+        <p>First unlock Level ${need} of every sport.</p>
+        ${next ? `<button class="go big" data-go>${icon('arrow')} Go</button>` : ''}
+      </div>`);
+    m.querySelector('[data-close]')!.addEventListener('click', () => this.closeModal());
+    m.querySelector('[data-go]')?.addEventListener('click', () => {
+      sound.tap();
+      this.closeModal();
+      this.openZone(next!);
+    });
   }
 
   private modal(html: string) {
@@ -821,58 +1182,47 @@ export class GameUI {
     const pct = Math.round(Math.min(1, rep.seconds / cap) * 100);
     const canGems = s.skillPoints >= BALANCE.offlineGemCost;
     const notes: string[] = [];
-    if (rep.capped) notes.push(`<small>Away time only earns for ${fmtTime(rep.seconds)}. Skills in the Beach tree add more.</small>`);
-    if (rep.waiting > 0) notes.push(`<p>${rep.waiting} zone${rep.waiting > 1 ? 's are' : ' is'} waiting for you. Hire a manager to keep them running while you are away.</p>`);
+    if (rep.waiting > 0) notes.push(`<p class="off-note">${icon('manager')} Hire a manager to earn while you're away</p>`);
     const m = this.modal(`
       <div class="menu-head">
         ${tile('clock', '#1497b5', 46)}
-        <div class="menu-title"><h2>Welcome back!</h2><p>You were away for ${fmtTime(rep.away)}</p></div>
+        <div class="menu-title"><h2>Welcome back!</h2><p>${icon('clock')} ${fmtTime(rep.away)}</p></div>
         <button class="x" data-close aria-label="Close">${icon('close')}</button>
       </div>
       ${
         rep.coins > 0
-          ? `<p class="off-lead">While you were away you earned:</p>
-      <div class="off-earn">${icon('coins')}<b data-off-total>${fmt(rep.coins)}</b></div>
-      <div class="off-bar-row"><span>Away time</span><span>Max ${fmtTime(cap)}</span></div>
+          ? `<div class="off-earn">${icon('coins')}<b data-off-total>${fmt(rep.coins)}</b><em class="off-pct">${Math.round(BALANCE.offlineRate * 100)}%</em></div>
+      <div class="off-bar-row"><span>${icon('clock')}</span><span>Max ${fmtTime(cap)}</span></div>
       <div class="bar"><i style="width:${pct}%"></i></div>
       ${notes.join('')}
       <div class="off-boosts">
-        <button class="go off-btn" data-off-ad>${icon('video')}<b>Watch ad</b><small>x${BALANCE.offlineAdMult}</small></button>
-        <button class="go off-btn alt" data-off-gems${canGems ? '' : ' disabled'}>${icon('gem')}<b>${BALANCE.offlineGemCost} gems</b><small>x${BALANCE.offlineGemMult}</small></button>
+        <button class="go off-btn" data-off-ad>${icon('video')}<b>${Math.round(BALANCE.offlineAdRate * 100)}%</b><small>${COIN} ${fmt(rep.full * BALANCE.offlineAdRate)}</small></button>
+        <button class="go off-btn alt" data-off-gems${canGems ? '' : ' disabled'}>${icon('gem')}<b>${BALANCE.offlineGemCost} · 100%</b><small>${COIN} ${fmt(rep.full)}</small></button>
       </div>`
           : notes.join('')
       }`);
-    let done = false;
-    const finish = () => {
-      done = true;
-      this.closeModal();
-    };
+    const finish = () => this.closeModal();
     m.querySelector('[data-close]')!.addEventListener('click', finish);
-    m.querySelector('[data-off-ad]')?.addEventListener('click', async () => {
-      const result = await this.playAd();
-      if (done) return; // closed while the ad was up
-      if (result === 'rewarded') {
-        const extra = Math.round(rep.coins * (BALANCE.offlineAdMult - 1));
-        s.coins += extra;
-        sound.coin();
-        this.confetti();
-        this.game.save();
-        this.refreshTop();
-        finish();
-      } else if (result === 'failed') {
-        this.toast('No ad is ready right now. Try again in a minute.');
-      }
-    });
-    m.querySelector('[data-off-gems]')?.addEventListener('click', () => {
-      if (s.skillPoints < BALANCE.offlineGemCost) return;
-      s.skillPoints -= BALANCE.offlineGemCost;
-      const extra = Math.round(rep.coins * (BALANCE.offlineGemMult - 1));
-      s.coins += extra;
+    const raise = (rate: number) => {
+      topUpOffline(s, rep, rate);
       sound.coin();
       this.confetti();
       this.game.save();
       this.refreshTop();
       finish();
+    };
+    const adBtn = m.querySelector<HTMLButtonElement>('[data-off-ad]');
+    adBtn?.addEventListener('click', async () => {
+      adBtn.disabled = true;
+      const result = await this.playAd();
+      if (result === 'rewarded') return raise(BALANCE.offlineAdRate);
+      adBtn.disabled = false;
+      if (result === 'failed') this.toast('No ad is ready right now. Try again in a minute.');
+    });
+    m.querySelector('[data-off-gems]')?.addEventListener('click', () => {
+      if (s.skillPoints < BALANCE.offlineGemCost) return;
+      s.skillPoints -= BALANCE.offlineGemCost;
+      raise(1);
     });
   }
 

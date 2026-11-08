@@ -14,7 +14,7 @@ Nothing has been submitted and no accounts were made. This document lists what i
 * 80+ automated tests, a full-playthrough simulation and a browser smoke test pass.
 
 ## Ads (Google AdMob)
-* One **rewarded video** ("Watch ad", above the Expand button) gives coins x2 for 40 seconds. Ids are in `src/config/ads.ts`; the plugin is `@capacitor-community/admob`.
+* One **rewarded video** ("Watch ad", above the Expand button) gives coins x2 for 2 minutes. Ids are in `src/config/ads.ts`; the plugin is `@capacitor-community/admob`.
 * iOS uses your AdMob app id `ca-app-pub-8560073239883666~9782230015` and rewarded block `.../6132040872`. **Android still uses Google's public test ids**: make an Android app in AdMob, then change `ADS.android` in `src/config/ads.ts` and `admob_app_id` in `android/app/src/main/res/values/strings.xml`.
 * **Test ads vs. live ads**: normal builds ask for *test* ads with your real ids (clicking your own live ads can get an AdMob account banned). For the build you upload to the stores use `npm run phone:sync:live`.
 * First tap on "Watch ad" runs: iOS tracking permission, EU/UK consent form (create the message in AdMob > Privacy & messaging, or no form will show), then the ad. In a normal browser a 5 second demo screen stands in.

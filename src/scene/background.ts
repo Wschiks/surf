@@ -119,8 +119,12 @@ export class Mist {
   private tween: Phaser.Tweens.Tween | null = null;
   private front: number;
   private gone = false;
+  /** The next expansion is ready: the wind has blown the mist back a little, a peek at what comes next. */
+  private peek = false;
   /** The number of expansions the mist is drawn for. */
   level: number;
+  /** How far the wind blows the mist back when the next expansion is ready. */
+  static readonly PEEK = 0.8 * UNIT;
 
   private static readonly LEFT = -M;
   private static readonly WIDTH = MAP_PX_W + M * 2;
@@ -196,10 +200,42 @@ export class Mist {
     }
   }
 
+  /**
+   * The wind blows the mist back a little (the next expansion is ready), or not. `animate` false jumps there (loading a save).
+   * Animated it overshoots and settles, like a gust.
+   */
+  setPeek(on: boolean, animate = true) {
+    if (this.gone || on === this.peek) return;
+    this.peek = on;
+    const target = Mist.frontFor(this.level) + (on ? Mist.PEEK : 0);
+    this.tween?.stop();
+    if (!animate) {
+      this.front = target;
+      return this.layout();
+    }
+    const state = { f: this.front };
+    this.tween = this.scene.tweens.add({
+      targets: state,
+      f: target,
+      duration: 1800,
+      ease: 'Back.easeOut',
+      onUpdate: () => {
+        this.front = state.f;
+        this.layout();
+      },
+    });
+  }
+
+  /** Where the front edge is now (world y). */
+  get frontY(): number {
+    return this.front;
+  }
+
   /** Pull the front edge back to where `level` expansions leave it. `animate` false jumps there (loading a save). */
   moveTo(level: number, animate = true) {
     if (this.gone || level === this.level) return;
     this.level = level;
+    this.peek = false;
     const target = Mist.frontFor(level);
     this.tween?.stop();
     if (!animate) {
@@ -223,6 +259,13 @@ export class Mist {
         this.finish();
       },
     });
+  }
+
+  /** Take the mist away for good (a rebirth makes a new one). */
+  destroy() {
+    this.tween?.stop();
+    if (!this.gone) this.parts.forEach((p) => p.destroy());
+    this.gone = true;
   }
 
   private finish() {

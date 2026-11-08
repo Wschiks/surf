@@ -1,16 +1,19 @@
-import { areaById } from '../config/areas';
+import { AREAS, areaById } from '../config/areas';
 import { EXPANSIONS, expansionAfter, type ExpansionDef } from '../config/expansions';
 import { SPORTS, sportById, zoneById, zoneId, type SportDef, type SportId, type ZoneRef } from '../config/sports';
 import { upgradeCount } from './economy';
-import { skillEffects } from './skills';
+import { addSkillPoints, skillEffects } from './skills';
 import { newZone, openAreas, type GameState } from './state';
 import { FACILITIES } from '../config/facilities';
+import { REBIRTH } from '../config/rebirth';
 
 export interface Requirement {
   text: string;
   met: boolean;
   /** Progress text such as "6 / 10". */
   progress: string;
+  /** The zone where the player works on this requirement (tapping the requirement goes there). */
+  zone?: string;
 }
 
 export interface UnlockStatus {
@@ -42,7 +45,7 @@ export function sportStatus(state: GameState, sport: SportDef): UnlockStatus {
   if (!rule) return { requirements: [], coins: 0, ready: true, canBuy: true, blockedBy: null };
   const after = sportById(rule.after);
   const owned = ownsLevel(state, rule.after, rule.level);
-  const reqs: Requirement[] = [{ text: `Own Level ${rule.level} of ${after.name}`, met: owned, progress: owned ? 'Done' : 'Not yet' }];
+  const reqs: Requirement[] = [{ text: `Own Level ${rule.level} of ${after.name}`, met: owned, progress: owned ? 'Done' : 'Not yet', zone: zoneId(rule.after, rule.level) }];
   const ready = reqs.every((r) => r.met);
   const coins = discounted(state, sport.id, rule.coins);
   return { requirements: reqs, coins, ready, canBuy: ready && state.coins >= coins, blockedBy: null };
@@ -89,7 +92,7 @@ export function levelStatus(state: GameState, ref: ZoneRef): UnlockStatus {
     if (!prevOwned && !blockedBy) blockedBy = `Unlock Level ${prevLevel} (${ref.sport.levels[prevLevel - 1].name}) first`;
     if (rule.prevLevelUpgrades !== undefined) {
       const have = upgradeCount(state.zones[zoneId(ref.sport.id, prevLevel)]);
-      reqs.push({ text: `Upgrade ${ref.sport.levels[prevLevel - 1].name}`, met: have >= rule.prevLevelUpgrades, progress: `${Math.min(have, rule.prevLevelUpgrades)} / ${rule.prevLevelUpgrades} upgrades` });
+      reqs.push({ text: `Upgrade ${ref.sport.levels[prevLevel - 1].name}`, met: have >= rule.prevLevelUpgrades, progress: `${Math.min(have, rule.prevLevelUpgrades)} / ${rule.prevLevelUpgrades} upgrades`, zone: zoneId(ref.sport.id, prevLevel) });
     }
   }
   const ready = !blockedBy && reqs.every((r) => r.met);
@@ -141,7 +144,7 @@ export function expansionStatus(state: GameState): ExpansionStatus | null {
   for (const sport of SPORTS) {
     if (areaById(sport.area).expansion > state.expansions) continue;
     const owned = ownsLevel(state, sport.id, def.level);
-    reqs.push({ text: `Own Level ${def.level} of ${sport.name}`, met: owned, progress: owned ? 'Done' : 'Not yet' });
+    reqs.push({ text: `Own Level ${def.level} of ${sport.name}`, met: owned, progress: owned ? 'Done' : 'Not yet', zone: zoneId(sport.id, def.level) });
   }
   const ready = reqs.every((r) => r.met);
   return { def, requirements: reqs, coins: def.coins, ready, canBuy: ready && state.coins >= def.coins, blockedBy: null };
@@ -216,3 +219,70 @@ export function nextGoal(state: GameState): Goal | null {
 }
 
 export { EXPANSIONS };
+
+export interface RebirthStatus {
+  /** How many rebirths this one would make. */
+  n: number;
+  requirements: Requirement[];
+  coins: number;
+  ready: boolean;
+  canBuy: boolean;
+}
+
+/** The next rebirth: only there once the whole game is done (both expansions bought). */
+export function rebirthStatus(state: GameState): RebirthStatus | null {
+  if (expansionAfter(state.expansions)) return null;
+  const ref = zoneById(REBIRTH.zone);
+  const z = state.zones[REBIRTH.zone];
+  const lvl = z.owned ? z.price : 0;
+  const coins = REBIRTH.coins * Math.pow(REBIRTH.costGrowth, state.rebirths);
+  const reqs: Requirement[] = [
+    { text: `${ref.def.name} (${ref.sport.name}) at Level ${REBIRTH.level}`, met: lvl >= REBIRTH.level, progress: `${Math.min(lvl, REBIRTH.level)} / ${REBIRTH.level}` },
+  ];
+  const ready = reqs.every((r) => r.met);
+  return { n: state.rebirths + 1, requirements: reqs, coins, ready, canBuy: ready && state.coins >= coins };
+}
+
+export function canRebirth(state: GameState): boolean {
+  return !!rebirthStatus(state)?.canBuy;
+}
+
+/**
+ * Rebirth: start the whole game over from the very beginning (no expansions, wave surfing only), with income x(1 +
+ * rebirths) for good and some gems. Skills, gems and purchases are kept.
+ */
+export function rebirth(state: GameState): boolean {
+  const st = rebirthStatus(state);
+  if (!st?.canBuy) return false;
+  state.rebirths += 1;
+  state.expansions = 0;
+  state.coins = 0;
+  state.quests = [];
+  for (const id of Object.keys(state.zones)) state.zones[id] = newZone();
+  for (const f of FACILITIES) state.facilities[f.id] = 0;
+  for (const s of SPORTS) state.sports[s.id] = false;
+  addSkillPoints(state, REBIRTH.gems);
+  openAreas(state);
+  return true;
+}
+
+/** A zone still under the mist: its area opens with a later expansion. */
+export function zoneMisted(state: GameState, id: string): boolean {
+  return expansionNeededFor(state, zoneById(id).sport.id) !== null;
+}
+
+/** Depth (map units) where the mist starts, or null once every area is open. */
+export function mistFrom(state: GameState): number | null {
+  const a = AREAS.find((x) => x.expansion > state.expansions);
+  return a ? a.from : null;
+}
+
+/** Every sport in the open areas is at the level the next expansion needs: the expansion shows itself (coins not counted). */
+export function expansionReady(state: GameState): boolean {
+  return !!expansionStatus(state)?.ready;
+}
+
+/** The rebirth button shows once the last zone of the game (the Offshore regatta) is unlocked. */
+export function rebirthShown(state: GameState): boolean {
+  return !!rebirthStatus(state) && !!state.zones[REBIRTH.zone]?.owned;
+}

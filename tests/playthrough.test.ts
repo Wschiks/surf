@@ -15,9 +15,11 @@ describe('full playthrough with the balance bot', () => {
     }
   });
 
-  it('takes hours, not minutes and not weeks', () => {
-    expect(run.finishedAt!).toBeGreaterThan(4 * HOUR);
-    expect(run.finishedAt!).toBeLessThan(14 * HOUR);
+  // The first App Store version finished in about 11 bot hours, and a player maxed it in 2-3 days: too fast.
+  // The author wants it slower, so a non-stop bot now needs about a day (a real player: most of a week).
+  it('takes about a day of non-stop play, not hours and not weeks', () => {
+    expect(run.finishedAt!).toBeGreaterThan(16 * HOUR);
+    expect(run.finishedAt!).toBeLessThan(30 * HOUR);
   });
 
   it('gives the first reward within minutes', () => {

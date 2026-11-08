@@ -1,0 +1,120 @@
+{
+  "identifier": "5E1F0A11",
+  "nonRenewingSubscriptions": [],
+  "products": [
+    {
+      "displayPrice": "0.99",
+      "familyShareable": false,
+      "internalID": "6A1B2C3D-0000-4000-8000-000000000001",
+      "localizations": [
+        {
+          "description": "Skill points for the skill trees",
+          "displayName": "20 gems",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "nl.mugstudio.surftycoon.gems20",
+      "referenceName": "20 gems",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "3.99",
+      "familyShareable": false,
+      "internalID": "6A1B2C3D-0000-4000-8000-000000000002",
+      "localizations": [
+        {
+          "description": "Skill points for the skill trees",
+          "displayName": "100 gems",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "nl.mugstudio.surftycoon.gems100",
+      "referenceName": "100 gems",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "9.99",
+      "familyShareable": false,
+      "internalID": "6A1B2C3D-0000-4000-8000-000000000003",
+      "localizations": [
+        {
+          "description": "Skill points for the skill trees",
+          "displayName": "300 gems",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "nl.mugstudio.surftycoon.gems300",
+      "referenceName": "300 gems",
+      "type": "Consumable"
+    },
+    {
+      "displayPrice": "2.99",
+      "familyShareable": false,
+      "internalID": "6A1B2C3D-0000-4000-8000-000000000004",
+      "localizations": [
+        {
+          "description": "Every ad reward, without an ad",
+          "displayName": "Remove ads",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "nl.mugstudio.surftycoon.removeads",
+      "referenceName": "Remove ads",
+      "type": "NonConsumable"
+    },
+    {
+      "displayPrice": "4.99",
+      "familyShareable": false,
+      "internalID": "6A1B2C3D-0000-4000-8000-000000000005",
+      "localizations": [
+        {
+          "description": "All coin income x5, for good",
+          "displayName": "Coins x5",
+          "locale": "en_US"
+        }
+      ],
+      "productID": "nl.mugstudio.surftycoon.coins5x",
+      "referenceName": "Coins x5",
+      "type": "NonConsumable"
+    }
+  ],
+  "settings": {
+    "_locale": "nl_NL",
+    "_storefront": "NLD"
+  },
+  "subscriptionGroups": [
+    {
+      "id": "21000001",
+      "localizations": [],
+      "name": "Surf Club",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "3.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "6A1B2C3D-0000-4000-8000-000000000007",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "Coins x2, no ads, 3 gems a day, +2h away",
+              "displayName": "Surf Club",
+              "locale": "en_US"
+            }
+          ],
+          "productID": "nl.mugstudio.surftycoon.club",
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "Surf Club monthly",
+          "subscriptionGroupID": "21000001",
+          "type": "RecurringSubscription",
+          "winbackOffers": []
+        }
+      ]
+    }
+  ],
+  "version": {
+    "major": 3,
+    "minor": 0
+  }
+}

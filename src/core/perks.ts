@@ -1,3 +1,4 @@
+import { AD_BREAK } from '../config/ads';
 // What the player bought (remove ads, coins x5). It is kept apart from the game save on purpose: a forged or restored
 // save cannot hand out purchases, and "Start over" does not lose them.
 
@@ -14,6 +15,11 @@ export interface Perks {
 export function refreshClub(perks: Perks, now = Date.now()): boolean {
   perks.club = (perks.clubUntil ?? 0) > now;
   return perks.club;
+}
+
+/** Is it time for an ad break? `played` and `sinceLast` are seconds in this session. */
+export function adBreakDue(o: { adFree: boolean; played: number; sinceLast: number }): boolean {
+  return !o.adFree && o.played >= AD_BREAK.firstAfterSeconds && o.sinceLast >= AD_BREAK.everySeconds;
 }
 
 /** Rewards come without showing an ad (bought "Remove ads", or Club member). */

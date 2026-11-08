@@ -211,8 +211,8 @@ Every choice made while building, and why. The concept document (`docs/concept.m
 - **Riders**: a splash where they land after a hop or jump, and they lean into turns.
 - **Tips**: after the first coins a note says an upgrade can be bought; after 3 upgrade levels it says to hire a manager. Shown once each (state field `tips`).
 
-## Watch an ad: coins x2 for 40 seconds
-- A violet **Watch ad** button sits directly above the Expand button (both live in a `.dock-slot`, so it hides with the bar). A rewarded video (Google AdMob, `@capacitor-community/admob`) makes **all coin income x2 for 40 seconds** (`BALANCE.boostSeconds`, `boostMult`; state field `boost` in seconds). It runs down with the game clock, also while away (a long tick only doubles the first `boost` seconds), survives an expansion and cannot be restarted while running. The reward is given only when the ad was watched to the end.
+## Watch an ad: coins x2 for 2 minutes
+- A violet **Watch ad** button sits directly above the Expand button (both live in a `.dock-slot`, so it hides with the bar). A rewarded video (Google AdMob, `@capacitor-community/admob`) makes **all coin income x2 for 2 minutes (120 s)** (`BALANCE.boostSeconds`, `boostMult`; state field `boost` in seconds). It runs down with the game clock, also while away (a long tick only doubles the first `boost` seconds), survives an expansion and cannot be restarted while running. The reward is given only when the ad was watched to the end.
 - **Ids** are in `src/config/ads.ts`: iOS app `ca-app-pub-8560073239883666~9782230015`, rewarded block `ca-app-pub-8560073239883666/6132040872`. Android has no AdMob app yet and uses Google's public test ids (also in the manifest). **Builds request test ads** (with the real ids) unless `VITE_ADS_LIVE=1`; use `npm run phone:sync:live` for the store build. This avoids clicking your own live ads (can get the account banned).
 - First tap: iOS tracking permission, EU/UK consent form (needs a message made in AdMob > Privacy & messaging), then the ad. In a browser a 5 s **demo ad** dialog stands in (closing it gives nothing).
 - Native files: `Info.plist` (app id, SKAdNetwork, tracking text), `PrivacyInfo.xcprivacy` (tracking on, Google domains, Device ID / Advertising Data / Product Interaction), Android manifest meta-data. **Terms and Privacy Policy rewritten** (they said "no ads"); `store/listing.md` and `docs/STORE-READINESS.md` now say "contains ads" and explain the forms.
@@ -220,7 +220,7 @@ Every choice made while building, and why. The concept document (`docs/concept.m
 
 ## Shop: ad streak and two purchases
 - A **bag button** in the top bar (yellow, with a red dot while the ad streak is available) opens the **Shop**. Built now because the gem ad has to live somewhere; more items can be added later (`src/config/shop.ts`, `src/ui/shop.ts`).
-- **Ad streak** (your list): ad 1 = 1 gem, ad 2 = coins x2 for 30 s, ad 3 = 2 gems, ad 4 = coins x2 for 1 minute, ad 5 = 5 gems (8 gems in total). After the 5th ad the streak is locked for **24 hours** of real time (`state.adShop {step, lockedUntil}`, saved), then starts again at ad 1. A boost reward never shortens a longer running boost. The **Watch ad button in the game stays** (x2 for 40 s, no limit, only while no boost runs).
+- **Ad streak** (your list): ad 1 = 1 gem, ad 2 = coins x2 for 30 s, ad 3 = 2 gems, ad 4 = coins x2 for 1 minute, ad 5 = 5 gems (8 gems in total). After the 5th ad the streak is locked for **24 hours** of real time (`state.adShop {step, lockedUntil}`, saved), then starts again at ad 1. A boost reward never shortens a longer running boost. The **Watch ad button in the game stays** (x2 for 2 min, no limit, only while no boost runs).
 - **Two purchases**, one-time, non-consumable: **Remove ads** 2.99 and **Coins x5** 4.99 (EUR shown as fallback; the store's own price text is used in the apps). My reading of your notes: *Remove ads* = every ad reward is given without watching an ad (all ads in the game are optional, so this is what "removing" them can mean); *Coins x5* = all coin income x5 for good (`BALANCE.x5Mult`; it multiplies with expansions and the ad boost, and shows in the "x9" chip next to the coins). Tell me if you meant something else.
 - **Purchases are not part of the save**: stored in their own key (`src/core/perks.ts`), left out of the save and of save codes (a forged code cannot switch them on: `ensureState` clears `perks`), and not erased by "Start over". The apps check the store at every start and the shop has **Restore purchases** (required by the stores). Plugin `@capgo/native-purchases` (`src/purchases.ts`). In a browser you cannot buy (the shop says so).
 - **Legal**: Terms (2. Free to play and the shop) and Privacy (Purchases, Ads, Third parties) rewritten; store listing has the product table.
@@ -317,3 +317,90 @@ Changed from `com.wschiks.surftycoon` (built from the GitHub name) to the revers
 
 ## No tutorial overlays at all
 The author asked for the whole dim-the-screen tutorial to go ("not 100% working"): both the five one-time coach marks and the forced first-run intro were removed, along with the `tips` field of the save and the separate intro-seen storage key. They can be recovered from git history (last commit that has them: fcb2926). Reason to keep it that way: every variant needed a real hole or z-index trick over a moving map, and each fix (open sheets covering the target, the seen-flag resetting with the save) exposed another edge. Guidance for a new player is now only non-blocking (see DESIGN-SURF-TYCOON.md 9.6a).
+
+## Ad breaks and a longer ad boost (4 Nov 2026)
+- **Watch ad** now gives coins x2 for **2 minutes** (`BALANCE.boostSeconds` 120). The button says "x2 for 2 min" and counts down as "1:45 left".
+- **Ad breaks**: at a calm moment (coins collected from a zone badge, or a sheet closed) the screen goes black with **"Ad break"** and a 3-2-1 countdown, then an interstitial ad plays. Not in the first 5 minutes of a session, then at most once every 7 minutes (`AD_BREAK` in `src/config/ads.ts`, rule `adBreakDue` in `core/perks.ts`). Never for players with Remove ads or the Surf Club. In a browser a demo ad stands in.
+- **Owner to do**: make an Interstitial ad block in AdMob (iOS app) and put its id in `ADS.ios.interstitial`. Until then live builds have no ad breaks; test builds use Google's test ads.
+
+## Money fixes (4 Nov 2026)
+- **Skimboarding**: starting the sport cost 5.3K, more than its own level 2 (Flatland, 1.5K). It now costs less than level 2 (`unlockCoins(1.6, 10)`). A test checks that starting a sport is always cheaper than its level 2 and that every level costs more than the one before.
+- **Beach buildings are rare and dear**: each one has to be earned first: it opens when a zone is unlocked (`FacilityDef.needs`, rule `facilityOpen` in `core/economy.ts`), and every level costs 7 times the one before. A toast says when a new one opens and the Beach button pulses.
+  - Start: Rental shop (opens with Longboarders, 20K), Lifeguard tower (Reef, 300K), Showers (Nazaré, 20M).
+  - After the 1st expansion: Beach café (Kitesurfing, 10M).
+  - After the 2nd expansion: the new Beach hotel (Boat hire, 30B; +15% coins per level).
+- **One house per stage**: rental shop, then café, then hotel (`stage`, `house`). A building that is not open yet has no plot on the map and shows a lock in the Beach sheet with what opens it.
+- **Pace**: the rarer buildings made the game much slower (15h15m), so the cost scale went from 8.3 to 7.85. The balance bot now finishes in **11h32m** (expansions at 5h01m and 9h07m), a little slower than the 10h10m before.
+
+## A new beach building is celebrated (4 Nov 2026)
+- Building a new beach facility (level 0 to 1) closes the Beach sheet (no ad break at that moment) and flies the camera to it, zoomed in. The building pops up with a bounce and a squash, a ring of light spreads, a puff of sand blows out and sparkles burst from it (fixed pattern), with confetti, the unlock sound and a yellow **"New! <name>"** tag above it for a few seconds (`BeachView.celebrate`, `MapScene.onBuilt`). Level ups after that work as before.
+
+## Away time earns 30% (4 Nov 2026)
+- While away (game closed, or the phone asleep), zones with a manager earn **30%** of their normal income (`BALANCE.offlineRate`), still for up to 2 hours plus skills and the Surf Club hours. Zones without a manager still finish one session and wait, with its full coins.
+- The Welcome back dialog shows what was earned and says "Away, your beach earns 30% of its normal income". The **Watch ad x2** button is gone. **5 gems turn it into the full 100%** (button "5 gems: get 100%, +X coins"). `OfflineReport.full` is what the time would have earned at 100%.
+- The balance bot plays without breaks, so the game length (11h32m) does not change; players who are often away progress slower.
+
+## Back and next arrows in a zone (4 Nov 2026)
+- The head of a zone sheet has two small round arrow buttons next to the close button: back (the level before, or before level 1 the last level of the sport before) and next (the next level, or after level 4 the next sport). Tapping one opens that zone's sheet and moves the camera there. The next arrow turns yellow and pulses when that level can be unlocked right now. The first zone has no back arrow, the last no next arrow.
+
+## Tapping a quest goes there (4 Nov 2026)
+- Tapping a quest (not its Claim button) opens what it is about: the zone of a level-up, sessions, guests, more guests, speed, manager or unlock quest (its sheet opens and the camera moves there), the Beach sheet for a building quest, the Expand sheet for an expansion quest, and the sports list for an "earn coins" quest.
+
+## Quest texts fit, and the rebirth (4 Nov 2026)
+- **Quest texts** were cut off ("Get 25 skimboarders in…"). They now use up to 3 lines and shorter wording: "Level up Beginner class to Lv 10", "10 sessions at Reef", "25 skimboarders at Big shore break", "Reef: speed Lv 20", "Manager for Reef".
+- **Rebirth** (`src/config/rebirth.ts`, `rebirthStatus` / `rebirth` in `core/unlocks.ts`): only once the whole game is done (both expansions bought). It needs **Offshore regatta (sailing level 4) at Level up 100** and **1 Qa coins** (x4 more for every next rebirth). It starts the whole game over from the very beginning (no expansions, wave surfing only, the mist comes back), and gives **+5 gems** and an income bonus for good: you keep the **x9** of a finished game and every rebirth adds 1 (**x10** after the first, x11 after the second...); the expansions of the new round multiply on top again (x10 → x30 → x90). Skills, gems and purchases stay. The Expand sheet shows it when there is nothing left to expand, the Expand button glows when it can be bought, and the big wave plays. Bot check: at the end of a game (11h48m) the beach earns about 152B/s, so 1 Qa is roughly 2 more hours of play.
+- **Rebirth button**: a small green round button with a rebirth icon sits above the Watch ad button once the whole game is done; it turns yellow and pulses when a rebirth can be bought, and opens the Rebirth sheet.
+- **The zone arrows go round**: next on the very last zone (Offshore regatta) goes to Beginner class, back on Beginner class goes to Offshore regatta.
+
+## One badge per sport when zoomed out (4 Nov 2026)
+- Zoomed out further than `MERGE_PPU` (75 screen px per map unit), the zone badges merge into **one badge per sport**, in the middle of its zones: the sport icon (a lock if it is not bought yet) and a yellow number for how many of its zones wait for a tap. Sports under the mist show none. Tapping one zooms in on that sport's zones, where the separate zone badges come back (`ZoneChips.setSport`, `MapScene.zoomToSport`).
+
+## Icons instead of words (4 Nov 2026)
+- The author's rule for the whole app: as little text as possible, icons where they say the same (the purple gem, not the word "gems"; the coin, not "coins"; sport icons, not sport names).
+- First pass: Rebirth card (coin x2, gem +5, sailing icon + "Lv 1 / 100", button = rebirth icon + price), Expansion card (the icons of the sports that open, coin x3, each requirement = sport icon + "Lv 4"), sheet titles without explanations (Sports, Beach, Expand, Rebirth), Beach rows without blurbs (coin or bolt icon + "+10%" and "+10% / Lv", locked = lock + sport icon + zone, or lock + expand icon + stage), zone stat labels as icons (people, coin, clock, coin/s), upgrade rows ("people 7 → 8", "clock 5.7s → 5.5s", "star x1 → x1.1 at Lv 25"), the manager row ("auto"), locked zones without the "You get" list, Welcome back (clock + time, coin amount with "30%", gem 5 → 100%), and toasts with icons.
+
+## The income bonus is a ladder, and rebirths climb it (5 Nov 2026)
+- The author's table: an **expansion adds +1** to the income bonus (x1 → x2 → x3), and a **rebirth adds +2, then +3, then +4...**; nothing is ever lost. So: x1, x2, x3, rebirth x5, x6, x7, rebirth x10, x11, x12, rebirth x16 (`bonusFor` in `core/economy.ts`, `EXPANSION_BONUS`, `REBIRTH.firstBonus` and `bonusStep`).
+- Expansions used to give x3 each (x9 at the end). A stage price cut (`STAGE_COST`) was tried to keep the old pace and then **removed on the author's word ("don't make the prices less")**: prices stay as they were, so with the smaller bonus the game is slower on purpose. See "The game is slower on purpose" below.
+- The first rebirth costs **1 Qa** (shown price; x4 for every next one). Rounds after a rebirth are faster than the first, thanks to the bigger bonus (the round times were measured with the removed stage prices and need measuring again).
+
+## Welcome back: three choices (6 Nov 2026)
+- The author asked for three options when coming back: **do nothing 30%**, **watch an ad**, **pay gems 100%**. The ad gives **60%** (`BALANCE.offlineAdRate`): double the free rate, the usual "watch to double" deal players know from other idle games, and it leaves a clear reason to still pay gems for the last 40%.
+- The dialog shows two buttons side by side, icon + % + coins each: video 60% and gem 5 · 100%. "Do nothing" is the X in the header (keeps the 30% shown at the top); the author removed a separate 30% button as not needed. A choice tops up what applyOffline already gave (`topUpOffline`) and closes.
+- Remove ads / Surf Club players get the 60% without watching, like the Watch ad boost. A rewarded ad also resets the ad-break timer, so no ad break follows right after it.
+
+## The daily ad day starts at the first ad (6 Nov 2026)
+- The 24 hours of the daily ad streak (5 ads in the Shop) now count from the **first** ad of the day, not from the last one (`adShop.startedAt`). Watch ad 1 at 10:00 and ad 5 at 15:00: the streak opens again at 10:00 the next day, not at 15:00.
+- If the 24 hours run out before all 5 are watched, the streak starts over at the first reward (a new day).
+
+## Bigger class: max 10, steep prices, rebirths make room (6 Nov 2026)
+- The author: a class can't hold 30+ kids. **Bigger class now stops at level 10** (a class of 13 in Beginner class) and every level costs **x3** the one before (1, 3, 9, 27, 81...; growth 3, no surge). It used to be max 40 at x2.5, and the bot ended the game with classes of 15-32.
+- **Every rebirth adds 5 levels** (`STATS.capacity.perRebirth`, `statMax`): max 15 after the 1st, 20 after the 2nd... A full class shows **MAX + lock + rebirth icon**, so players see the next rebirth makes room. (The author suggested unlocking after the 2nd rebirth; +5 per rebirth was picked so the 1st rebirth already gives something you see.)
+- Balance bot: the game length barely moves (about +35 min). Every zone fills its class to 10 except the last sailing zones (Offshore regatta ends around level 5): their late levels are expensive, but no single upgrade turns into a days-long wait.
+- Old saves keep a class that is already above the new max; it just shows MAX.
+
+## The game is slower on purpose (6 Nov 2026)
+- A friend of the author finished the App Store version (bot: **10h52m** non-stop) in **2-3 days** with everything maxed. Too fast: the author wants a slower game.
+- With the income ladder (x3 at the end instead of x9), unchanged prices and the Bigger class cap, the bot now finishes in **about 21h30m** (expansion 1 at 5h01m, expansion 2 at 11h37m): about **2x slower**, so roughly 4-6 days for a player like that friend, and then rebirths (with 5 more class levels each) keep going.
+- The playthrough test now expects **16-30 hours** of non-stop bot play (was 4-14).
+
+## Less text around expanding (6 Nov 2026)
+- **Under the mist nothing opens.** Tapping the mist, a zone in it, or a locked sport behind it shows one short popup, **lock + expand icon "Expand first"** (tap it to open Expand), and the Expand button gives a little shake. The old locked-zone screen with the full checklist is gone for those zones. The ← → arrows in a zone screen skip zones under the mist.
+- **Expand screen is icons only**: the new sports + the income bonus (coin x2...), a red tag (reset icon, coins, sports, beach: these start over) and a green tag (check, gems, skills: these stay), one coloured chip per sport with "Lv 4" (ticked when done, tap one that is not done to go there), and one big button with the price.
+- **Knowing you can expand**: a red dot on the Expand button (like the Shop), and a tappable "Expand ready!" popup the moment it becomes possible.
+- **Requirements are buttons**: a requirement you still have to do (for example "Upgrade Beginner class 0/12" on Longboarders) has a yellow arrow; tapping it goes to that zone (`Requirement.zone`). The quest still opens the locked zone, as the author asked.
+- Fixed: an empty brown bar showed in locked zone screens (a hidden notice that was still drawn).
+
+## The expansion is a secret until it is ready (6 Nov 2026)
+- The author: the Expand screen was still too full, and players should not even know about expanding before they are done with the open area. So **the Expand button does not exist until every open sport has the level the next expansion needs** (`expansionReady`); until then Watch ad takes its place in the dock.
+- **The moment it becomes ready** (the last sport reaches Lv 4): the camera goes to the mist, a gust of white wind streaks rushes in and the mist is blown back a little (`Mist.setPeek`, 0.8 units, with an overshoot), the Expand button pops up (red dot when the coins are there too) and an "Expand!" popup shows. A save that is already ready loads with the mist blown back, without the animation.
+- **The Expand screen is one line and one button**: "Start over · coin x7 forever" and the button with the price. (A sport tile and a big "x7" above it were removed again: they said the same thing twice.) The ticked requirements and the reset/keep tags are gone: when the screen exists, everything is already done.
+- Tapping the mist before it is ready opens a popup: lock, **"You can't expand yet!"**, "First unlock Level 4 of every sport." and one **Go** button. Go takes you to the next level to unlock of the first sport that is still short. After it is ready, tapping the mist opens Expand directly. Nothing else mentions expansions before that; the Sports list just says "Locked" for sports behind the mist.
+
+## The rebirth button shows with the Offshore regatta (6 Nov 2026)
+- The round rebirth button (above Watch ad) only appears once the last zone of the game, the **Offshore regatta (sailing-4), is unlocked** (`rebirthShown`). Before that nothing mentions rebirths. After the last expansion the Expand dock button is gone (Watch ad takes its place); the round button is the only way into the rebirth screen.
+- **The first time it appears, the screen goes dark** except for the rebirth button, with "Rebirth!" and an arrow pointing at it. Only tapping the button closes it (it opens the rebirth screen). Shown once per save (`state.hints.rebirth`, never reset, also not by a rebirth).
+- **x10 / x100 near the top**: with fewer levels left than the chosen amount (Bigger class has only 10), the button buys the levels that are left, still all or nothing (`planBuy`). Before, it showed "+10" with a price but bought nothing.
+- **Big numbers in letters, like Idle Farming Empire**: K, M, B, T, then **aa, bb, cc, dd** ... zz, then aaa, bbb ... (every step x1000, `suffix` in `src/ui/format.ts`). Replaces Qa, Qi, Sx, Sp, Oc, which players could not tell apart and which ran out after Oc. The economy doc uses the same letters.
+- **Faster turnover takes off the same seconds every level** (was +2% speed per level, which gave big steps early and tiny ones late). A session goes from its base time to a third of it at Lv 100 in equal steps (`BALANCE.speedEnd`, `speedSeconds` in `core/economy.ts`): Beginner class 6.00s -> 2.00s, -0.04s every level. Session times now show two decimals so one level is visible. Faster turnover costs x1.336 per level (100 levels on Beginner class about 907T in total). The balance bot finishes in 27h32m.
+- **Banner plane** (`src/config/plane.ts`, `src/core/plane.ts`, `UI.launchPlane`/`openPlane`): a small plane pulling a banner flies **in the game world** (`src/scene/plane.ts`): along the coast through the middle of what you see when it starts, right to left, in 16 s, above everything (the mist too) with its shadow on the ground below it. It zooms and pans with the map and also flies while a menu is open. Tapping it on the map opens the popup. It only comes once a zone has a manager: the first one 2-3 min after that, then 5-8 min after you claimed it, or 3-4 min after you let it fly by or closed the popup. The prize is chosen before it appears and is on the banner: **50% coins** (the coins-per-second counter x 5 min), **40% coins x2 for 5 min** (added to the boost timer), **10% 3 gems**. Tapping it opens a popup with the prize and **Watch ad** (Remove ads / Surf Club: **Claim**, no ad). **This is the one random thing in the game, the author's choice** (prize and timing).

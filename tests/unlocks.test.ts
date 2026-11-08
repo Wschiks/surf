@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { EXPANSIONS, EXPANSION_MULT } from '../src/config/expansions';
+import { EXPANSIONS, EXPANSION_BONUS } from '../src/config/expansions';
 import { SPORTS, ZONES, zoneById } from '../src/config/sports';
 import { buyStat, multipliers, upgradeCount, zoneStats } from '../src/core/economy';
-import { expansionNeededFor, sportStatus, unlockSport } from '../src/core/unlocks';
+import { expansionNeededFor, expansionReady, mistFrom, sportStatus, unlockSport, zoneMisted } from '../src/core/unlocks';
 import { newGame, type GameState } from '../src/core/state';
 import { expand, expansionStatus, levelStatus, nextGoal, unlockLevel, zoneUnlockStatus } from '../src/core/unlocks';
 
@@ -100,7 +100,7 @@ describe('levels of a sport', () => {
 describe('beach expansions', () => {
   it('there are two: the Sea and then the Ocean', () => {
     expect(EXPANSIONS.map((e) => e.opens)).toEqual(['sea', 'ocean']);
-    expect(EXPANSION_MULT).toBe(3);
+    expect(EXPANSION_BONUS).toBe(1); // each one adds +1 to the income bonus
   });
 
   it('needs the required level in every open sport and coins', () => {
@@ -140,11 +140,11 @@ describe('beach expansions', () => {
     // ...but the Sea is open now: its sports can be earned
     expect(expansionNeededFor(s, 'windsurfing')).toBeNull();
     expect(expansionNeededFor(s, 'sailing')).toBe(2);
-    expect(multipliers(s).coins).toBe(3);
-    expect(zoneStats(s, zoneById('wave-1')).income).toBeCloseTo(before * 3);
+    expect(multipliers(s).coins).toBe(2);
+    expect(zoneStats(s, zoneById('wave-1')).income).toBeCloseTo(before * 2);
   });
 
-  it('the second expansion opens the Ocean and makes income x9', () => {
+  it('the second expansion opens the Ocean and makes income x3', () => {
     const s = fresh();
     s.expansions = 1;
     s.sports.skimboarding = s.sports.windsurfing = s.sports.kitesurfing = s.sports.foil = true;
@@ -153,7 +153,7 @@ describe('beach expansions', () => {
     expect(expand(s)).toBe(true);
     expect(expansionNeededFor(s, 'sailing')).toBeNull(); // the Ocean is open, sailing still has to be earned
     expect(s.sports.sailing).toBe(false);
-    expect(multipliers(s).coins).toBe(9);
+    expect(multipliers(s).coins).toBe(3);
     expect(expansionStatus(s)).toBeNull();
     expect(expand(s)).toBe(false);
   });
@@ -166,5 +166,33 @@ describe('beach expansions', () => {
     const g = nextGoal(s)!;
     expect(g.expansion).toBe(true);
     expect(g.coins).toBe(EXPANSIONS[0].coins);
+  });
+});
+
+describe('where requirements point, and the mist', () => {
+  it('a requirement knows the zone where you work on it', () => {
+    const s = newGame(0);
+    const lvl2 = levelStatus(s, zoneById('wave-2'));
+    expect(lvl2.requirements[0].zone).toBe('wave-1');
+    expect(expansionStatus(s)!.requirements.map((r) => r.zone)).toEqual(['wave-4', 'skimboarding-4']);
+  });
+
+  it('zones in areas that are not open yet are under the mist', () => {
+    const s = newGame(0);
+    expect(zoneMisted(s, 'wave-3')).toBe(false);
+    expect(zoneMisted(s, 'windsurfing-1')).toBe(true);
+    expect(mistFrom(s)).toBe(4);
+    s.expansions = 2;
+    expect(zoneMisted(s, 'sailing-4')).toBe(false);
+    expect(mistFrom(s)).toBeNull();
+  });
+
+  it('the expansion shows itself only once every open sport has the level it needs', () => {
+    const s = newGame(0);
+    expect(expansionReady(s)).toBe(false);
+    for (const id of ['wave-2', 'wave-3', 'wave-4', 'skimboarding-1', 'skimboarding-2', 'skimboarding-3']) s.zones[id].owned = true;
+    expect(expansionReady(s)).toBe(false);
+    s.zones['skimboarding-4'].owned = true;
+    expect(expansionReady(s)).toBe(true); // the coins are not needed to see it
   });
 });

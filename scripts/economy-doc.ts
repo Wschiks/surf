@@ -2,25 +2,24 @@
 // game code (so the document cannot drift from the game). Usage: npm run docs:economy
 import { writeFileSync } from 'node:fs';
 import { BALANCE, LEVEL_MILESTONES, STATS, STAT_IDS, costFactor, milestoneMult, tierFactor, type StatId } from '../src/config/balance';
-import { EXPANSIONS, EXPANSION_MULT } from '../src/config/expansions';
+import { EXPANSIONS, EXPANSION_BONUS } from '../src/config/expansions';
 import { FACILITIES } from '../src/config/facilities';
 import { SPORTS, ZONES, type ZoneRef } from '../src/config/sports';
 import { costOf, managerCost, statCost, zoneStats } from '../src/core/economy';
 import { newGame, newZone } from '../src/core/state';
 import { simulate } from '../src/core/bot';
+import { suffix } from '../src/ui/format';
 
 const state = newGame(0);
 state.skills = {}; // no free root skills: the pure formulas only
 const ONE = { coins: 1, speed: 1 };
 
-const SUFFIX = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
 function f(n: number): string {
   if (!isFinite(n)) return '-';
-  if (n >= 1e36) return n.toExponential(2).replace('e+', ' x 10^');
   if (n < 1000) return n < 10 ? String(Math.round(n * 100) / 100) : String(Math.round(n * 10) / 10);
-  const e = Math.min(SUFFIX.length - 1, Math.floor(Math.log10(n) / 3));
+  const e = Math.floor(Math.log10(n) / 3);
   const v = n / 10 ** (e * 3);
-  return `${v < 10 ? v.toFixed(2) : v < 100 ? v.toFixed(1) : v.toFixed(0)}${SUFFIX[e]}`;
+  return `${v < 10 ? v.toFixed(2) : v < 100 ? v.toFixed(1) : v.toFixed(0)}${suffix(e)}`;
 }
 function t(sec: number): string {
   if (!isFinite(sec)) return '-';
@@ -65,14 +64,14 @@ p('### Income of a zone');
 p('```');
 p('guests          = baseGuests + capacity                    (+ skill guests)');
 p('pricePerGuest   = tierScale^tier x (1 + priceStep x price) x milestoneMult(price) x coinMultiplier');
-p('duration        = baseSeconds / ((1 + speedStep x speed) x speedMultiplier)');
+p('duration        = baseSeconds x (1 - (1 - speedEnd) x speed / maxSpeed) / speedMultiplier');
 p('incomePerSession = guests x pricePerGuest');
 p('coinsPerSecond   = incomePerSession / duration');
 p('```');
-p(`with tierScale = **${BALANCE.tierScale}**, priceStep = **${BALANCE.priceStep}** (each Level up adds +5% of the *base* price, i.e. linear, not compounding), speedStep = **${BALANCE.speedStep}** (each Faster turnover adds +2% of base speed).`);
+p(`with tierScale = **${BALANCE.tierScale}**, priceStep = **${BALANCE.priceStep}** (each Level up adds +5% of the *base* price, i.e. linear, not compounding), speedEnd = **${BALANCE.speedEnd.toFixed(3)}** (every Faster turnover level takes off the same number of seconds; at the top level a session takes 1/${Math.round(1 / BALANCE.speedEnd)} of its base time).`);
 p();
 p('So the three stats are **multiplicative with each other** but each one is **linear in its own level**:');
-p('`coinsPerSecond = tierScale^tier x (baseGuests + capacity) x (1 + 0.05 x price) x milestoneMult(price) x (1 + 0.02 x speed) / baseSeconds`');
+p('`coinsPerSecond = tierScale^tier x (baseGuests + capacity) x (1 + 0.05 x price) x milestoneMult(price) / (baseSeconds x (1 - (2/3) x speed / 100))`');
 p();
 p('### Cost of an upgrade');
 p('```');
@@ -84,7 +83,7 @@ p('| stat | UI name | baseCost | growth (per level) | surge | max level | effect
 p('|---|---|---|---|---|---|---|');
 p(`| price | Level up | ${STATS.price.baseCost} | x${STATS.price.growth} | ${STATS.price.surge} | ${STATS.price.max} | +${BALANCE.priceStep * 100}% of base price per guest (linear) |`);
 p(`| capacity | Bigger class | ${STATS.capacity.baseCost} | x${STATS.capacity.growth} | ${STATS.capacity.surge} | ${STATS.capacity.max} | +1 guest |`);
-p(`| speed | Faster turnover | ${STATS.speed.baseCost} | x${STATS.speed.growth} | ${STATS.speed.surge} | ${STATS.speed.max} | +${BALANCE.speedStep * 100}% of base speed (session time = base / (1 + 0.02 x level)) |`);
+p(`| speed | Faster turnover | ${STATS.speed.baseCost} | x${STATS.speed.growth} | ${STATS.speed.surge} | ${STATS.speed.max} | -${f(((1 - BALANCE.speedEnd) / STATS.speed.max) * 100)}% of the base time per level, the same every level |`);
 p();
 p('What that means, in words:');
 {
@@ -92,7 +91,7 @@ p('What that means, in words:');
   const ratio = (st: StatId, n: number) => statCost(r, st, n) / statCost(r, st, 0);
   p(`* **Level up** is the cheap, long ladder: cost grows only ${((STATS.price.growth - 1) * 100).toFixed(0)}% per level (level 100 costs ${f(ratio('price', 100))}x the first level, level 1000 ${f(ratio('price', 999))}x) while every level adds the same flat +5% of the base price. It is the "always something to buy" engine of the game and the only stat with a deep ladder (max 1000) and milestone bonuses.`);
   p(`* **Bigger class** costs **x${STATS.capacity.growth} per level** (plus a small surge): level 10 costs ${f(ratio('capacity', 10))}x the first level, level 25 ${f(ratio('capacity', 25))}x. One more guest is worth 1/(baseGuests + capacity) of the income, so the very first one is the best deal in the game (+33% on 3 guests) and every next one is dearer *and* worth less. Realistically a player buys a couple of dozen per zone, and only once the coins are huge (the bot ends with 13-30).`);
-  p(`* **Faster turnover** compounds x${STATS.speed.growth} per level with a surge of ${STATS.speed.surge} per level on top (level 50 costs ${f(ratio('speed', 50))}x the first level, level 100 ${f(ratio('speed', 100))}x). Its base cost (${STATS.speed.baseCost}) is the highest, so it is the last of the three to be worth buying early, but each level is +2% of base speed forever and it reaches a **hard cap at level ${STATS.speed.max}: sessions take 1/${1 + BALANCE.speedStep * STATS.speed.max} of the base time (x${1 + BALANCE.speedStep * STATS.speed.max} faster)**. The bot maxes it in every zone.`);
+  p(`* **Faster turnover** compounds x${STATS.speed.growth} per level with a surge of ${STATS.speed.surge} per level on top (level 50 costs ${f(ratio('speed', 50))}x the first level, level 100 ${f(ratio('speed', 100))}x). Its base cost (${STATS.speed.baseCost}) is the highest, so it is the last of the three to be worth buying early, every level takes the same number of seconds off and it reaches a **hard cap at level ${STATS.speed.max}: sessions take 1/${Math.round(1 / BALANCE.speedEnd)} of the base time (x${Math.round(1 / BALANCE.speedEnd)} faster)**. The bot maxes it in every zone.`);
 }
 p();
 p('### Level-up milestones (bonus multiplier on the income of that zone)');
@@ -116,7 +115,7 @@ p('### Worked example (Wave surfing, Beginner class, tier 0)');
   const a = stats(ref, ZERO);
   const b = stats(ref, { capacity: 2, price: 10, speed: 5 });
   p(`Start: ${a.guests} guests x ${f(a.pricePerGuest)} coins = **${f(a.income)}** per session, ${t(a.duration)} per session = **${f(a.perSecond)} coins/s**.`);
-  p(`After 2 Bigger class, 10 Level up, 5 Faster turnover (cost ${f(costOf(ref, 'capacity', 0, 2) + costOf(ref, 'price', 0, 10) + costOf(ref, 'speed', 0, 5))} coins in total): guests = 3 + 2 = ${b.guests}; price per guest = 5^0 x (1 + 0.05 x 10) = ${f(b.pricePerGuest)}; session = 6 / (1 + 0.02 x 5) = ${t(b.duration)}; income = ${b.guests} x ${f(b.pricePerGuest)} = ${f(b.income)}; **${f(b.perSecond)} coins/s** (${(b.perSecond / a.perSecond).toFixed(2)}x the start).`);
+  p(`After 2 Bigger class, 10 Level up, 5 Faster turnover (cost ${f(costOf(ref, 'capacity', 0, 2) + costOf(ref, 'price', 0, 10) + costOf(ref, 'speed', 0, 5))} coins in total): guests = 3 + 2 = ${b.guests}; price per guest = 5^0 x (1 + 0.05 x 10) = ${f(b.pricePerGuest)}; session = 6 x (1 - (2/3) x 5 / 100) = ${t(b.duration)}; income = ${b.guests} x ${f(b.pricePerGuest)} = ${f(b.income)}; **${f(b.perSecond)} coins/s** (${(b.perSecond / a.perSecond).toFixed(2)}x the start).`);
 }
 p();
 
@@ -124,9 +123,9 @@ p();
 p('## 2. Progression rules that make the numbers matter');
 p();
 p('* Sports and levels get **more expensive by tier** (`costScale^tier`) but also **earn more** (`tierScale^tier`). A tier is a "rung" of the whole game; every zone has one (0 for Beginner class up to 11.8 for the Offshore regatta).');
-p('* **Expansion 1 and 2** need Level 4 of every sport in the open areas and reset coins, zones, upgrades and beach buildings, but give **income x' + EXPANSION_MULT + ' each, for good**, and open the next area (Sea, then Ocean). Skills stay. Expansions no longer pay skill points (gems come from quests only).');
+p('* **Expansion 1 and 2** need Level 4 of every sport in the open areas and reset coins, zones, upgrades and beach buildings, but add **+' + EXPANSION_BONUS + ' to the income bonus each, for good** (x1, x2, x3), and open the next area (Sea, then Ocean). Skills stay. Expansions no longer pay skill points (gems come from quests only).');
 p('```');
-for (const e of EXPANSIONS) p(`expansion ${e.n}: opens ${e.opens}, needs Level ${e.level} of every open sport, costs ${f(e.coins)} coins, income x${EXPANSION_MULT}`);
+for (const e of EXPANSIONS) p(`expansion ${e.n}: opens ${e.opens}, needs Level ${e.level} of every open sport, costs ${f(e.coins)} coins, income bonus +${EXPANSION_BONUS}`);
 p('```');
 p('* The **balance bot** (`scripts/simulate.ts`, an active but patient player who taps every waiting zone and always buys the best payback) is the referee. Target: the whole game in roughly 4-14 hours. Whenever a number in this document changes, re-run it.');
 p();
@@ -251,8 +250,8 @@ p();
   };
   p(`* **Bigger class's ${STATS.capacity.max} cap is close to what a player can actually reach**, not a decorative far-off number: at x${STATS.capacity.growth} per level, level 30 in the first zone already costs ${f(costOf(r, 'capacity', 0, 30))} and the full ${STATS.capacity.max} costs ${f(costOf(r, 'capacity', 0, STATS.capacity.max))}. With 1 trillion coins to spend on it in a tier-0 zone a player reaches level ${reach(1e12, 'capacity')}; with 1 quadrillion, level ${reach(1e15, 'capacity')}. Higher tiers cost costScale^tier more, so their practical ceiling is lower still.`);
   p(`* **Level up is the workhorse.** Its cost only rises ${((STATS.price.growth - 1) * 100).toFixed(0)}% per level, so the 1000-level ladder is reachable (total ${f(costOf(r, 'price', 0, 1000))} in tier 0) and the milestones (x${milestoneMult(1000)} in total at level 1000) reward it. The bot ends near 400-1000 Level ups per zone.`);
-  p(`* **Faster turnover is a fixed, finite bonus** (x${1 + BALANCE.speedStep * STATS.speed.max} at level ${STATS.speed.max}, total ${f(costOf(r, 'speed', 0, 100))} in tier 0). Because it multiplies everything else it is worth buying, but it is capped, so it can never run away.`);
-  p(`* **Per-zone income at the end (all three maxed, tier 0 vs the last zone):** ${f(stats(ZONES[0], { capacity: 100, price: 1000, speed: 100 }).perSecond)} coins/s vs ${f(stats(ZONES[ZONES.length - 1], { capacity: 100, price: 1000, speed: 100 }).perSecond)} coins/s, before any expansion (x${EXPANSION_MULT} each), skill or building multiplier.`);
+  p(`* **Faster turnover is a fixed, finite bonus** (x${Math.round(1 / BALANCE.speedEnd)} at level ${STATS.speed.max}, total ${f(costOf(r, 'speed', 0, 100))} in tier 0). Because it multiplies everything else it is worth buying, but it is capped, so it can never run away.`);
+  p(`* **Per-zone income at the end (all three maxed, tier 0 vs the last zone):** ${f(stats(ZONES[0], { capacity: 100, price: 1000, speed: 100 }).perSecond)} coins/s vs ${f(stats(ZONES[ZONES.length - 1], { capacity: 100, price: 1000, speed: 100 }).perSecond)} coins/s, before any expansion bonus (+${EXPANSION_BONUS} each), skill or building multiplier.`);
 }
 p();
 p('---');

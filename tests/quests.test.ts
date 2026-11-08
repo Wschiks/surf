@@ -16,8 +16,8 @@ describe('quests', () => {
     const s = game();
     expect(s.quests).toHaveLength(QUEST_SLOTS - 1); // "get more guests" only comes later
     const texts = s.quests.map((q) => questView(s, q).text);
-    expect(texts[0]).toBe('Level up Beginner class to level 10');
-    expect(texts).toContain('Finish 10 sessions at Beginner class');
+    expect(texts[0]).toBe('Level up Beginner class to Lv 10');
+    expect(texts).toContain('10 sessions at Beginner class');
     expect(texts).toContain('Serve 40 guests at Beginner class');
     expect(texts.some((t) => /^Earn /.test(t))).toBe(true);
     expect(texts.some((t) => /^Get \d+ surfers/.test(t))).toBe(false);
@@ -31,7 +31,7 @@ describe('quests', () => {
     refreshQuests(s);
     expect(s.quests.map((q) => q.kind)).toContain('guests');
     const g = s.quests.find((q) => q.kind === 'guests')!;
-    expect(questView(s, g).text).toMatch(/^Get 10 surfers in /);
+    expect(questView(s, g).text).toMatch(/^10 surfers at /);
   });
 
   it('are the same every time for the same game (nothing is random)', () => {

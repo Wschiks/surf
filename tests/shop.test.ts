@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import { AD_COOLDOWN_SECONDS, AD_STEPS, CLUB, GEM_PACKS } from '../src/config/shop';
 import { BALANCE } from '../src/config/balance';
-import { adFree, loadPerks, PERKS_KEY, refreshClub, savePerks } from '../src/core/perks';
+import { adBreakDue, adFree, loadPerks, PERKS_KEY, refreshClub, savePerks } from '../src/core/perks';
+import { AD_BREAK } from '../src/config/ads';
 import { loadGame, saveGame } from '../src/core/save';
 import { adStreak, claimAdStep, claimClubGems, clubStatus, grantGemPack } from '../src/core/shop';
 import { multipliers, offlineCap } from '../src/core/economy';
@@ -44,6 +45,25 @@ describe('ad streak', () => {
     expect(adStreak(s, later).lockedFor).toBe(0);
     expect(adStreak(s, later).step).toBe(0);
     expect(claimAdStep(s, later)).toEqual({ gems: 1 });
+  });
+
+  it('the day starts at the first ad, not the last', () => {
+    const s = fresh();
+    const t = 5_000_000;
+    claimAdStep(s, t);
+    for (let i = 1; i < AD_STEPS.length; i++) claimAdStep(s, t + 5 * 3600 * 1000); // the rest 5 hours later
+    expect(adStreak(s, t + 5 * 3600 * 1000).lockedFor).toBe(AD_COOLDOWN_SECONDS - 5 * 3600);
+    expect(claimAdStep(s, t + AD_COOLDOWN_SECONDS * 1000)).toEqual({ gems: 1 });
+  });
+
+  it('a day that runs out before all five ads starts over at the first reward', () => {
+    const s = fresh();
+    const t = 5_000_000;
+    claimAdStep(s, t);
+    claimAdStep(s, t);
+    expect(adStreak(s, t + AD_COOLDOWN_SECONDS * 1000 - 1000).step).toBe(2);
+    expect(adStreak(s, t + AD_COOLDOWN_SECONDS * 1000).step).toBe(0);
+    expect(claimAdStep(s, t + AD_COOLDOWN_SECONDS * 1000)).toEqual({ gems: 1 });
   });
 
   it('a boost reward never shortens a longer boost that is running', () => {
@@ -154,5 +174,17 @@ describe('Surf Club', () => {
     const saveStore = memory();
     saveGame(s, 1, saveStore);
     expect(saveStore.data.get('surf-tycoon-save-v1')).not.toContain('clubUntil');
+  });
+});
+
+describe('ad breaks', () => {
+  const ok = { adFree: false, played: AD_BREAK.firstAfterSeconds, sinceLast: AD_BREAK.everySeconds };
+  it('come every few minutes, not at the start', () => {
+    expect(adBreakDue(ok)).toBe(true);
+    expect(adBreakDue({ ...ok, played: 60 })).toBe(false);
+    expect(adBreakDue({ ...ok, sinceLast: 60 })).toBe(false);
+  });
+  it('never come for players without ads', () => {
+    expect(adBreakDue({ ...ok, adFree: true })).toBe(false);
   });
 });

@@ -11,20 +11,31 @@ export interface AdStreak {
   lockedFor: number;
 }
 
+/** When the day of the streak that started at `startedAt` is over (0 = no day running). */
+function dayEnd(state: GameState): number {
+  return state.adShop.startedAt > 0 ? state.adShop.startedAt + AD_COOLDOWN_SECONDS * 1000 : 0;
+}
+
 export function adStreak(state: GameState, now: number): AdStreak {
-  const step = Math.min(Math.max(0, state.adShop.step), AD_STEPS.length - 1);
+  // a day that ran out before all five ads were watched starts over at the first reward
+  const expired = state.adShop.step > 0 && dayEnd(state) > 0 && now >= dayEnd(state);
+  const step = expired ? 0 : Math.min(Math.max(0, state.adShop.step), AD_STEPS.length - 1);
   return { step, reward: AD_STEPS[step], lockedFor: Math.max(0, Math.ceil((state.adShop.lockedUntil - now) / 1000)) };
 }
 
-/** Give the reward of the next ad in the streak. After the 5th the streak is locked for a day. Returns the reward, or null while locked. */
+/**
+ * Give the reward of the next ad in the streak. The day starts with the first ad: after the 5th the streak is locked
+ * until 24 hours after that first ad (not after the last). Returns the reward, or null while locked.
+ */
 export function claimAdStep(state: GameState, now: number): AdStep | null {
   const s = adStreak(state, now);
   if (s.lockedFor > 0) return null;
+  if (s.step === 0) state.adShop.startedAt = now;
   if ('gems' in s.reward) addSkillPoints(state, s.reward.gems);
   else state.boost = Math.max(state.boost, s.reward.boost);
   if (s.step + 1 >= AD_STEPS.length) {
     state.adShop.step = 0;
-    state.adShop.lockedUntil = now + AD_COOLDOWN_SECONDS * 1000;
+    state.adShop.lockedUntil = dayEnd(state);
   } else {
     state.adShop.step = s.step + 1;
   }

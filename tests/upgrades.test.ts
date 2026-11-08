@@ -86,6 +86,14 @@ describe('buying many levels at once', () => {
     expect(planBuy(W1, 'price', 0, 1, 10).count).toBe(0);
   });
 
+  it('x10 / x100 near the top buy the levels that are left, not nothing', () => {
+    const top = STATS.capacity.max;
+    expect(planBuy(W1, 'capacity', 0, 1e300, 100).count).toBe(top);
+    expect(planBuy(W1, 'capacity', top - 3, 1e300, 10).count).toBe(3);
+    expect(planBuy(W1, 'capacity', top - 3, 1, 10).count).toBe(0); // still all or nothing
+    expect(planBuy(W1, 'capacity', top, 1e300, 10).count).toBe(0); // full: nothing to buy
+  });
+
   it('Max stops at the top level', () => {
     const plan = planBuy(W1, 'speed', 0, 1e300, 'max');
     expect(plan.count).toBe(STATS.speed.max);

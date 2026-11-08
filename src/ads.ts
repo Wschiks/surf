@@ -59,3 +59,37 @@ export async function showRewardedAd(): Promise<AdResult> {
     return 'failed';
   }
 }
+
+function interstitialId(): string {
+  const ios = Capacitor.getPlatform() === 'ios';
+  if (!ADS.live) return ios ? ADS.testInterstitial.ios : ADS.testInterstitial.android;
+  return ios ? ADS.ios.interstitial : ADS.android.interstitial;
+}
+
+/** Can an ad break show an ad? In a browser a stand-in is shown; in a live build only once its ad block is set. */
+export function interstitialAvailable(): boolean {
+  return !adsNative || !!interstitialId();
+}
+
+/** Show one ad break ad (interstitial). Resolves when it is closed, or at once if none could be shown. */
+export async function showInterstitialAd(): Promise<void> {
+  const adId = interstitialId();
+  if (!adsNative || !adId) return;
+  try {
+    await setup();
+    const { AdMob, InterstitialAdPluginEvents } = await admob();
+    await AdMob.prepareInterstitial({ adId, isTesting: !ADS.live });
+    await new Promise<void>((resolve) => {
+      const handles: Promise<{ remove: () => Promise<void> }>[] = [];
+      const done = () => {
+        handles.forEach((h) => void h.then((x) => x.remove()));
+        resolve();
+      };
+      handles.push(AdMob.addListener(InterstitialAdPluginEvents.Dismissed, done));
+      handles.push(AdMob.addListener(InterstitialAdPluginEvents.FailedToShow, done));
+      AdMob.showInterstitial().catch(done);
+    });
+  } catch {
+    // no ad: keep playing
+  }
+}

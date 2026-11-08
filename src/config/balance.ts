@@ -15,19 +15,20 @@ export interface StatDef {
   growth: number;
   /** Extra cost that grows with the level: cost x (1 + surge x level). Makes the late levels dearer. */
   surge: number;
-  /** Highest level you can buy. */
+  /** Highest level you can buy (before any rebirth). */
   max: number;
+  /** Every rebirth raises the highest level by this much. */
+  perRebirth?: number;
 }
 
 export const STATS: Record<StatId, StatDef> = {
-  // Bigger class: one more guest per level. Much dearer than a level up: each level costs about 2.5x (250%) the one before.
-  // Capped well below its old max of 100: at x2.5 per level, level 30 already costs trillions of coins and level 100
-  // an absurd number no player will ever reach - a max of 40 keeps the "Max" button meaningful instead of decorative.
-  capacity: { id: 'capacity', label: 'Capacity', icon: 'people', baseCost: 25, growth: 2.5, surge: 0.06, max: 40 },
+  // Bigger class: one more guest per level, and few levels: max 10 (a class of 13 kids), each level x3 the one before
+  // (1, 3, 9, 27, 81...). A full class is a goal you reach; every rebirth makes room for 5 more.
+  capacity: { id: 'capacity', label: 'Capacity', icon: 'people', baseCost: 25, growth: 3, surge: 0, max: 10, perRebirth: 5 },
   // Level up: many small steps (up to 1000), with a bonus at milestone levels (see LEVEL_MILESTONES).
   price: { id: 'price', label: 'Level up', icon: 'tag', baseCost: 6, growth: 1.03, surge: 0, max: 1000 },
   // Faster sessions: the dearest of the three.
-  speed: { id: 'speed', label: 'Speed', icon: 'bolt', baseCost: 80, growth: 1.085, surge: 0.1, max: 100 },
+  speed: { id: 'speed', label: 'Speed', icon: 'bolt', baseCost: 80, growth: 1.336, surge: 0, max: 100 },
 };
 
 /** Bonus multipliers for the income of a zone at certain levels. They stack. After level 300 every 100 levels doubles it. */
@@ -58,27 +59,32 @@ export const BALANCE = {
   /** Every tier step multiplies the income of a zone by this factor. */
   tierScale: 5,
   /** Every tier step multiplies costs by this factor. Bigger than tierScale, so later tiers take longer to reach. */
-  costScale: 8.3,
+  costScale: 7.85,
   /** Scales every unlock price at once (level and sport unlocks). */
   unlockMult: 3,
   /** Price per guest gains this fraction of the base price per level up (a small step). */
   priceStep: 0.05,
-  /** Sessions get this fraction faster per speed level (duration = base / (1 + step * level)): a small step, 0.1 s on a 6 s session. */
-  speedStep: 0.02,
+  /**
+   * At the top Faster turnover level a session takes this fraction of its base time (6 s -> 2 s). Every level takes off
+   * the same number of seconds: (1 - speedEnd) / max of the base time (0.04 s on a 6 s session).
+   */
+  speedEnd: 1 / 3,
   /** Cost of a manager, in multiples of the tier scale. */
   managerCost: 60,
   /** Offline earnings stop after this many seconds away (2 hours; the beach skills add more). */
   offlineCapSeconds: 2 * 3600,
   /** Watching a rewarded ad makes all coin income x2 for this many seconds. */
-  boostSeconds: 40,
+  boostSeconds: 120,
   boostMult: 2,
   /** The one-time purchase "Coins x5": all coin income x5. */
   x5Mult: 5,
   /** Only show this many guests per zone on the map. */
   maxVisibleGuests: 10,
-  /** The welcome-back dialog: what watching an ad, or spending gems, does to the away-earnings you already got (1x). */
-  offlineAdMult: 2,
-  offlineGemMult: 3,
+  /** While away the beach earns this share of its normal income (managed zones only). */
+  offlineRate: 0.3,
+  /** In the welcome-back dialog, watching an ad turns the away earnings into this share (double the free rate). */
+  offlineAdRate: 0.6,
+  /** In the welcome-back dialog, this many gems turn the away earnings into the full 100%. */
   offlineGemCost: 5,
 };
 

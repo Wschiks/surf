@@ -1,7 +1,7 @@
 import { STAT_IDS, type StatId } from '../config/balance';
 import { FACILITIES } from '../config/facilities';
 import { SPORTS, ZONES, type ZoneRef } from '../config/sports';
-import { buyFacility, buyManager, buyStat, collectAll, facilityCost, managerCost, multipliers, planBuy, statCost, tick, zoneStats } from './economy';
+import { buyFacility, facilityOpen, statMax, buyManager, buyStat, collectAll, facilityCost, managerCost, multipliers, planBuy, statCost, tick, zoneStats } from './economy';
 import { newGame, type GameState } from './state';
 import { claimQuest, refreshQuests } from './quests';
 import { EXPANSIONS } from '../config/expansions';
@@ -47,7 +47,7 @@ interface Candidate {
 /** How many levels to buy at once: as many as fit in a quarter of the money, so a thousand levels do not take a thousand steps. */
 function bulk(state: GameState, r: ZoneRef, stat: StatId, level: number, firstCost: number): number {
   if (firstCost > state.coins * 0.25) return 1;
-  return Math.max(1, Math.min(200, planBuy(r, stat, level, state.coins * 0.25, 'max').count));
+  return Math.max(1, Math.min(200, planBuy(r, stat, level, state.coins * 0.25, 'max', 0, statMax(stat, state.rebirths)).count));
 }
 
 function candidates(state: GameState): Candidate[] {
@@ -58,7 +58,7 @@ function candidates(state: GameState): Candidate[] {
     if (!z.owned) continue;
     const cur = zoneStats(state, r, z, m).perSecond;
     for (const stat of STAT_IDS) {
-      const cost = statCost(r, stat, z[stat]);
+      const cost = statCost(r, stat, z[stat], 0, statMax(stat, state.rebirths));
       if (!isFinite(cost)) continue;
       const next = zoneStats(state, r, { ...z, [stat]: z[stat] + 1 }, m).perSecond;
       out.push({ name: `${r.id} ${stat} ${z[stat] + 1}`, cost, gain: next - cur, buy: () => buyStat(state, r.id, stat, bulk(state, r, stat, z[stat], cost)) });
@@ -67,6 +67,7 @@ function candidates(state: GameState): Candidate[] {
   }
   const rate = totalRate(state);
   for (const f of FACILITIES) {
+    if (!facilityOpen(state, f)) continue;
     const lvl = state.facilities[f.id];
     const cost = facilityCost(f.id, lvl);
     if (!isFinite(cost)) continue;
@@ -105,7 +106,7 @@ function allDone(state: GameState): boolean {
 }
 
 function allMaxed(state: GameState): boolean {
-  return ZONES.every((r) => STAT_IDS.every((s) => !isFinite(statCost(r, s, state.zones[r.id][s])))) && FACILITIES.every((f) => !isFinite(facilityCost(f.id, state.facilities[f.id])));
+  return ZONES.every((r) => STAT_IDS.every((s) => !isFinite(statCost(r, s, state.zones[r.id][s], 0, statMax(s, state.rebirths))))) && FACILITIES.every((f) => !facilityOpen(state, f) || !isFinite(facilityCost(f.id, state.facilities[f.id])));
 }
 
 export function simulate(opts: { maxSeconds: number; step?: number; state?: GameState } = { maxSeconds: 3600 * 24 }): SimResult {

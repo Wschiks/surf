@@ -20,7 +20,7 @@ type Page = 'main' | 'how' | 'terms' | 'privacy' | 'about';
 const HOW_TO_PLAY = [
   ['Start sessions', 'Tap the round badge on a zone to start a session. When it is done, tap it again to collect the coins.'],
   ['Upgrade', 'Open a zone to level it up, get a bigger class or make it faster. Hold a button to buy quickly, or pick x10, x100 or Max.'],
-  ['Managers', 'Hire a manager to keep a zone running by itself, also while the game is closed. Away time earns for 2 hours; skills in the Beach tree make that longer.'],
+  ['Managers', 'Hire a manager to keep a zone running by itself, also while the game is closed. While you are away your beach earns 30% of its normal income, for up to 2 hours; skills in the Beach tree make that longer. Back in the game, 5 gems turn it into the full 100%.'],
   ['New levels and sports', 'A new level needs coins and upgrades on the level before it. A new sport needs a level of the sport before it, and coins.'],
   ['Quests', 'Finish quests for extra coins. Harder quests, and every fifth quest, also give a skill point. Every quest pays its own reward. Swipe the row of quests sideways to see them all.'],
   ['Skills', 'Skill points (the purple gems) are for the skill trees: one tree for every sport and one for the beach. Each tree starts with a free skill and then splits up so you can choose. Skills stay when you expand the beach.'],

@@ -188,6 +188,7 @@ describe('what the skills do', () => {
   it('beach: buildings work better and cost less', () => {
     const s = game();
     s.coins = 1e12;
+    s.zones['wave-2'].owned = true; // the shop opens with Longboarders
     buyFacility(s, 'shop');
     const plain = zoneStats(s, W1).income;
     const cost = facilityCost('shop', 1);

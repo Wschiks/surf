@@ -1,3 +1,4 @@
+import { BALANCE } from '../src/config/balance';
 import { describe, expect, it } from 'vitest';
 import { SAVE_KEY, loadGame, saveGame } from '../src/core/save';
 import { buyManager, tick, tapZone } from '../src/core/economy';
@@ -56,8 +57,10 @@ describe('game clock', () => {
     // the Game class reads localStorage, so emulate it
     (globalThis as unknown as { localStorage: unknown }).localStorage = store;
     const g = new Game(10_000 + 3600 * 1000);
-    expect(g.state.coins - before).toBeCloseTo(3600 * 0.5 * 1.05, 0); // (+5%: the free root skill of wave surfing)
-    expect(g.offlineReport?.coins).toBeGreaterThan(1000);
+    // away the beach earns 30% (+5%: the free root skill of wave surfing)
+    expect(g.state.coins - before).toBeCloseTo(3600 * 0.5 * 1.05 * BALANCE.offlineRate, 0);
+    expect(g.offlineReport?.coins).toBeGreaterThan(300);
+    expect(g.offlineReport?.full).toBeCloseTo(3600 * 0.5 * 1.05, 0);
     delete (globalThis as unknown as { localStorage?: unknown }).localStorage;
   });
 
@@ -70,7 +73,7 @@ describe('game clock', () => {
     const before = g.state.coins;
     g.update(1000);
     g.update(1000 + 600_000);
-    expect(g.state.coins - before).toBeGreaterThan(200);
+    expect(g.state.coins - before).toBeGreaterThan(60); // 30% of the ten minutes
     tick(g.state, 0);
     delete (globalThis as unknown as { localStorage?: unknown }).localStorage;
   });

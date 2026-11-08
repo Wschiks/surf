@@ -130,7 +130,8 @@ export const SPORTS: SportDef[] = [
     area: 'wave',
     color: '#f2b134',
     guestKind: 'skimmer',
-    unlock: { after: 'wave', level: 2, coins: unlockCoins(1.6, 60) },
+    // cheaper than its own level 2 (Flatland, 1.5K): it used to cost 5.3K, more than the level after it
+    unlock: { after: 'wave', level: 2, coins: unlockCoins(1.6, 10) },
     guestColors: ['#ffb74d', '#4dd0e1', '#f06292', '#aed581', '#ba68c8'],
     terms: {
       capacity: 'More boards',

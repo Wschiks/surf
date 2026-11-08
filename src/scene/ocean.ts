@@ -44,7 +44,11 @@ export class OceanView {
         this.buoys.push(b);
       }
     }
-    // the ocean racer of the offshore regatta
+    // the ocean racer of the offshore regatta (and gone again if the zone is not owned any more)
+    if (!state.zones[zoneId('sailing', 4)]?.owned && this.yacht) {
+      this.yacht.destroy();
+      this.yacht = undefined;
+    }
     if (state.zones[zoneId('sailing', 4)]?.owned && !this.yacht) {
       const r = toWorld({ x: 0.2, y: 6.5, w: 3.5, h: 1.4 });
       this.yacht = placeUpright(this.scene, 'boat-yacht', r.x + r.w * 0.5, r.y + r.h * 0.62).setDepth(DEPTH.things);
