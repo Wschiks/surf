@@ -116,7 +116,8 @@ export class GameUI {
     this.root.innerHTML = `
       <div class="col">
       <div class="hud">
-        <div class="pill coins"><span class="ico">${COIN}</span><span class="cv"><b data-ref="coins">0</b><small data-ref="rate">+0/s</small></span><em class="mult" data-ref="mult" hidden></em></div>
+        <div class="pill coins"><span class="ico">${COIN}</span><b data-ref="coins">0</b><em class="mult" data-ref="mult" hidden></em></div>
+        <div class="pill rate"><span class="ico">${icon('chart')}</span><b data-ref="rate">+0/s</b></div>
         <button class="pill gems" data-ref="gembtn" aria-label="Skill points"><span class="ico">${icon('gem')}</span><b data-ref="gems">0</b></button>
       </div>
       <div class="quests" data-ref="quests">

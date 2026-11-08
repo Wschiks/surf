@@ -640,3 +640,11 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 .dock .boost small { font-size: 10px; bottom: -7px; padding: 0 6px; }
 .rbtn .dot, .cbtn .dot { width: 12px; height: 12px; }
 .toasts { left: 60px; right: 60px; }
+/* top bar covers the whole width: total coins | coins per second | gems on the right */
+.hud { gap: 6px; }
+.hud .pill.coins { flex: 1.25 1 0; min-width: 0; }
+.hud .pill.rate { flex: 1 1 0; min-width: 0; color: #7ff0a8; }
+.hud .pill.rate b { font-size: 16px; white-space: nowrap; }
+.hud .pill.rate .ico .ic { color: #5be08f; }
+.hud .pill.gems { flex: 0 0 auto; margin-left: 0; }
+.hud .pill b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
