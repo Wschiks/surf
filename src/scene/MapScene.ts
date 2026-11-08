@@ -289,8 +289,8 @@ export class MapScene extends Phaser.Scene {
   update(time: number, delta: number) {
     const now = Date.now();
     this.game_.update(now);
-    // testing only (npm run dev): coins never run out, not even after a rebirth
-    if (import.meta.env.DEV && DEV_UNLIMITED_COINS) this.game_.state.coins = Math.max(this.game_.state.coins, 999e27);
+    // testing only (npm run dev, or a web test build with VITE_TEST_COINS=1 such as Vercel): coins never run out, not even after a rebirth
+    if ((import.meta.env.DEV || import.meta.env.VITE_TEST_COINS === '1') && DEV_UNLIMITED_COINS) this.game_.state.coins = Math.max(this.game_.state.coins, 999e27);
     this.view.update(Math.min(delta, 100) / 1000);
     const cam = this.cameras.main;
     cam.setZoom(this.view.zoom * this.dpr);
