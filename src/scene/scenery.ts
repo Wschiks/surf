@@ -18,7 +18,7 @@ export class Scenery {
     bakeIsland(scene);
     bakeShip(scene);
     // Sea, right edge: wind turbines (base at the given point)
-    [4.65, 5.3, 5.95].forEach((depth, i) => {
+    [4.9, 5.85, 6.8].forEach((depth, i) => {
       const x = 15.7 + (i % 2) * 0.35;
       const tower = placeUpright(scene, 'sc-tower', x * UNIT, depth * UNIT).setDepth(DEPTH.things - 0.4);
       tower.setOrigin(0.58, 0.95).setDisplaySize(26, 120);
@@ -28,8 +28,8 @@ export class Scenery {
       this.blades.push(b);
     });
     // Sea, left edge: a sandbank island with two palms
-    placeImage(scene, 'sc-island', -1.9 * UNIT, 4.6 * UNIT).setDepth(DEPTH.things - 0.6).setDisplaySize(ISLAND_SIZE.w, ISLAND_SIZE.h);
-    for (const [dx, dy, s] of [[-1.05, 5.22, 0.85], [-0.78, 5.32, 1]] as const) {
+    placeImage(scene, 'sc-island', -1.9 * UNIT, 5.2 * UNIT).setDepth(DEPTH.things - 0.6).setDisplaySize(ISLAND_SIZE.w, ISLAND_SIZE.h);
+    for (const [dx, dy, s] of [[-1.05, 5.82, 0.85], [-0.78, 5.92, 1]] as const) {
       const palm = placeUpright(scene, 'deco-palm', dx * UNIT, dy * UNIT).setDepth(DEPTH.things - 0.5);
       palm.setDisplaySize(52 * s, 84 * s);
     }
@@ -46,7 +46,7 @@ export class Scenery {
     }
     // ship: 150 s per crossing along the depth axis, fading in and out at the ends
     const t = (time / 150000) % 1;
-    const y = (6.6 + t * 2.2) * UNIT;
+    const y = (7.6 + t * 2.6) * UNIT;
     this.ship.setPosition(17.3 * UNIT, y).setRotation(Math.PI);
     this.ship.setAlpha(Math.min(1, t * 8, (1 - t) * 8));
   }

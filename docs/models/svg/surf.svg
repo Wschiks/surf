@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="50 120 340 464" width="440" height="580" preserveAspectRatio="xMidYMid meet" role="img" aria-label="New surfer standing sideways on a shortboard">
+<rect x="0" y="0" width="440" height="600" fill="#86D0DE"></rect>
+<g fill="none" stroke="#A6DDE8" stroke-width="3" stroke-linecap="round">
+<path d="M40 90 q12 -7 24 0 t24 0"></path>
+<path d="M330 150 q12 -7 24 0 t24 0"></path>
+<path d="M60 430 q12 -7 24 0 t24 0"></path>
+<path d="M330 470 q12 -7 24 0 t24 0"></path>
+</g>
+<g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-opacity="0.75">
+<path d="M208,424 Q194,458 176,494" stroke-width="5"></path>
+<path d="M232,424 Q246,458 264,494" stroke-width="5"></path>
+<path d="M216,430 Q212,456 208,480" stroke-width="2.5"></path>
+</g>
+<path d="M220,176 C241,202 253,254 253,306 C253,360 246,398 236,418 Q220,426 204,418 C194,398 187,360 187,306 C187,254 199,202 220,176 Z" fill="#0E4A5C" fill-opacity="0.22" transform="translate(7,10)"></path>
+<path d="M220,176 C241,202 253,254 253,306 C253,360 246,398 236,418 Q220,426 204,418 C194,398 187,360 187,306 C187,254 199,202 220,176 Z" fill="#FFFFFF"></path>
+<line x1="220" y1="184" x2="220" y2="420" stroke="#DCE5EA" stroke-width="1.5"></line>
+<rect x="206" y="370" width="28" height="42" rx="9" fill="#4A5866"></rect>
+<path d="M221,420 C232,436 212,446 225,466" fill="none" stroke="#2A3A4C" stroke-width="2" stroke-linecap="round"></path>
+<ellipse cx="230" cy="360" rx="19" ry="32" fill="#0E4A5C" fill-opacity="0.16"></ellipse>
+<line x1="220" y1="320" x2="220" y2="376" stroke="#2A3A4C" stroke-width="12" stroke-linecap="round"></line>
+<ellipse cx="223" cy="316" rx="8" ry="6" fill="#E2AE85"></ellipse>
+<ellipse cx="223" cy="380" rx="8" ry="6" fill="#E2AE85"></ellipse>
+<line x1="216" y1="327" x2="248" y2="300" stroke="#F3C9A2" stroke-width="9" stroke-linecap="round"></line>
+<line x1="216" y1="369" x2="190" y2="396" stroke="#F3C9A2" stroke-width="9" stroke-linecap="round"></line>
+<ellipse cx="218" cy="348" rx="15" ry="26" fill="#FF7043" stroke="#E0582E" stroke-width="2"></ellipse>
+<circle cx="248" cy="300" r="5.5" fill="#E2AE85"></circle>
+<circle cx="190" cy="396" r="5.5" fill="#E2AE85"></circle>
+<circle cx="226" cy="346" r="12.5" fill="#F3C9A2"></circle>
+<circle cx="222" cy="347" r="12" fill="#3D2B1A"></circle>
+</svg>

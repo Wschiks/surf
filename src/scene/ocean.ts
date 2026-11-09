@@ -1,36 +1,28 @@
 import Phaser from 'phaser';
-import { UNIT, toWorld } from '../config/layout';
-import { zoneId } from '../config/sports';
+import { toWorld } from '../config/layout';
+import { ZONES, zoneId } from '../config/sports';
+
+/** The rectangle of a sailing zone (1 to 4). */
+const zoneRect = (level: number) => ZONES.find((z) => z.id === zoneId('sailing', level))!.def.rect;
 import type { GameState } from '../core/state';
 import { bakeBoats, placeUpright } from './art';
 import { DEPTH } from './background';
 
 /**
- * Boats of the Ocean area: dinghies moored at the jetty (one per sailing level owned), race course buoys once
- * Club racing is open, and an ocean racer once the Offshore regatta is open. They bob gently.
+ * Boats of the Ocean area: race course buoys once Club racing is open. (The Offshore regatta sails real yachts, see
+ * rig/sports/sail.ts.)
  */
 export class OceanView {
-  private moored: Phaser.GameObjects.Image[] = [];
   private buoys: Phaser.GameObjects.Image[] = [];
-  private yacht?: Phaser.GameObjects.Image;
 
   constructor(private scene: Phaser.Scene) {
     bakeBoats(scene);
   }
 
-  update(state: GameState, time: number, animate = true) {
-    const owned = [1, 2, 3, 4].filter((l) => state.zones[zoneId('sailing', l)]?.owned).length;
-    // dinghies moored along the left side of the jetty
-    while (this.moored.length < owned) {
-      const i = this.moored.length;
-      const img = placeUpright(this.scene, 'boat-dinghy', 4.75 * UNIT, (1.05 + i * 0.5) * UNIT).setDepth(DEPTH.things);
-      img.setOrigin(0.5, 0.9).setDisplaySize(46 * 0.9, 56 * 0.9);
-      if (animate) this.pop(img);
-      this.moored.push(img);
-    }
+  update(state: GameState, _time: number, animate = true) {
     // race course: a triangle of buoys inside the Club racing zone
     if (state.zones[zoneId('sailing', 3)]?.owned && this.buoys.length === 0) {
-      const r = toWorld({ x: 4.0, y: 6.5, w: 3.5, h: 1.4 });
+      const r = toWorld(zoneRect(3));
       const pts = [
         [0.12, 0.2],
         [0.5, 0.86],
@@ -38,38 +30,18 @@ export class OceanView {
         [0.5, 0.2],
       ];
       for (const [fx, fy] of pts) {
-        const b = placeUpright(this.scene, 'buoy', r.x + r.w * fx, r.y + r.h * fy).setDepth(DEPTH.things);
+        // upright pictures stand above the boats on the water, so a dinghy sailing behind one goes out of sight
+        const b = placeUpright(this.scene, 'buoy', r.x + r.w * fx, r.y + r.h * fy).setDepth(DEPTH.things + 0.3);
         b.setOrigin(0.5, 0.85).setDisplaySize(16 * 1.1, 22 * 1.1);
         if (animate) this.pop(b);
         this.buoys.push(b);
       }
     }
-    // the ocean racer of the offshore regatta (and gone again if the zone is not owned any more)
-    if (!state.zones[zoneId('sailing', 4)]?.owned && this.yacht) {
-      this.yacht.destroy();
-      this.yacht = undefined;
-    }
-    if (state.zones[zoneId('sailing', 4)]?.owned && !this.yacht) {
-      const r = toWorld({ x: 0.2, y: 6.5, w: 3.5, h: 1.4 });
-      this.yacht = placeUpright(this.scene, 'boat-yacht', r.x + r.w * 0.5, r.y + r.h * 0.62).setDepth(DEPTH.things);
-      this.yacht.setOrigin(0.5, 0.9).setDisplaySize(90 * 1.1, 84 * 1.1);
-      if (animate) this.pop(this.yacht);
-    }
-    const bob = (img: Phaser.GameObjects.Image | undefined, i: number, baseY: number) => {
-      if (img) img.y = baseY + Math.sin(time / 700 + i * 1.7) * 1.6;
-    };
-    this.moored.forEach((m, i) => bob(m, i, (1.85 + i * 0.42) * UNIT));
-    if (this.yacht) {
-      const r = toWorld({ x: 0.2, y: 6.5, w: 3.5, h: 1.4 });
-      bob(this.yacht, 0, r.y + r.h * 0.62);
-    }
   }
 
   reset() {
-    for (const o of [...this.moored, ...this.buoys, ...(this.yacht ? [this.yacht] : [])]) o.destroy();
-    this.moored = [];
+    for (const o of this.buoys) o.destroy();
     this.buoys = [];
-    this.yacht = undefined;
   }
 
   private pop(img: Phaser.GameObjects.Image) {

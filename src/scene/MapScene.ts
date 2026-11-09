@@ -18,6 +18,8 @@ import { icon } from '../ui/icons';
 import { BeachView } from './beach';
 import { MapInput, MapView } from './MapView';
 import { ZoneView } from './zoneView';
+import { bakeRigAtlas } from './rig/atlas';
+import { FxPool } from './rig/fx';
 import { SiteView } from './sites';
 import { OceanView } from './ocean';
 import { Scenery } from './scenery';
@@ -43,6 +45,7 @@ export class MapScene extends Phaser.Scene {
   private scenery!: Scenery;
   private plane!: PlaneView;
   private zones: ZoneView[] = [];
+  private fx!: FxPool;
   private popCount = 0;
   private popsAlive = 0;
 
@@ -96,7 +99,9 @@ export class MapScene extends Phaser.Scene {
     this.fields = new FieldView(this);
     this.road = new RoadView(this);
     this.plane = new PlaneView(this, this.view);
-    for (const ref of ZONES) this.zones.push(new ZoneView(this, ref, (id, coins) => this.pop(id, coins)));
+    bakeRigAtlas(this);
+    this.fx = new FxPool(this, DEPTH.things - 0.25);
+    for (const ref of ZONES) this.zones.push(new ZoneView(this, ref, this.fx, (id, coins) => this.pop(id, coins)));
 
     this.mist = new Mist(this, this.game_.state.expansions);
     // a save where the next expansion is already ready: the mist is already blown back a little
@@ -303,7 +308,9 @@ export class MapScene extends Phaser.Scene {
     this.bg.swell.tilePositionY = -time * 0.008;
     this.bg.swell.tilePositionX = time * 0.004;
     this.mist.update(time);
-    for (const z of this.zones) z.update(time, this.game_.state, this.view);
+    const dt = Math.min(delta, 50) / 1000;
+    for (const z of this.zones) z.update(time, dt, this.game_.state, this.view);
+    this.fx.update(dt);
     this.beach.update(this.game_.state);
     this.beach.animateWalkers(this.game_.state, time);
     this.sites.update(this.game_.state);

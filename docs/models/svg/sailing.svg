@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 40 440 600" width="440" height="580" preserveAspectRatio="xMidYMid meet" role="img" aria-label="New sailing dinghy with the boom out to one side and the sailor hiking on the other">
+<rect x="0" y="0" width="440" height="700" fill="#86D0DE"></rect>
+<g fill="none" stroke="#A6DDE8" stroke-width="3" stroke-linecap="round">
+<path d="M40 90 q12 -7 24 0 t24 0"></path>
+<path d="M340 120 q12 -7 24 0 t24 0"></path>
+<path d="M40 330 q12 -7 24 0 t24 0"></path>
+<path d="M350 560 q12 -7 24 0 t24 0"></path>
+</g>
+<g transform="translate(0,80) scale(1,0.8)">
+<g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-opacity="0.75">
+<path d="M172,592 Q156,616 140,640" stroke-width="5"></path>
+<path d="M268,592 Q284,616 300,640" stroke-width="5"></path>
+<path d="M212,60 Q196,94 178,110" stroke-width="3"></path>
+<path d="M228,60 Q244,94 262,110" stroke-width="3"></path>
+</g>
+<path d="M222,194 L318,430 C342,336 300,252 222,194 Z" fill="#0E4A5C" fill-opacity="0.15" transform="translate(28,36)"></path>
+<path d="M220,50 C262,110 292,230 292,360 C292,450 286,530 280,580 L160,580 C154,530 148,450 148,360 C148,230 178,110 220,50 Z" fill="#0E4A5C" fill-opacity="0.22" transform="translate(8,11)"></path>
+<path d="M220,50 C262,110 292,230 292,360 C292,450 286,530 280,580 L160,580 C154,530 148,450 148,360 C148,230 178,110 220,50 Z" fill="#FFFFFF" stroke="#DCE5EA" stroke-width="3" stroke-linejoin="round"></path>
+<rect x="172" y="380" width="96" height="175" rx="22" fill="#E7EEF2"></rect>
+<line x1="220" y1="398" x2="220" y2="540" stroke="#2A3A4C" stroke-width="4" stroke-opacity="0.55" stroke-linecap="round"></line>
+<rect x="214" y="346" width="12" height="26" rx="3" fill="#9AA7B2"></rect>
+<rect x="214" y="578" width="12" height="30" rx="4" fill="#2A3A4C"></rect>
+<line x1="220" y1="584" x2="220" y2="500" stroke="#9C7A54" stroke-width="6" stroke-linecap="round"></line>
+</g>
+<ellipse cx="160" cy="466" rx="18" ry="30" fill="#0E4A5C" fill-opacity="0.16"></ellipse>
+<line x1="160" y1="442" x2="212" y2="432" stroke="#2A3A4C" stroke-width="12" stroke-linecap="round"></line>
+<line x1="160" y1="464" x2="212" y2="478" stroke="#2A3A4C" stroke-width="12" stroke-linecap="round"></line>
+<ellipse cx="218" cy="432" rx="5.5" ry="7.5" fill="#E2AE85"></ellipse>
+<ellipse cx="218" cy="478" rx="5.5" ry="7.5" fill="#E2AE85"></ellipse>
+<path d="M318,424 L232,485 L188,432" fill="none" stroke="#46525E" stroke-width="1.8" stroke-linejoin="round"></path>
+<circle cx="232" cy="485" r="4" fill="#2A3A4C"></circle>
+<g transform="translate(0,80) scale(1,0.8)">
+<path d="M222,194 L318,430 C342,336 300,252 222,194 Z" fill="#FF7043" stroke="#E0582E" stroke-width="2" stroke-linejoin="round"></path>
+<line x1="258" y1="283" x2="296" y2="271" stroke="#FFAB91" stroke-width="2" stroke-linecap="round"></line>
+<line x1="286" y1="351" x2="322" y2="341" stroke="#FFAB91" stroke-width="2" stroke-linecap="round"></line>
+<line x1="220" y1="192" x2="318" y2="430" stroke="#46525E" stroke-width="6" stroke-linecap="round"></line>
+<circle cx="220" cy="190" r="7" fill="#2A3A4C"></circle>
+</g>
+<line x1="152" y1="430" x2="188" y2="432" stroke="#F3C9A2" stroke-width="9" stroke-linecap="round"></line>
+<line x1="152" y1="474" x2="182" y2="486" stroke="#F3C9A2" stroke-width="9" stroke-linecap="round"></line>
+<line x1="220" y1="480" x2="182" y2="486" stroke="#2A3A4C" stroke-width="3" stroke-linecap="round"></line>
+<ellipse cx="150" cy="452" rx="14" ry="25" fill="#FFCA28" stroke="#E0A800" stroke-width="2"></ellipse>
+<circle cx="154" cy="452" r="12" fill="#F3C9A2"></circle>
+<circle cx="150" cy="452" r="11.5" fill="#3D2B1A"></circle>
+<circle cx="188" cy="432" r="5.5" fill="#E2AE85"></circle>
+<circle cx="182" cy="486" r="5.5" fill="#E2AE85"></circle>
+</svg>

@@ -77,3 +77,6 @@ Tapping level 1 of a sport under the mist now shows the same card as levels 2-4 
 
 ## Bigger class capped at a reachable level
 `Bigger class` (capacity) was capped at level 100, but at x2.5 per level the cost of even level 30 is already trillions of coins - level 100 needed an astronomical, unreachable sum, so "x100"/"Max" showed a meaningless price. Lowered the cap to 40 (`src/config/balance.ts`), close to what the balance bot actually reaches (13-30). The bot's playthrough timeline (8h16m) is unchanged, since it never bought anywhere near the old cap anyway. `docs/ECONOMY.md` regenerated.
+
+## New guest models that move (branch `models`)
+Every guest (6 water sports and the beach players) is rebuilt from the author's model spec (`docs/models/`) as moving parts with a routine per sport instead of figure eights and zigzags; see DECISIONS.md. Code in `src/scene/rig/`, tests in `tests/rig.test.ts` (14 tests, 166 in total). Not yet tested on a real phone: check the frame rate with every zone open.

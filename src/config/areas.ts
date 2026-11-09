@@ -21,8 +21,8 @@ export interface AreaDef {
 export const AREAS: AreaDef[] = [
   { id: 'beach', name: 'Beach', from: 0, to: 1.6, expansion: 0, color: '#f2dca4', blurb: 'The shared hangout' },
   { id: 'wave', name: 'Wave', from: 1.6, to: 4, expansion: 0, color: '#5fd0e6', blurb: 'Wave surfing and skimboarding' },
-  { id: 'sea', name: 'Sea', from: 4, to: 6.4, expansion: 1, color: '#2b8fd0', blurb: 'Windsurfing, kitesurfing, foil and wing' },
-  { id: 'ocean', name: 'Ocean', from: 6.4, to: 8, expansion: 2, color: '#12468f', blurb: 'Sailing and boats' },
+  { id: 'sea', name: 'Sea', from: 4, to: 7.4, expansion: 1, color: '#2b8fd0', blurb: 'Windsurfing, kitesurfing, foil and wing' },
+  { id: 'ocean', name: 'Ocean', from: 7.4, to: 9.6, expansion: 2, color: '#12468f', blurb: 'Sailing and boats' },
 ];
 
 export function areaById(id: AreaId): AreaDef {
@@ -39,10 +39,10 @@ export const SEA_STOPS: [number, number, number, number][] = [
   [1.6, 150, 234, 232],
   [2.8, 88, 205, 228],
   [4, 46, 158, 214],
-  [5.2, 31, 122, 194],
-  [6.4, 22, 86, 160],
-  [8, 11, 47, 107],
-  [11, 6, 30, 78],
+  [5.7, 31, 122, 194],
+  [7.4, 22, 86, 160],
+  [9.6, 11, 47, 107],
+  [12.6, 6, 30, 78],
 ];
 
 export function seaColorAt(depth: number): [number, number, number] {

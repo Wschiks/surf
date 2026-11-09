@@ -3,19 +3,17 @@ import { UNIT, toWorld } from '../config/layout';
 import { SPORTS, type SportDef } from '../config/sports';
 import type { GameState } from '../core/state';
 import type { LabelLayer } from '../ui/labels';
-import { bakeJetty, bakeKiteLaunch, JETTY_SIZE, KITE_LAUNCH_SIZE, placeImage, placeUpright } from './art';
+import { bakeKiteLaunch, KITE_LAUNCH_SIZE, placeImage, placeUpright } from './art';
 import { icon } from '../ui/icons';
 import { DEPTH } from './background';
-import { dashedRect } from './draw';
 
 interface Site {
   sport: SportDef;
-  plot: Phaser.GameObjects.Graphics;
   objects: Phaser.GameObjects.GameObject[];
   built: boolean;
 }
 
-/** Places on the beach that a sport needs: the kite launch area and the jetty. Empty plot until the sport unlocks. */
+/** Places on the beach that a sport needs: the kite launch area. Nothing is drawn there until the sport unlocks. */
 export class SiteView {
   private sites: Site[] = [];
 
@@ -24,16 +22,9 @@ export class SiteView {
     private labels: LabelLayer,
   ) {
     bakeKiteLaunch(scene);
-    bakeJetty(scene);
     for (const sport of SPORTS) {
       if (!sport.beachSite) continue;
-      const r = toWorld(sport.beachSite.rect);
-      const plot = scene.add.graphics().setDepth(DEPTH.things - 2);
-      plot.lineStyle(3, 0xb98543, 0.75);
-      dashedRect(plot, r, 14);
-      plot.fillStyle(0xb98543, 0.12);
-      plot.fillRect(r.x, r.y, r.w, r.h);
-      this.sites.push({ sport, plot, objects: [], built: false });
+      this.sites.push({ sport, objects: [], built: false });
     }
   }
 
@@ -45,7 +36,6 @@ export class SiteView {
       const id = 'site-' + spec.id;
       if (unlocked && !site.built) {
         site.built = true;
-        site.plot.setVisible(false);
         this.build(site, animate);
       }
       // label above the plot while it is still empty
@@ -57,13 +47,12 @@ export class SiteView {
     }
   }
 
-  /** Take the built sites away again (a rebirth): the empty plots come back. */
+  /** Take the built sites away again (a rebirth). */
   reset() {
     for (const site of this.sites) {
       site.objects.forEach((o) => o.destroy());
       site.objects = [];
       site.built = false;
-      site.plot.setVisible(true);
     }
   }
 
@@ -81,17 +70,7 @@ export class SiteView {
         this.scene.tweens.add({ targets: [img, sock], alpha: 1, duration: 900 });
       }
     }
-    if (spec.id === 'jetty') {
-      const img = placeImage(this.scene, 'site-jetty', r.x, r.y).setDepth(DEPTH.things - 2);
-      img.setDisplaySize(r.w, r.h);
-      site.objects.push(img);
-      if (animate) {
-        img.setAlpha(0);
-        this.scene.tweens.add({ targets: img, alpha: 1, duration: 900 });
-      }
-    }
     void UNIT;
     void KITE_LAUNCH_SIZE;
-    void JETTY_SIZE;
   }
 }

@@ -9,12 +9,12 @@ import { SPORTS, ZONES } from '../src/config/sports';
 const overlap = (a: Rect, b: Rect) => a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
 
 describe('map layout data', () => {
-  it('the map is 15 wide and 8 deep; the areas fill it: beach 20%, then Wave, Sea and Ocean', () => {
+  it('the map is 15 wide and 9.6 deep; the areas fill it: the beach, then Wave, Sea and Ocean (Sea and Ocean made deeper, author request)', () => {
     expect(MAP_W).toBe(15);
-    expect(MAP_H).toBe(8);
+    expect(MAP_H).toBe(9.6);
     expect(AREAS.map((a) => a.id)).toEqual(['beach', 'wave', 'sea', 'ocean']);
     expect(AREAS[0].from).toBe(0);
-    expect(AREAS[0].to / MAP_H).toBeCloseTo(0.2);
+    expect(AREAS[0].to).toBeCloseTo(1.6);
     for (let i = 1; i < AREAS.length; i++) expect(AREAS[i].from).toBe(AREAS[i - 1].to);
     expect(AREAS[AREAS.length - 1].to).toBe(MAP_H);
     expect(AREAS.map((a) => a.expansion)).toEqual([0, 0, 1, 2]);
@@ -50,9 +50,9 @@ describe('map layout data', () => {
     expect(xs[0]).toBeLessThan(xs[1]);
     expect(xs[1]).toBeLessThan(xs[2]);
     expect(SPORTS.filter((s) => s.area === 'ocean').map((s) => s.id)).toEqual(['sailing']);
-    for (const s of SPORTS) if (s.beachSite) expect(s.beachSite.rect.y).toBeLessThan(1.6); // starts on the beach (a jetty reaches into the water)
+    for (const s of SPORTS) if (s.beachSite) expect(s.beachSite.rect.y).toBeLessThan(1.6); // starts on the beach
     expect(SPORTS.find((s) => s.id === 'kitesurfing')?.beachSite?.id).toBe('kite-launch');
-    expect(SPORTS.find((s) => s.id === 'sailing')?.beachSite?.id).toBe('jetty');
+    expect(SPORTS.find((s) => s.id === 'sailing')?.beachSite).toBeUndefined(); // the jetty is gone (author's choice)
   });
 
   it('beach facilities stand on the beach front (the promenade) and beach sites do not sit on them', () => {

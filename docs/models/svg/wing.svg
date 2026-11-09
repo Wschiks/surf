@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 600" width="440" height="580" preserveAspectRatio="xMidYMid meet" role="img" aria-label="New wing foiler holding the wing by its strut, board lifted above the water">
+<rect x="0" y="0" width="440" height="600" fill="#86D0DE"></rect>
+<g fill="none" stroke="#A6DDE8" stroke-width="3" stroke-linecap="round">
+<path d="M40 90 q12 -7 24 0 t24 0"></path>
+<path d="M50 470 q12 -7 24 0 t24 0"></path>
+<path d="M340 540 q12 -7 24 0 t24 0"></path>
+<path d="M360 120 q12 -7 24 0 t24 0"></path>
+</g>
+<g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-opacity="0.85">
+<path d="M216,532 Q208,566 198,600" stroke-width="2.5"></path>
+<path d="M224,532 Q232,566 242,600" stroke-width="2.5"></path>
+</g>
+<ellipse cx="220" cy="530" rx="6" ry="3.5" fill="#FFFFFF" fill-opacity="0.9"></ellipse>
+<path d="M184,360 C184,338 200,330 220,330 C240,330 256,338 256,360 L260,494 C260,514 248,520 220,520 C192,520 180,514 180,494 Z" fill="#0E4A5C" fill-opacity="0.18" transform="translate(26,36)"></path>
+<ellipse cx="240" cy="464" rx="18" ry="30" fill="#0E4A5C" fill-opacity="0.13" transform="rotate(-20 240 464)"></ellipse>
+<g transform="translate(322,368) rotate(37)">
+<path d="M-120,70 C-110,10 -50,0 0,0 C50,0 110,10 120,70 C80,74 40,96 0,104 C-40,96 -80,74 -120,70 Z" fill="#0E4A5C" fill-opacity="0.12"></path>
+</g>
+<path d="M184,360 C184,338 200,330 220,330 C240,330 256,338 256,360 L260,494 C260,514 248,520 220,520 C192,520 180,514 180,494 Z" fill="#FFFFFF"></path>
+<rect x="193" y="366" width="54" height="142" rx="16" fill="#5B6876"></rect>
+<line x1="214" y1="428" x2="218" y2="402" stroke="#2A3A4C" stroke-width="12" stroke-linecap="round"></line>
+<line x1="214" y1="428" x2="220" y2="456" stroke="#2A3A4C" stroke-width="12" stroke-linecap="round"></line>
+<ellipse cx="219" cy="398" rx="8" ry="6" fill="#E2AE85"></ellipse>
+<ellipse cx="221" cy="460" rx="8" ry="6" fill="#E2AE85"></ellipse>
+<line x1="206" y1="406" x2="248" y2="380" stroke="#F3C9A2" stroke-width="9" stroke-linecap="round"></line>
+<line x1="222" y1="450" x2="231" y2="403" stroke="#F3C9A2" stroke-width="9" stroke-linecap="round"></line>
+<circle cx="248" cy="380" r="5.5" fill="#E2AE85"></circle>
+<circle cx="231" cy="403" r="5.5" fill="#E2AE85"></circle>
+<ellipse cx="214" cy="428" rx="14" ry="25" fill="#2A3A4C" transform="rotate(-20 214 428)"></ellipse>
+<path d="M202,418 Q214,404 226,416" fill="none" stroke="#7E57C2" stroke-width="3" stroke-linecap="round"></path>
+<circle cx="218" cy="425" r="12.5" fill="#F3C9A2"></circle>
+<circle cx="214" cy="429" r="12" fill="#D9A441"></circle>
+<g transform="translate(290,324) rotate(37)">
+<path d="M-120,70 C-110,10 -50,0 0,0 C50,0 110,10 120,70 C80,74 40,96 0,104 C-40,96 -80,74 -120,70 Z" fill="#B39DDB"></path>
+<rect x="-64" y="26" width="28" height="20" rx="6" fill="#ECE6F8"></rect>
+<rect x="36" y="26" width="28" height="20" rx="6" fill="#ECE6F8"></rect>
+<path d="M-120,70 C-110,10 -50,0 0,0 C50,0 110,10 120,70" fill="none" stroke="#7E57C2" stroke-width="10" stroke-linecap="round"></path>
+<line x1="0" y1="2" x2="0" y2="104" stroke="#7E57C2" stroke-width="7" stroke-linecap="round"></line>
+<rect x="-6" y="66" width="12" height="8" rx="3" fill="#2A3A4C"></rect>
+<rect x="-6" y="94" width="12" height="8" rx="3" fill="#2A3A4C"></rect>
+</g>
+</svg>

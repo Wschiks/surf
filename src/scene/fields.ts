@@ -1,10 +1,16 @@
 import Phaser from 'phaser';
-import { BEACH_SPORTS, fieldRect, fieldsArea, type BeachSportDef } from '../config/beach';
-import { LAND, rectContains, toWorld, UNIT, type Rect } from '../config/layout';
-import { beachSportOpen } from '../core/economy';
+import {BEACH_SPORTS, fieldRect, fieldsArea, type BeachSportDef} from '../config/beach';
+import {LAND, rectContains, toWorld, UNIT, type Rect} from '../config/layout';
+import {beachSportOpen} from '../core/economy';
 import type { GameState } from '../core/state';
-import { PLAYER_SIZE, playerTexture, rng } from './art';
-import { DEPTH } from './background';
+import {rng} from './art';
+import {DEPTH} from './background';
+import {ATLAS, PIVOT, RES} from './rig/atlas';
+import {GuestBody, shadowOffset} from './rig/body';
+import {hexToNum, outfit, PAL} from './rig/geom';
+import {K_PLAYER} from './rig/models';
+import {emptyLook, type Look} from './rig/sim';
+import {playerPose, type PlayerAct} from './rig/sports/players';
 
 /** Both beach sports play red against blue, so the two teams always read at a glance. */
 const TEAM_COLORS = ['#ff4b3e', '#2f7dff'];
@@ -37,7 +43,12 @@ const FORMATION: [number, number][][] = [
 ];
 
 interface Player {
-  img: Phaser.GameObjects.Image;
+  body: GuestBody;
+  look: Look;
+  /** What the arms are doing, and seconds left of it. */
+  act: PlayerAct;
+  actT: number;
+  phase: number;
   home: { x: number; y: number };
   x: number;
   y: number;
@@ -54,8 +65,8 @@ interface Player {
 interface Field {
   r: Rect;
   players: Player[];
-  ball: Phaser.GameObjects.Graphics;
-  shadow: Phaser.GameObjects.Graphics;
+  ball: Phaser.GameObjects.Image;
+  shadow: Phaser.GameObjects.Image;
   sim: SoccerGame | VolleyGame;
 }
 
@@ -98,34 +109,29 @@ export class FieldView {
     for (const s of this.sites) {
       const z = state.zones[s.def.id];
       if (!z) continue;
-      const open = beachSportOpen(state, s.def);
-      const key = `${z.owned}|${open}|${z.fields}|${z.capacity}`;
+      const key = `${z.owned}|${z.fields}|${z.capacity}`;
       if (key !== s.key) {
         s.key = key;
-        this.build(s, z.owned, open, 1 + z.fields, 1 + z.capacity);
+        this.build(s, z.owned, 1 + z.fields, 1 + z.capacity);
       }
       s.running = z.owned && (z.manager || z.phase === 'running');
       for (const f of s.fields) {
         f.sim.step(f, s.running ? dt : 0, s.running);
-        draw(f, time / 1000);
+        draw(f, time / 1000, dt);
       }
     }
   }
 
-  private build(s: Site, owned: boolean, open: boolean, count: number, perTeam: number) {
+  private build(s: Site, owned: boolean, count: number, perTeam: number) {
     for (const f of s.fields) {
-      f.players.forEach((p) => p.img.destroy());
+      f.players.forEach((p) => p.body.destroy());
       f.ball.destroy();
       f.shadow.destroy();
     }
     s.fields = [];
     const g = s.ground;
     g.clear();
-    if (!owned) {
-      // a dashed plot where the first field will be
-      if (open) dashedRect(g, toWorld(fieldRect(s.def, 0)), 0xb98543, 0.75);
-      return;
-    }
+    if (!owned) return;
     const soccer = s.def.id === 'soccer';
     const sportNo = BEACH_SPORTS.indexOf(s.def);
     for (let i = 0; i < count; i++) {
@@ -136,17 +142,25 @@ export class FieldView {
       for (let team = 0; team < 2; team++) {
         spots.forEach(([a, d], k) => {
           const home = spot(r, soccer, team, a, d);
-          const img = this.scene.add.image(home.x, home.y, playerTexture(this.scene, TEAM_COLORS[team], k + i + team)).setDepth(DEPTH.things).setDisplaySize(PLAYER_SIZE, PLAYER_SIZE);
+          const n = players.length;
+          const o = { ...outfit(k * 2 + i * 5 + team * 3 + sportNo, 2, TEAM_COLORS[team]), stripe: -1, straps: false, bulk: 1 };
+          const body = new GuestBody(this.scene, {
+            kind: 'player',
+            outfit: o,
+            color: hexToNum(TEAM_COLORS[team]),
+            depth: DEPTH.things + 0.01 + n * 0.002,
+            shadowDepth: DEPTH.things - 0.2,
+            skyDepth: DEPTH.things + 0.6,
+            k: K_PLAYER,
+          });
           const face = facingMiddle(soccer, team);
-          players.push({ img, home, x: home.x, y: home.y, vx: 0, vy: 0, team, keeper: soccer && perTeam >= 3 && k === spots.length - 1, hop: 0, face });
+          players.push({ body, look: playerLook(), act: 'ready', actT: 0, phase: (k * 0.37 + team * 0.21 + i * 0.13) % 1, home, x: home.x, y: home.y, vx: 0, vy: 0, team, keeper: soccer && perTeam >= 3 && k === spots.length - 1, hop: 0, face });
         });
       }
-      const shadow = this.scene.add.graphics().setDepth(DEPTH.things - 0.2);
-      shadow.fillStyle(0x6b5330, 0.28).fillEllipse(0, 0, 9, 5);
-      const ball = this.scene.add.graphics().setDepth(DEPTH.things + 0.5);
-      ball.fillStyle(0xffffff, 1).fillCircle(0, 0, 3.4);
-      if (soccer) ball.fillStyle(0x222222, 1).fillCircle(0, 0, 1.2);
-      else ball.lineStyle(1.2, 0xffc233, 1).strokeCircle(0, 0, 3.4);
+      const dp = PIVOT.get('disc')!;
+      const shadow = this.scene.add.image(0, 0, ATLAS, 'disc').setOrigin(dp.ox, dp.oy).setDepth(DEPTH.things - 0.2).setTint(PAL.shadow).setTintMode(Phaser.TintModes.FILL).setAlpha(0.18);
+      const bp = PIVOT.get('ball-v')!;
+      const ball = this.scene.add.image(0, 0, ATLAS, soccer ? 'ball-s' : 'ball-v').setOrigin(bp.ox, bp.oy).setDepth(DEPTH.things + 0.5);
       const field: Field = { r, players, ball, shadow, sim: null! };
       const seed = 1 + sportNo * 101 + i * 37;
       field.sim = soccer ? new SoccerGame(field, seed) : new VolleyGame(field, seed);
@@ -186,17 +200,52 @@ function facingMiddle(soccer: boolean, team: number): number {
   return team === 0 ? Math.PI / 2 : -Math.PI / 2;
 }
 
-/** Put the players and the ball where the simulation says, with a little running bounce. */
-function draw(f: Field, t: number) {
-  f.players.forEach((p, k) => {
+/** An empty look for a player (the body fills in the rest each frame). */
+function playerLook(): Look {
+  const L = emptyLook();
+  L.board.alpha = 0;
+  return L;
+}
+
+/** How long each action shows. */
+const ACT_TIME: Record<PlayerAct, number> = { ready: 0, pass: 0.35, set: 0.35, spike: 0.4, kick: 0.25 };
+
+/** Start an action (a pass, a spike, a kick ...). */
+function act(p: Player, a: PlayerAct) {
+  p.act = a;
+  p.actT = ACT_TIME[a];
+}
+
+/** Put the players (run cycle, arms for each action, jumps) and the ball where the simulation says. */
+function draw(f: Field, t: number, dt: number) {
+  const ballSoon = f.sim instanceof VolleyGame ? f.sim.incoming() : null;
+  f.players.forEach((p, i) => {
     const speed = Math.hypot(p.vx, p.vy);
-    const run = Math.min(1, speed / 18);
-    const bounce = 1 + run * 0.07 * Math.sin(t * 15 + k * 1.7) + (p.hop > 0 ? 0.28 * Math.sin((p.hop / 0.35) * Math.PI) : 0);
-    p.img.setPosition(p.x, p.y).setRotation(p.face + Math.PI / 2).setScale((PLAYER_SIZE / p.img.width) * bounce);
+    p.actT = Math.max(0, p.actT - dt);
+    if (p.actT <= 0) p.act = 'ready';
+    let a = p.act;
+    let k = p.actT > 0 ? 1 - p.actT / ACT_TIME[p.act] : 0;
+    // the player the ball comes to gets the arms ready for it a moment before
+    if (a === 'ready' && ballSoon && ballSoon.to === i && ballSoon.left < 0.25) {
+      a = 'pass';
+      k = 0;
+    }
+    const { pose, jump } = playerPose(t, p.phase, speed, a, k);
+    const L = p.look;
+    L.x = p.x;
+    L.y = p.y;
+    L.h = p.face + Math.PI / 2;
+    L.scale = 1 + 0.12 * jump;
+    L.lift = jump * 0.6;
+    L.rider = pose;
+    p.body.draw(L, t);
   });
   const sim = f.sim;
-  f.ball.setPosition(sim.bx, sim.by).setScale(1 + sim.lift * 0.9);
-  f.shadow.setPosition(sim.bx + sim.lift * 3, sim.by + 1 + sim.lift * 4).setScale(1 - sim.lift * 0.35);
+  const s = (2.3 / 10.5 / RES) * (1 + sim.lift * 0.9);
+  f.ball.setPosition(sim.bx, sim.by).setScale(s).setRotation(sim.bx * 0.15);
+  const off = shadowOffset(7 + sim.lift * 60, 10 + sim.lift * 80, K_PLAYER * 0.25);
+  const ss = (2.3 / 32 / RES) * (1 - sim.lift * 0.3);
+  f.shadow.setPosition(sim.bx + off.x, sim.by + off.y).setScale(ss, ss * 0.85);
 }
 
 // ---------------------------------------------------------------- soccer
@@ -308,6 +357,7 @@ class SoccerGame {
         if (this.rnd() < dt * 1.2) {
           this.owner = i;
           q.hop = 0.25;
+          act(q, 'kick');
           this.holdUntil = this.clock + 0.4 + this.rnd() * 0.6;
         }
         break;
@@ -322,6 +372,7 @@ class SoccerGame {
           const ty = m.y + (this.rnd() - 0.5) * r.h * 0.22;
           this.pass = { sx: this.bx, sy: this.by, tx: gx - (o2.team === 0 ? -2 : 2), ty, t: 0, dur: Math.max(0.25, Math.abs(gx - this.bx) / 120), to: this.owner, shot: true };
           o2.hop = 0.3;
+          act(o2, 'kick');
         } else {
           // pass to a teammate, preferably one further forward; sometimes an opponent cuts it out
           mates.sort((a, b) => dir * (b.p.x - a.p.x));
@@ -340,6 +391,7 @@ class SoccerGame {
             }
           }
           const dist = Math.hypot(tx - this.bx, ty - this.by);
+          act(o2, 'kick');
           this.pass = { sx: this.bx, sy: this.by, tx: inX(tx), ty: inY(ty), t: 0, dur: Math.max(0.3, dist / 70), to, shot: false };
         }
         this.owner = -1;
@@ -431,6 +483,12 @@ class VolleyGame {
     return this.f.r.y + this.f.r.h / 2;
   }
 
+  /** The player the ball is flying to, and the seconds left until it gets there. */
+  incoming(): { to: number; left: number } | null {
+    const fl = this.flight;
+    return fl && !fl.miss ? { to: fl.to, left: fl.dur - fl.t } : null;
+  }
+
   private team(t: number) {
     return this.f.players.map((p, i) => ({ p, i })).filter((x) => x.p.team === t);
   }
@@ -455,6 +513,7 @@ class VolleyGame {
     const ty = this.netY() + sign * (r.h / 2) * (0.3 + this.rnd() * 0.5);
     const opp = this.team(other).sort((a, b) => Math.hypot(a.p.x - tx, a.p.y - ty) - Math.hypot(b.p.x - tx, b.p.y - ty))[0];
     this.f.players[from].hop = 0.35;
+    act(this.f.players[from], dur < 0.9 || this.touch === 0 ? 'spike' : 'pass');
     this.flight = { sx: this.bx, sy: this.by, tx, ty, t: 0, dur, peak, to: opp.i, miss: this.rnd() < 0.12 };
     this.side = other;
     this.touch = 0;
@@ -499,6 +558,7 @@ class VolleyGame {
             // bump or set to a teammate, high
             const mate = mates[(this.touch + hitter) % mates.length];
             ps[hitter].hop = 0.3;
+            act(ps[hitter], this.touch === most - 1 ? 'set' : 'pass');
             const near = this.touch === most - 1;
             const tx = near ? mate.p.x * 0.5 + (f.r.x + f.r.w / 2) * 0.5 : mate.p.x;
             const sign = team === 0 ? -1 : 1;
@@ -574,29 +634,14 @@ function drawCourt(g: Phaser.GameObjects.Graphics, r: Rect, soccer: boolean) {
     g.strokeRect(r.x + r.w - i, r.y + r.h / 2 - gh / 2, 5, gh);
   } else {
     // the net across the middle, with its posts
+    // the net (README 3.7): navy with a white band on top, posts, and its shadow on the sand (down-right, like all shadows)
     const my = r.y + r.h / 2;
-    g.lineStyle(2, 0x6b5330, 0.25).lineBetween(r.x + 2, my + 3, r.x + r.w - 2, my + 3);
-    g.lineStyle(2.6, 0x30343a, 1).lineBetween(r.x + 1, my, r.x + r.w - 1, my);
-    g.fillStyle(0x30343a, 1).fillCircle(r.x + 1, my, 2.6).fillCircle(r.x + r.w - 1, my, 2.6);
+    const sh = shadowOffset(0, 8, 0.3);
+    g.lineStyle(2.2, PAL.shadow, 0.18).lineBetween(r.x + 2 + sh.x, my + sh.y, r.x + r.w - 2 + sh.x, my + sh.y);
+    g.lineStyle(1.8, PAL.navy, 1).lineBetween(r.x + 1, my + 0.4, r.x + r.w - 1, my + 0.4);
+    g.lineStyle(0.9, 0xffffff, 1).lineBetween(r.x + 1, my - 0.5, r.x + r.w - 1, my - 0.5);
+    g.fillStyle(PAL.navy, 1).fillCircle(r.x + 1, my, 2.2).fillCircle(r.x + r.w - 1, my, 2.2);
   }
-}
-
-function dashedRect(g: Phaser.GameObjects.Graphics, r: Rect, color: number, alpha: number) {
-  g.fillStyle(color, 0.12).fillRoundedRect(r.x, r.y, r.w, r.h, 6);
-  g.lineStyle(2.5, color, alpha);
-  const dash = 9;
-  const edge = (x1: number, y1: number, x2: number, y2: number) => {
-    const len = Math.hypot(x2 - x1, y2 - y1);
-    for (let d = 0; d < len; d += dash * 2) {
-      const a = d / len;
-      const b = Math.min(1, (d + dash) / len);
-      g.lineBetween(x1 + (x2 - x1) * a, y1 + (y2 - y1) * a, x1 + (x2 - x1) * b, y1 + (y2 - y1) * b);
-    }
-  };
-  edge(r.x, r.y, r.x + r.w, r.y);
-  edge(r.x + r.w, r.y, r.x + r.w, r.y + r.h);
-  edge(r.x + r.w, r.y + r.h, r.x, r.y + r.h);
-  edge(r.x, r.y + r.h, r.x, r.y);
 }
 
 /** Cars driving along the road behind the beach front, both ways. Fixed speeds and colours. */

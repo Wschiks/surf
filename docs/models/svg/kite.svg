@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 600" width="440" height="580" preserveAspectRatio="xMidYMid meet" role="img" aria-label="New kitesurfer on a twin-tip, kite flying off to the side on two lines">
+<rect x="0" y="0" width="440" height="600" fill="#86D0DE"></rect>
+<g fill="none" stroke="#A6DDE8" stroke-width="3" stroke-linecap="round">
+<path d="M30 60 q12 -7 24 0 t24 0"></path>
+<path d="M40 300 q12 -7 24 0 t24 0"></path>
+<path d="M330 330 q12 -7 24 0 t24 0"></path>
+<path d="M60 570 q12 -7 24 0 t24 0"></path>
+<path d="M320 560 q12 -7 24 0 t24 0"></path>
+</g>
+<path d="M186,196 C226,66 384,66 424,196 C392,160 344,140 305,140 C266,140 218,160 186,196 Z" fill="#0E4A5C" fill-opacity="0.10" transform="translate(18,64)"></path>
+<path d="M186,196 C226,66 384,66 424,196 C392,160 344,140 305,140 C266,140 218,160 186,196 Z" fill="#FF7043"></path>
+<path d="M186,196 C226,66 384,66 424,196" fill="none" stroke="#D9502A" stroke-width="9" stroke-linecap="round"></path>
+<g stroke="#D9502A" stroke-width="4" stroke-linecap="round">
+<line x1="234" y1="123" x2="243" y2="154"></line>
+<line x1="305" y1="98" x2="305" y2="140"></line>
+<line x1="376" y1="123" x2="367" y2="154"></line>
+</g>
+<line x1="190" y1="192" x2="162" y2="472" stroke="#3B4651" stroke-width="1.6"></line>
+<line x1="420" y1="192" x2="200.5" y2="462" stroke="#3B4651" stroke-width="1.6"></line>
+<g transform="translate(190,500) rotate(-15)">
+<g fill="none" stroke="#FFFFFF" stroke-linecap="round" stroke-opacity="0.8">
+<path d="M70,22 Q100,40 136,44" stroke-width="5"></path>
+<path d="M78,6 Q106,16 132,14" stroke-width="3"></path>
+</g>
+<path d="M-80,-8 C-80,-20 -66,-25 -50,-24 Q0,-28 50,-24 C66,-25 80,-20 80,-8 L80,8 C80,20 66,25 50,24 Q0,28 -50,24 C-66,25 -80,20 -80,8 Z" fill="#0E4A5C" fill-opacity="0.22" transform="translate(6,9)"></path>
+<path d="M-80,-8 C-80,-20 -66,-25 -50,-24 Q0,-28 50,-24 C66,-25 80,-20 80,-8 L80,8 C80,20 66,25 50,24 Q0,28 -50,24 C-66,25 -80,20 -80,8 Z" fill="#FFFFFF"></path>
+<rect x="-74" y="-17" width="10" height="34" rx="5" fill="#FF7043"></rect>
+<rect x="64" y="-17" width="10" height="34" rx="5" fill="#FF7043"></rect>
+<ellipse cx="8" cy="26" rx="30" ry="16" fill="#0E4A5C" fill-opacity="0.18"></ellipse>
+<line x1="-31" y1="0" x2="-8" y2="14" stroke="#2A3A4C" stroke-width="12" stroke-linecap="round"></line>
+<line x1="31" y1="0" x2="8" y2="14" stroke="#2A3A4C" stroke-width="12" stroke-linecap="round"></line>
+<ellipse cx="-32" cy="-1" rx="6" ry="8.5" fill="#E2AE85"></ellipse>
+<ellipse cx="32" cy="-1" rx="6" ry="8.5" fill="#E2AE85"></ellipse>
+<rect x="-36" y="-5" width="8" height="12" rx="3" fill="#2A3A4C"></rect>
+<rect x="28" y="-5" width="8" height="12" rx="3" fill="#2A3A4C"></rect>
+<line x1="0" y1="-31" x2="0" y2="10" stroke="#2A3A4C" stroke-width="2"></line>
+<line x1="-18" y1="12" x2="-14" y2="-33" stroke="#F3C9A2" stroke-width="9" stroke-linecap="round"></line>
+<line x1="18" y1="12" x2="14" y2="-33" stroke="#F3C9A2" stroke-width="9" stroke-linecap="round"></line>
+<rect x="-22" y="-37" width="44" height="6" rx="3" fill="#2A3A4C"></rect>
+<circle cx="-24" cy="-34" r="3.5" fill="#E53935"></circle>
+<circle cx="24" cy="-34" r="3.5" fill="#1E88E5"></circle>
+<ellipse cx="0" cy="18" rx="26" ry="14" fill="#2A3A4C"></ellipse>
+<path d="M-20,25 Q0,33 20,25" fill="none" stroke="#FF7043" stroke-width="3" stroke-linecap="round"></path>
+<circle cx="0" cy="13" r="12.5" fill="#B97C55"></circle>
+<circle cx="0" cy="17" r="12" fill="#1C1715"></circle>
+<circle cx="-14" cy="-34" r="5.5" fill="#9E6644"></circle>
+<circle cx="14" cy="-34" r="5.5" fill="#9E6644"></circle>
+</g>
+</svg>

@@ -1,4 +1,4 @@
-// Map geometry. The map is MAP_W x MAP_H units (15 wide, 8 deep). A phone screen is about 1 unit wide
+// Map geometry. The map is MAP_W x MAP_H units (15 wide, 9.6 deep). A phone screen is about 1 unit wide
 // and 2 units high at the default zoom. World coordinates are unit * UNIT pixels.
 // Map coordinates: x = column (0..15), depth = distance from the back of the beach (0 = back of beach,
 // 8 = far edge of the ocean). World y = depth * UNIT, so the beach is at the top of the unrotated map.
@@ -7,7 +7,7 @@
 
 export const UNIT = 100;
 export const MAP_W = 15;
-export const MAP_H = 8;
+export const MAP_H = 9.6;
 export const MAP_ROTATION_DEG = 215;
 /** How many map units fit across the screen width when the game starts (roughly 1 by 2 units). */
 export const START_UNITS_ACROSS = 1.1;
