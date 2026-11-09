@@ -1,4 +1,5 @@
 import type { Perks } from './perks';
+import { ensureSkins, newSkins, type SkinState } from './skins';
 import { FACILITIES } from '../config/facilities';
 import { areaById } from '../config/areas';
 import { rootSkills } from './skills';
@@ -56,6 +57,8 @@ export interface GameState {
   skills: Record<string, boolean>;
   /** One-time pointers the player has already seen (for example "tap the rebirth button"). Never reset, not even by a rebirth. */
   hints: Record<string, boolean>;
+  /** Skins and boxes. Kept for good: expansions and rebirths do not touch them. */
+  skins: SkinState;
   /** Real time (ms since 1970) when the game was last saved or updated. */
   savedAt: number;
   startedAt: number;
@@ -88,6 +91,7 @@ export function newGame(now: number): GameState {
     perks: {},
     skills: rootSkills(),
     hints: {},
+    skins: newSkins(),
     savedAt: now,
     startedAt: now,
   };
@@ -133,6 +137,7 @@ export function ensureState(state: GameState): GameState {
   state.adShop.startedAt ??= 0;
   state.clubNext ??= 0;
   state.perks = {}; // never taken from a save
+  ensureSkins(state);
 
   state.skills = { ...rootSkills(), ...(state.skills ?? {}) };
   return state;

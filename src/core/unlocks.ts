@@ -1,3 +1,4 @@
+import { giveBox } from './skins';
 import { AREAS, areaById } from '../config/areas';
 import { EXPANSIONS, expansionAfter, type ExpansionDef } from '../config/expansions';
 import { SPORTS, sportById, zoneById, zoneId, type SportDef, type SportId, type ZoneRef } from '../config/sports';
@@ -76,6 +77,7 @@ export function unlockSport(state: GameState, id: SportId): boolean {
   const z = state.zones[zoneId(id, 1)];
   z.owned = true;
   z.phase = 'idle';
+  giveBox(state); // a new section: a box
   return true;
 }
 
@@ -120,6 +122,7 @@ export function unlockLevel(state: GameState, id: string): boolean {
   const z = state.zones[id];
   z.owned = true;
   z.phase = 'idle';
+  giveBox(state); // a new section: a box
   return true;
 }
 

@@ -6,6 +6,7 @@ import { adFree } from '../core/perks';
 import { adStreak, claimAdStep, claimClubGems, clubStatus, grantGemPack } from '../core/shop';
 import { buy, buyClub, buyPack, canBuy, manageClub, restore, storePrices, type PriceKey } from '../purchases';
 import { icon, tile } from './icons';
+import { BoxShop } from './skins';
 import { sound } from './sound';
 
 export interface ShopContext {
@@ -37,6 +38,7 @@ export class Shop {
   private prices: Partial<Record<PriceKey, string>> = {};
   private signature = '';
   private buying = false;
+  private boxes: BoxShop | null = null;
 
   constructor(
     private root: HTMLElement,
@@ -54,6 +56,8 @@ export class Shop {
         <button class="x" data-close aria-label="Close">${icon('close')}</button>
       </div>
       <div class="shop-card club" data-club></div>
+      <h4>Boxes</h4>
+      <div data-boxshop></div>
       <h4>Free rewards</h4>
       <div class="shop-card" data-streak></div>
       <h4>Gems</h4>
@@ -65,6 +69,7 @@ export class Shop {
     this.root.querySelector('[data-close]')!.addEventListener('click', () => this.ctx.close());
     this.root.querySelector('[data-close2]')!.addEventListener('click', () => this.ctx.close());
     this.root.querySelector('[data-restore]')?.addEventListener('click', () => void this.restore());
+    this.boxes = new BoxShop(this.root, this.root.querySelector('[data-boxshop]') as HTMLElement, this.ctx);
     this.update();
     void storePrices().then((p) => {
       this.prices = p;
@@ -75,11 +80,14 @@ export class Shop {
 
   /** Called about ten times a second while the shop is open: redraws only when something changed. */
   update() {
+    this.boxes?.update();
     const g = this.ctx.game.state;
     const now = Date.now();
     const streak = adStreak(g, now);
     const busy = this.ctx.busy() || this.buying;
-    const sig = [streak.step, streak.lockedFor, busy, g.perks.noAds, g.perks.x5, g.perks.club, g.perks.clubUntil, clubStatus(g, now).nextIn, g.skillPoints, Object.values(this.prices).join(',')].join('|');
+    const sig = [streak.step, streak.lockedFor, busy, g.perks.noAds, g.perks.x5, g.perks.club, g.perks.clubUntil, clubStatus(g, now).nextIn, g.skillPoints, Object.values(this.prices).join(',')].join(
+      '|',
+    );
     if (sig === this.signature) return;
     this.signature = sig;
 
@@ -106,11 +114,7 @@ export class Shop {
       const done = locked || i < streak.step;
       return `<div class="step${done ? ' done' : ''}${!locked && i === streak.step ? ' next' : ''}">${done ? icon('check') : stepText(s)}</div>`;
     }).join('');
-    const label = locked
-      ? `Next ads in ${clock(streak.lockedFor)}`
-      : busy
-        ? 'Loading...'
-        : `${adFree(g.perks) ? 'Claim' : 'Watch ad'} ${streak.step + 1} of ${AD_STEPS.length}`;
+    const label = locked ? `Next ads in ${clock(streak.lockedFor)}` : busy ? 'Loading...' : `${adFree(g.perks) ? 'Claim' : 'Watch ad'} ${streak.step + 1} of ${AD_STEPS.length}`;
     this.root.querySelector('[data-streak]')!.innerHTML = `
       <div class="shop-title"><b>Watch 5 ads</b><small>${locked ? 'Done for today' : 'Once a day'}</small></div>
       <div class="steps">${steps}</div>
@@ -118,13 +122,15 @@ export class Shop {
       <button class="go big ready" data-ad ${locked || busy ? 'disabled' : ''}>${icon('video')} ${label}</button>`;
     this.root.querySelector('[data-ad]')!.addEventListener('click', () => void this.watch());
 
-    this.root.querySelector('[data-packs]')!.innerHTML = `<p class="shop-note have">${icon('gem')}<span>You have <b>${g.skillPoints}</b> gems. Spend them in the skill trees.</span></p>` + GEM_PACKS.map(
-      (p) => `<div class="shop-card product">
+    this.root.querySelector('[data-packs]')!.innerHTML =
+      `<p class="shop-note have">${icon('gem')}<span>You have <b>${g.skillPoints}</b> gems. Spend them in the skill trees.</span></p>` +
+      GEM_PACKS.map(
+        (p) => `<div class="shop-card product">
         ${tile('gem', '#8a4dff', 44)}
         <div class="shop-txt"><b>${p.gems} gems${p.tag ? `<em class="tag">${p.tag}</em>` : ''}</b><small>Skill points for the skill trees</small></div>
         <button class="go" data-pack="${p.id}" ${busy ? 'disabled' : ''}>${this.prices[p.id] ?? p.price}</button>
       </div>`,
-    ).join('');
+      ).join('');
     this.root.querySelectorAll<HTMLElement>('[data-pack]').forEach((b) => b.addEventListener('click', () => void this.buyPack(b.dataset.pack as GemPackId)));
 
     this.root.querySelector('[data-products]')!.innerHTML = PRODUCTS.map((p) => {

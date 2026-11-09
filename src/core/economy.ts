@@ -1,3 +1,4 @@
+import { skinBoost } from './skins';
 import { BALANCE, costFactor, milestoneMult, STATS, STAT_IDS, tierFactor, type StatId } from '../config/balance';
 import { CLUB } from '../config/shop';
 import { REBIRTH } from '../config/rebirth';
@@ -77,7 +78,9 @@ export function zoneStats(state: GameState, ref: AnyZoneRef, z: ZoneState = stat
   const fx = skillEffects(state);
   const sp = ref.sport.id;
   const guests = guestsFor(ref, z, fx.guests[sp] ?? 0);
-  const pricePerGuest = tierFactor(ref.def.tier) * (1 + BALANCE.priceStep * z.price) * milestoneMult(z.price) * m.coins * (1 + (fx.coins[sp] ?? 0));
+  // the skin a section wears: Bronze +100%, Silver +500%
+  const skin = 1 + skinBoost(state, ref.id);
+  const pricePerGuest = tierFactor(ref.def.tier) * (1 + BALANCE.priceStep * z.price) * milestoneMult(z.price) * m.coins * (1 + (fx.coins[sp] ?? 0)) * skin;
   const duration = speedSeconds(ref.def.baseSeconds, z.speed) / (m.speed * (1 + (fx.speed[sp] ?? 0)));
   const income = guests * pricePerGuest;
   return { guests, pricePerGuest, duration, income, perSecond: income / duration };

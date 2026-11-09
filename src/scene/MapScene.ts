@@ -1,4 +1,4 @@
-import { DEV_UNLIMITED_COINS } from '../config/dev';
+import { DEV_ALL_SKINS, DEV_UNLIMITED_COINS, DEV_UNLIMITED_GEMS } from '../config/dev';
 import Phaser from 'phaser';
 import { AREAS, areaRect } from '../config/areas';
 import { MAP_W, UNIT, rectCenter, rectContains, toWorld } from '../config/layout';
@@ -26,6 +26,7 @@ import { Scenery } from './scenery';
 import { PlaneView } from './plane';
 import { syncPurchases, watchPacks } from '../purchases';
 import { grantGemPack } from '../core/shop';
+import { unlockAllSkins } from '../core/skins';
 import { fmt } from '../ui/format';
 import { sound } from '../ui/sound';
 
@@ -295,7 +296,13 @@ export class MapScene extends Phaser.Scene {
     const now = Date.now();
     this.game_.update(now);
     // testing only (npm run dev, or a web test build with VITE_TEST_COINS=1 such as Vercel): coins never run out, not even after a rebirth
-    if ((import.meta.env.DEV || import.meta.env.VITE_TEST_COINS === '1') && DEV_UNLIMITED_COINS) this.game_.state.coins = Math.max(this.game_.state.coins, 999e27);
+    // and the same switch gives unlimited gems and every skin unlocked
+    if (import.meta.env.DEV || import.meta.env.VITE_TEST_COINS === '1') {
+      const st = this.game_.state;
+      if (DEV_UNLIMITED_COINS) st.coins = Math.max(st.coins, 999e27);
+      if (DEV_UNLIMITED_GEMS) st.skillPoints = Math.max(st.skillPoints, 99_999);
+      if (DEV_ALL_SKINS) unlockAllSkins(st);
+    }
     this.view.update(Math.min(delta, 100) / 1000);
     const cam = this.cameras.main;
     cam.setZoom(this.view.zoom * this.dpr);

@@ -4,3 +4,9 @@
 
 /** Unlimited coins while testing: the coins are topped up every frame, also after an expansion or rebirth. */
 export const DEV_UNLIMITED_COINS = true;
+
+/** Unlimited gems while testing: topped up every frame like the coins. */
+export const DEV_UNLIMITED_GEMS = true;
+
+/** Every skin unlocked while testing (4 pieces each, the look only: Bronze and Silver still need boxes). */
+export const DEV_ALL_SKINS = true;

@@ -1,3 +1,4 @@
+import { SkinScreen } from './skins';
 import { type StatId } from '../config/balance';
 import { FACILITIES } from '../config/facilities';
 import { areaById } from '../config/areas';
@@ -137,7 +138,7 @@ export class GameUI {
       <div class="rail right" data-ref="railR">
         <!-- hidden until they work: Apple rejects buttons that do nothing -->
         <button class="rbtn" data-ref="spin" aria-label="Daily spin" hidden>${icon('spin')}</button>
-        <button class="rbtn" data-ref="skins" aria-label="Skins" hidden>${icon('skin')}</button>
+        <button class="rbtn" data-ref="skins" aria-label="Skins" hidden>${icon('skin')}<i class="dot" data-ref="skinsdot" hidden></i></button>
         <button class="rbtn" data-ref="gear" aria-label="Menu">${icon('gear')}</button>
       </div>
       <!-- bottom corners: beach + sports left, skills + shop right; the middle stays free for the map -->
@@ -167,12 +168,17 @@ export class GameUI {
     this.refs.gembtn.addEventListener('click', () => this.openSkills());
     this.refs.gear.addEventListener('click', () => this.openMenu());
     this.refs.shop.addEventListener('click', () => this.openShop());
+    this.refs.skins.addEventListener('click', () => this.openSkins());
     this.refs.expand.addEventListener('click', () => this.openExpand());
     this.refs.boost.addEventListener('click', () => void this.watchAd());
     this.refs.rebirth.addEventListener('click', () => this.openExpand());
     // tapping the dark area around a dialog closes it
     this.refs.modal.addEventListener('click', (e) => {
-      if (e.target === this.refs.modal) this.closeModal();
+      if (e.target !== this.refs.modal) return;
+      // while a box is being opened, a tap beside the dialog counts as a tap on the box (next box, or back to the shop)
+      const reveal = this.refs.modal.querySelector<HTMLElement>('.sk-reveal');
+      if (reveal) reveal.click();
+      else this.closeModal();
     });
     // tapping a quest (not its claim button) goes to what it is about and opens it
     this.refs.qlist.querySelectorAll<HTMLElement>('.q-row').forEach((row, i) =>
@@ -920,7 +926,16 @@ export class GameUI {
     this.refs.mult.hidden = perm === 1;
     this.refs.mult.textContent = `x${perm}`;
     this.refreshBoost();
-    this.refs.shopdot.hidden = adStreak(s, Date.now()).lockedFor > 0;
+    // skins: the Skins button (the collection) shows with the first box; boxes are opened in the shop, so the shop
+    // button gets the dot (and the first time a spotlight) while free boxes wait
+    const k = s.skins;
+    const waiting = k.boxes + k.golden > 0;
+    this.refs.shopdot.hidden = adStreak(s, Date.now()).lockedFor > 0 && !waiting;
+    this.refs.shop.classList.toggle('pulse', waiting);
+    this.refs.skins.hidden = !(waiting || k.opened > 0);
+    this.refs.skinsdot.hidden = true;
+    if (waiting && !s.hints.boxes && !this.coachOpen && this.refs.modal.hidden && !this.skillScreen.isOpen) this.coach(this.refs.shop, 'bag', 'Boxes!', 'boxes', () => this.openShop());
+    this.skins?.update();
     // the rebirth button shows once the whole game is done, and glows when a rebirth can be bought
     const showRebirth = rebirthShown(s);
     (this.refs.rebirth as HTMLButtonElement).hidden = !showRebirth;
@@ -1114,6 +1129,7 @@ export class GameUI {
     this.refreshSheet();
     this.skillScreen.update();
     this.shop?.update();
+    this.skins?.update();
     if (this.game.offlineReport) this.showOffline(this.game.offlineReport);
   }
 
@@ -1343,6 +1359,20 @@ export class GameUI {
   }
 
   private shop: Shop | null = null;
+  private skins: SkinScreen | null = null;
+
+  openSkins() {
+    const m = this.modal('');
+    this.skins = new SkinScreen(m.querySelector('.modal') as HTMLElement, {
+      game: this.game,
+      close: () => this.closeModal(),
+      toast: (t) => this.toast(t),
+      confetti: () => this.confetti(),
+      refreshTop: () => this.refreshTop(),
+    });
+    this.modalClosed = () => (this.skins = null);
+    this.skins.show();
+  }
 
   openShop() {
     const m = this.modal('');

@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import type { SkinDef } from '../../config/skins';
 import type { GuestKind, ZoneRef } from '../../config/sports';
 import { DEPTH } from '../background';
 import { ATLAS, PIVOT, RES } from './atlas';
@@ -122,7 +123,7 @@ export class Crew {
   }
 
   /** `detail`: 2 close up, 1 zoomed out (no small parts, only wake marks), 0 far away (no particles). */
-  update(dt: number, timeS: number, active: boolean, guests: number, near: boolean, detail = 2) {
+  update(dt: number, timeS: number, active: boolean, guests: number, near: boolean, detail = 2, skin: SkinDef | null = null) {
     const n = Math.min(guests, visibleGuests(this.kind, this.zone.level));
     const z = this.zone;
     z.active = active;
@@ -143,7 +144,10 @@ export class Crew {
       const b = this.bodies[i];
       const on = near && i < n;
       b.setVisible(on);
-      if (on) b.draw(this.guests[i].look, timeS, detail);
+      if (on) {
+        b.setSkin(skin);
+        b.draw(this.guests[i].look, timeS, detail);
+      }
     }
     for (let i = 0; i < this.extraBodies.length; i++) {
       const b = this.extraBodies[i];

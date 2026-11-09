@@ -6,6 +6,7 @@ import { zoneStats } from '../core/economy';
 import type { GameState } from '../core/state';
 import { bakeWaveTile, LOOK_TINT, WAVE_STYLES } from './art';
 import { Crew } from './rig/crew';
+import { skinById } from '../config/skins';
 import type { FxPool } from './rig/fx';
 import { DEPTH } from './background';
 import type { MapView } from './MapView';
@@ -90,6 +91,7 @@ export class ZoneView {
     this.lastElapsed = z.elapsed;
     const n = Math.min(st.guests, BALANCE.maxVisibleGuests);
     const detail = view.zoom >= 1.2 ? 2 : view.zoom >= 0.55 ? 1 : 0;
-    this.crew.update(dt, time / 1000, z.manager || z.phase === 'running', n, near, detail);
+    const worn = state.skins.worn[this.ref.id];
+    this.crew.update(dt, time / 1000, z.manager || z.phase === 'running', n, near, detail, worn ? (skinById(worn) ?? null) : null);
   }
 }

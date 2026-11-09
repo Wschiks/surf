@@ -1,9 +1,11 @@
 import Phaser from 'phaser';
 import type { GuestKind } from '../../config/sports';
-import { ATLAS, PIVOT, RES } from './atlas';
+import type { SkinDef } from '../../config/skins';
+import { ATLAS, PIVOT, RES, skinTexture } from './atlas';
 import { add, arms, head, len, lerp, mul, PAL, rot, shadowOffset, sub, TAU, v, type Outfit, type Pose, type V } from './geom';
 import { BOATS, K, KITE, WIND, type Boat, type Gear } from './models';
 import { rigPoint, type Look } from './sim';
+import { skinEdge } from './skinArt';
 
 export { shadowOffset };
 
@@ -117,6 +119,10 @@ export class GuestBody {
   private kite?: Img;
   private visible = true;
   private look!: Look;
+  /** The skin the section wears, laid over the main gear (board, sail, kite or wing). */
+  private skinImg?: Img;
+  private skinId = '';
+  private gearTint: number | null = null;
   /** 2 = everything, 1 = no hands, feet and small details, 0 = board, body, head and gear only. */
   private detail = 2;
 
@@ -254,6 +260,45 @@ export class GuestBody {
     return im;
   }
 
+  /** The main gear of the sport: what a skin goes on. */
+  private mainGear(): Img | undefined {
+    const k = this.o.kind;
+    if (k === 'windsurfer' || k === 'sailor') return this.sail;
+    if (k === 'kiter') return this.kite;
+    if (k === 'foiler') return this.wing;
+    return this.board;
+  }
+
+  /** Put a skin on (or take it off with null). */
+  setSkin(skin: SkinDef | null) {
+    const id = skin?.id ?? '';
+    if (id === this.skinId) return;
+    this.skinId = id;
+    this.skinImg?.destroy();
+    this.all = this.all.filter((im) => im !== this.skinImg);
+    this.skinImg = undefined;
+    const gear = this.mainGear();
+    if (gear && this.gearTint !== null) gear.setTint(this.gearTint);
+    this.gearTint = null;
+    if (!skin || !gear) return;
+    // the gear's own colour would peek out along the edge: it takes the colour of the skin's edge
+    this.gearTint = gear.tintTopLeft;
+    gear.setTint(skinEdge(skin));
+    const tex = skinTexture(this.scene, skin);
+    const im = this.scene.add.image(0, 0, tex.key) as Img;
+    im.setOrigin(tex.ox, tex.oy).setDepth(gear.depth + 0.00005).setVisible(false);
+    this.all.push(im);
+    this.skinImg = im;
+  }
+
+  /** The skin follows its gear exactly (same place, turn, size, alpha). */
+  private syncSkin() {
+    const im = this.skinImg;
+    const gear = this.mainGear();
+    if (!im || !gear) return;
+    im.setPosition(gear.x, gear.y).setRotation(gear.rotation).setScale(gear.scaleX, gear.scaleY).setAlpha(gear.alpha).setVisible(gear.visible && this.visible);
+  }
+
   setVisible(on: boolean) {
     if (on === this.visible) return;
     this.visible = on;
@@ -330,6 +375,11 @@ export class GuestBody {
   // ---------------------------------------------------------------- drawing
 
   draw(L: Look, t: number, detail = 2) {
+    this.drawParts(L, t, detail);
+    this.syncSkin();
+  }
+
+  private drawParts(L: Look, t: number, detail: number) {
     this.look = L;
     this.detail = detail;
     if (!this.visible) return;

@@ -6,6 +6,7 @@ import { WAVE_STYLES, bakeWaveTile, LOOK_TINT } from './scene/art';
 import { bakeRigAtlas } from './scene/rig/atlas';
 import { Crew } from './scene/rig/crew';
 import { FxPool } from './scene/rig/fx';
+import { skinsOfZone } from './config/skins';
 
 class Lab extends Phaser.Scene {
   crews: { id: string; crew: Crew; rect: { x: number; y: number; w: number; h: number } }[] = [];
@@ -14,6 +15,7 @@ class Lab extends Phaser.Scene {
   paused = false;
   active = true;
   guests = 10;
+  skin = -1;
   view = { x: 0, y: 0, zoom: 3 };
   rot = (MAP_ROTATION_DEG * Math.PI) / 180;
   create() {
@@ -35,7 +37,7 @@ class Lab extends Phaser.Scene {
   }
   step(dt: number) {
     this.t += dt;
-    for (const c of this.crews) c.crew.update(dt, this.t, this.active, this.guests, true);
+    for (const c of this.crews) c.crew.update(dt, this.t, this.active, this.guests, true, 2, this.skin >= 0 ? skinsOfZone(c.id)[this.skin] : null);
     this.fx.update(dt);
   }
   advance(seconds: number) {

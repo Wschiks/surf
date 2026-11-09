@@ -2,7 +2,7 @@
 
 The source of truth for the game idea is `docs/concept.md` (a copy of the author's concept document, never edit it).
 Sections without "(proposal)" are the author's own idea; follow them exactly.
-Nothing in the game is random (one exception, the author's choice: the banner plane's prize and timing), and there is no clock, calendar, weather or events (see "Parked for later").
+Nothing in the game is random (two exceptions, the author's choice: the banner plane's prize and timing, and what a skin box gives), and there is no clock, calendar, weather or events (see "Parked for later").
 
 - Stack: Phaser 4 + TypeScript + Vite (npm). DOM overlay for the UI.
 - All game data lives in `src/config/`. Add a sport by adding data, not code.

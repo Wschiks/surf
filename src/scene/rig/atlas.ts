@@ -1,5 +1,7 @@
 import Phaser from 'phaser';
+import type { SkinDef } from '../../config/skins';
 import { GEAR_PATHS as G, PATHS } from './models';
+import { drawSkin, skinShape } from './skinArt';
 
 // Every part of the guest models baked once into one texture ('rig'), so all guests draw in one batch.
 // Parts are drawn in spec px (README 1.1) at RES texture px per spec px; white parts are tinted per guest.
@@ -987,4 +989,26 @@ export function bakeRigAtlas(scene: Phaser.Scene) {
     tex.add(f.name, 0, it.x + pad, it.y + pad, it.w - pad * 2, it.h - pad * 2);
     PIVOT.set(f.name, { ox: -f.x0 / (f.x1 - f.x0), oy: -f.y0 / (f.y1 - f.y0) });
   }
+}
+
+/**
+ * The texture of a skin (made when first worn): its pattern in the shape of its section's gear, at the atlas
+ * resolution, with the same pivot as the gear picture, so it lies exactly over it. Returns the key and the origin.
+ */
+export function skinTexture(scene: Phaser.Scene, skin: SkinDef): { key: string; ox: number; oy: number } {
+  const shape = skinShape(skin.sport, skin.level);
+  const key = `skin-${skin.id}`;
+  const w = shape.x1 - shape.x0;
+  const h = shape.y1 - shape.y0;
+  if (!scene.textures.exists(key)) {
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.ceil(w * RES);
+    canvas.height = Math.ceil(h * RES);
+    const ctx = canvas.getContext('2d')!;
+    ctx.scale(RES, RES);
+    ctx.translate(-shape.x0, -shape.y0);
+    drawSkin(ctx, skin, shape);
+    scene.textures.addCanvas(key, canvas);
+  }
+  return { key, ox: -shape.x0 / w, oy: -shape.y0 / h };
 }

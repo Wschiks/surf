@@ -1,3 +1,4 @@
+import { giveBox } from './skins';
 import { STATS } from '../config/balance';
 import { FACILITIES, facilityById } from '../config/facilities';
 import { ZONES, zoneById, type ZoneRef } from '../config/sports';
@@ -233,6 +234,7 @@ export function claimQuest(state: GameState, index: number): number {
   state.coins += reward;
   state.totalCoins += reward;
   addSkillPoints(state, v.points);
+  giveBox(state); // every quest also gives a box
   state.questsDone += 1;
   state.quests[index] = null as unknown as Quest; // the slot gets a new quest, in the same place
   refreshQuests(state);
