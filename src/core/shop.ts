@@ -1,4 +1,5 @@
-import { AD_COOLDOWN_SECONDS, AD_STEPS, CLUB, GEM_PACKS, type AdStep, type GemPackId } from '../config/shop';
+import { AD_COOLDOWN_SECONDS, AD_STEPS, CLUB, COIN_PACKS, GEM_PACKS, type AdStep, type CoinPackId, type GemPackId } from '../config/shop';
+import { autoIncomePerSecond } from './economy';
 import { loadGranted, saveGranted } from './perks';
 import { addSkillPoints } from './skills';
 import type { GameState } from './state';
@@ -71,4 +72,21 @@ export function claimClubGems(state: GameState, now: number): number {
   addSkillPoints(state, CLUB.gemsPerDay);
   state.clubNext = now + CLUB.claimSeconds * 1000;
   return CLUB.gemsPerDay;
+}
+
+/** The coins a coin pack gives right now: the coins-per-second counter x its hours. */
+export function coinPackValue(state: GameState, id: CoinPackId): number {
+  const pack = COIN_PACKS.find((p) => p.id === id)!;
+  return autoIncomePerSecond(state) * pack.hours * 3600;
+}
+
+/** Buy a coin pack with gems. Not possible without the gems, or while nothing earns coins yet (no manager). */
+export function buyCoinPack(state: GameState, id: CoinPackId): number {
+  const pack = COIN_PACKS.find((p) => p.id === id)!;
+  const coins = coinPackValue(state, id);
+  if (state.skillPoints < pack.gems || coins <= 0) return 0;
+  state.skillPoints -= pack.gems;
+  state.coins += coins;
+  state.totalCoins += coins;
+  return coins;
 }

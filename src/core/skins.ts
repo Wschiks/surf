@@ -169,6 +169,23 @@ export function unlockAllSkins(state: GameState) {
   for (const k of SKINS) if ((state.skins.pieces[k.id] ?? 0) < need) state.skins.pieces[k.id] = need;
 }
 
+/**
+ * Give fixed pieces of one skin (the daily calendar's star days). They add to what the skin has, up to the top tier; a
+ * new look is put on like a box's. Returns null when the skin is already complete (the caller gives something else).
+ */
+export function givePieces(state: GameState, id: string, n: number): BoxResult | null {
+  const skin = skinById(id);
+  const s = state.skins;
+  const before = s.pieces[id] ?? 0;
+  if (!skin || before >= MAX_PIECES) return null;
+  const after = Math.min(MAX_PIECES, before + n);
+  s.pieces[id] = after;
+  const newTier = tierOf(after) > tierOf(before) ? tierOf(after) : null;
+  const worn = s.worn[skin.zone];
+  if (newTier && (!worn || tierOf(s.pieces[worn] ?? 0) < tierOf(after))) s.worn[skin.zone] = id;
+  return { skin, before, after, newTier };
+}
+
 /** A free box (a quest, a new section, an ad). */
 export function giveBox(state: GameState, n = 1) {
   state.skins.boxes += n;

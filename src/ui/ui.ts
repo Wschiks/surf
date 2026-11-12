@@ -1,4 +1,5 @@
-import { SkinScreen } from './skins';
+import { CalendarScreen } from './calendar';
+import { BoxShop, boxArt, SkinScreen } from './skins';
 import { type StatId } from '../config/balance';
 import { FACILITIES } from '../config/facilities';
 import { areaById } from '../config/areas';
@@ -9,7 +10,30 @@ import { adsNative, interstitialAvailable, showInterstitialAd, showRewardedAd, t
 import { AD_BREAK, type RewardedSpot } from '../config/ads';
 import { adBreakDue } from '../core/perks';
 import { BALANCE } from '../config/balance';
-import { autoIncomePerSecond, beachSportOpen, statDef, statIdsFor, unlockBeachSport, statMax, topUpOffline, bonusFor, bonusMult, facilityOpen, offlineCap, startBoost, buyFacility, buyManager, buyStat, costOf, discounts, facilityCost, managerCost, planBuy, tapZone, zoneStats, type BuyMode } from '../core/economy';
+import {
+  autoIncomePerSecond,
+  beachSportOpen,
+  statDef,
+  statIdsFor,
+  unlockBeachSport,
+  statMax,
+  topUpOffline,
+  bonusFor,
+  bonusMult,
+  facilityOpen,
+  offlineCap,
+  buyFacility,
+  buyManager,
+  buyStat,
+  costOf,
+  discounts,
+  facilityCost,
+  managerCost,
+  planBuy,
+  tapZone,
+  zoneStats,
+  type BuyMode,
+} from '../core/economy';
 import { milestoneMult, nextMilestone } from '../config/balance';
 import type { Game } from '../core/game';
 import type { OfflineReport } from '../core/economy';
@@ -18,6 +42,7 @@ import { canExpand, canRebirth, expand, expansionNeededFor, expansionReady, expa
 import { REBIRTH } from '../config/rebirth';
 import { PLANE } from '../config/plane';
 import { claimPlanePrize, planeDelay, planeUnlocked, rollPlanePrize, type PlanePrize } from '../core/plane';
+import { calendarStatus } from '../core/calendar';
 import { claimQuest, questView, QUEST_SLOTS } from '../core/quests';
 import { COIN, fmt, fmtClock, fmtDuration, fmtSeconds, fmtTime } from './format';
 import { icon, sportTile, tile } from './icons';
@@ -47,7 +72,12 @@ export interface UICallbacks {
   /** The next expansion just became ready (every open sport at the level it needs): the wind blows the mist back. */
   onExpandReady: () => void;
   /** Send the banner plane over the map with this prize on its banner. */
-  flyPlane: (f: { kind: PlanePrize['kind']; text: string; seconds: number; onTap: () => void; onGone: () => void }) => void;
+  flyPlane: (f: { seconds: number; linger: number; onTap: () => void; onGone: () => void }) => void;
+  /** The helicopter's popup was closed without the ad: it flies on. */
+  /** The helicopter popup was closed with X: it flies away. */
+  planeLeave: () => void;
+  /** After the ad: the helicopter rescues a swimmer and flies away; `done` when it has gone. */
+  planeRescue: (done: () => void) => void;
 }
 
 /** Set the HTML of an element only when it changed, so a button is not rebuilt while it is being pressed. */
@@ -119,7 +149,7 @@ export class GameUI {
       <div class="col">
       <div class="hud">
         <div class="pill coins"><span class="ico">${COIN}</span><b data-ref="coins">0</b><em class="mult" data-ref="mult" hidden></em></div>
-        <div class="pill rate"><span class="ico">${icon('chart')}</span><b data-ref="rate">+0/s</b></div>
+        <div class="pill rate"><span class="ico">${icon('chart')}</span><b data-ref="rate">+0/s</b><em class="x2tag" data-ref="boostTag" hidden></em></div>
         <button class="pill gems" data-ref="gembtn" aria-label="Skill points"><span class="ico">${icon('gem')}</span><b data-ref="gems">0</b></button>
       </div>
       <div class="quests" data-ref="quests">
@@ -130,14 +160,11 @@ export class GameUI {
         <button class="rbtn expand" data-ref="expand" aria-label="Expand" hidden>${icon('expand')}<i class="dot" data-ref="expanddot" hidden></i></button>
         <button class="rbtn rebirth-btn" data-ref="rebirth" aria-label="Rebirth" hidden>${icon('rebirth')}</button>
       </div>
-      <!-- under the right quest: watch an ad for coins x2 -->
-      <div class="rail topright">
-        <button class="cbtn boost" data-ref="boost" aria-label="Watch ad">${icon('bill')}<b data-ref="boostA" hidden></b><small data-ref="boostB">x${BALANCE.boostMult}</small><i class="boost-bar"><u data-ref="boostBar"></u></i></button>
-      </div>
       <!-- right column above the bottom corner: extras (spin and skins come later) -->
       <div class="rail right" data-ref="railR">
         <!-- hidden until they work: Apple rejects buttons that do nothing -->
         <button class="rbtn" data-ref="spin" aria-label="Daily spin" hidden>${icon('spin')}</button>
+        <button class="rbtn" data-ref="calendar" aria-label="Daily rewards">${icon('calendar')}<i class="dot" data-ref="calendardot" hidden></i></button>
         <button class="rbtn" data-ref="skins" aria-label="Skins" hidden>${icon('skin')}<i class="dot" data-ref="skinsdot" hidden></i></button>
         <button class="rbtn" data-ref="gear" aria-label="Menu">${icon('gear')}</button>
       </div>
@@ -169,8 +196,8 @@ export class GameUI {
     this.refs.gear.addEventListener('click', () => this.openMenu());
     this.refs.shop.addEventListener('click', () => this.openShop());
     this.refs.skins.addEventListener('click', () => this.openSkins());
+    this.refs.calendar.addEventListener('click', () => this.openCalendar());
     this.refs.expand.addEventListener('click', () => this.openExpand());
-    this.refs.boost.addEventListener('click', () => void this.watchAd());
     this.refs.rebirth.addEventListener('click', () => this.openExpand());
     // tapping the dark area around a dialog closes it
     this.refs.modal.addEventListener('click', (e) => {
@@ -336,7 +363,10 @@ export class GameUI {
       </div>`;
     this.sheetEl.innerHTML = head + (owned ? this.ownedBody(id) : this.lockedBody(id));
     this.sheetEl.querySelector('[data-close]')!.addEventListener('click', () => this.closeSheet());
-    for (const [sel, pick] of [['[data-next]', nextZoneId], ['[data-prev]', prevZoneId]] as const) {
+    for (const [sel, pick] of [
+      ['[data-next]', nextZoneId],
+      ['[data-prev]', prevZoneId],
+    ] as const) {
       this.sheetEl.querySelector(sel)?.addEventListener('click', () => {
         const to = stepZone(this.game.state, id, pick);
         if (!to) return;
@@ -450,14 +480,16 @@ export class GameUI {
   private ownedBody(id: string): string {
     const ref = anyZoneById(id);
     const { terms } = ref.sport;
-    const rows = statIdsFor(ref).map(
-      (s) => `
+    const rows = statIdsFor(ref)
+      .map(
+        (s) => `
       <div class="up" data-stat="${s}">
         <div class="up-ico">${icon(statDef(ref, s).icon)}</div>
         <div class="up-txt"><b>${terms[s] ?? statDef(ref, s).label}</b><small data-eff></small>${s === 'price' ? '<small data-ms class="ms"></small>' : ''}</div>
         <button class="buy" data-buy="${s}"></button>
       </div>`,
-    ).join('');
+      )
+      .join('');
     const modes = ([1, 10, 100, 'max'] as BuyMode[]).map((m) => `<button data-mode="${m}"${m === this.buyMode ? ' class="on"' : ''}>${m === 'max' ? 'Max' : 'x' + m}</button>`).join('');
     const mgrRow = `
       <div class="up mgr" data-mgr>
@@ -488,7 +520,11 @@ export class GameUI {
     if (need.kind === 'closed') {
       // same layout as an unlockable zone: what you get, what is blocking it, and the ticked list of what the expansion that opens it needs
       const next = expansionStatus(this.game.state);
-      const items = next ? SPORTS.filter((sp) => areaById(sp.area).expansion <= this.game.state.expansions).map((sp, i) => `<li data-xreq="${i}"><span class="tick"></span><span class="rt">${icon(sp.icon)} Lv ${next.def.level}</span><em></em></li>`).join('') : '';
+      const items = next
+        ? SPORTS.filter((sp) => areaById(sp.area).expansion <= this.game.state.expansions)
+            .map((sp, i) => `<li data-xreq="${i}"><span class="tick"></span><span class="rt">${icon(sp.icon)} Lv ${next.def.level}</span><em></em></li>`)
+            .join('')
+        : '';
       return `
       <div class="unlock-card">
         <h3>${sportTile(ref.sport.icon, ref.sport.color, 30)} ${ref.sport.name}</h3>
@@ -498,7 +534,12 @@ export class GameUI {
       </div>`;
     }
     // a requirement you still have to do is a button: it takes you to the zone where you do it
-    const reqs = need.status.requirements.map((r, i) => `<li data-req="${i}"${r.zone ? ` data-goto="${r.zone}"` : ''}><span class="tick"></span><span class="rt">${r.text}</span><em></em>${r.zone ? `<span class="goto">${icon('arrow')}</span>` : ''}</li>`).join('');
+    const reqs = need.status.requirements
+      .map(
+        (r, i) =>
+          `<li data-req="${i}"${r.zone ? ` data-goto="${r.zone}"` : ''}><span class="tick"></span><span class="rt">${r.text}</span><em></em>${r.zone ? `<span class="goto">${icon('arrow')}</span>` : ''}</li>`,
+      )
+      .join('');
     return `
       <div class="unlock-card">
         <h3>${icon('lock')} ${need.kind === 'sport' ? ref.sport.name : ref.def.name}</h3>
@@ -541,13 +582,13 @@ export class GameUI {
 
   private buildSportsSheet() {
     const rows = SPORTS.map((sp) => {
-        const pips = sp.levels.map((_, i) => `<button class="pip" data-zone="${zoneId(sp.id, i + 1)}" aria-label="Level ${i + 1}">${i + 1}</button>`).join('');
-        return `
+      const pips = sp.levels.map((_, i) => `<button class="pip" data-zone="${zoneId(sp.id, i + 1)}" aria-label="Level ${i + 1}">${i + 1}</button>`).join('');
+      return `
         <div class="sport-row" data-sport="${sp.id}">
           ${sportTile(sp.icon, sp.color, 46)}
           <div class="sport-mid"><b>${sp.name}</b><small data-info></small><div class="pips">${pips}</div></div>
         </div>`;
-      }).join('');
+    }).join('');
     this.sheetEl.innerHTML = `
       <div class="sheet-head">
         ${tile('sports', '#1497b5', 48)}
@@ -686,24 +727,32 @@ export class GameUI {
   private startRebirth() {
     if (!canRebirth(this.game.state) || document.querySelector('.tsunami')) return;
     const n = this.game.state.rebirths + 1;
-    this.bigWave(`Rebirth ${n}`, () => {
-      rebirth(this.game.state);
-      this.game.save();
-      this.cb.onRebirth();
-      this.refreshTop();
-    }, `${icon('rebirth')} Rebirth ${n}! ${COIN} x${bonusFor(0, n)} ${icon('gem')} +${REBIRTH.gems}`);
+    this.bigWave(
+      `Rebirth ${n}`,
+      () => {
+        rebirth(this.game.state);
+        this.game.save();
+        this.cb.onRebirth();
+        this.refreshTop();
+      },
+      `${icon('rebirth')} Rebirth ${n}! ${COIN} x${bonusFor(0, n)} ${icon('gem')} +${REBIRTH.gems}`,
+    );
   }
 
   /** Buy the expansion: the big wave sweeps over the screen and, while everything is hidden, the beach starts over. */
   private startExpansion() {
     if (!canExpand(this.game.state) || document.querySelector('.tsunami')) return;
     const st = expansionStatus(this.game.state)!;
-    this.bigWave(`${st.def.name} ${st.def.n}`, () => {
-      expand(this.game.state);
-      this.game.save();
-      this.cb.onExpanded();
-      this.refreshTop();
-    }, () => `${icon('expand')} ${COIN} x${bonusMult(this.game.state)}`);
+    this.bigWave(
+      `${st.def.name} ${st.def.n}`,
+      () => {
+        expand(this.game.state);
+        this.game.save();
+        this.cb.onExpanded();
+        this.refreshTop();
+      },
+      () => `${icon('expand')} ${COIN} x${bonusMult(this.game.state)}`,
+    );
   }
 
   /** The big wave sweeps over the screen; `atPeak` runs while everything is hidden, then confetti and a message. */
@@ -771,7 +820,14 @@ export class GameUI {
         row.querySelector('[data-lvl]')!.textContent = open ? `Lv ${lvl}/${f.max}` : '';
         const what = f.effect === 'coins' ? COIN : icon('bolt');
         const need = zoneById(f.needs);
-        setHtml(row.querySelector('[data-eff]') as HTMLElement, open ? `${what} +${Math.round(f.perLevel * lvl * 100)}% <span class="dim">(+${Math.round(f.perLevel * 100)}% / Lv)</span>` : f.stage > s.expansions ? `${icon('lock')} ${icon('expand')} ${f.stage}` : `${icon('lock')} ${icon(need.sport.icon)} ${need.def.name}`);
+        setHtml(
+          row.querySelector('[data-eff]') as HTMLElement,
+          open
+            ? `${what} +${Math.round(f.perLevel * lvl * 100)}% <span class="dim">(+${Math.round(f.perLevel * 100)}% / Lv)</span>`
+            : f.stage > s.expansions
+              ? `${icon('lock')} ${icon('expand')} ${f.stage}`
+              : `${icon('lock')} ${icon(need.sport.icon)} ${need.def.name}`,
+        );
         const btn = row.querySelector<HTMLButtonElement>('[data-buyfac]')!;
         if (open) this.setBuy(btn, facilityCost(f.id, lvl, skillEffects(s).facilityCost));
         else {
@@ -789,7 +845,13 @@ export class GameUI {
         const need = zoneById(b.needs);
         setHtml(
           row.querySelector('[data-eff]') as HTMLElement,
-          z.owned ? `${icon('people')} ${1 + z.capacity}v${1 + z.capacity} · ${icon('flag')} ${1 + z.fields}` : open ? `${icon('people')} 1v1 · ${icon('flag')} 1` : b.stage > s.expansions ? `${icon('lock')} ${icon('expand')} ${b.stage}` : `${icon('lock')} ${icon(need.sport.icon)} ${need.def.name}`,
+          z.owned
+            ? `${icon('people')} ${1 + z.capacity}v${1 + z.capacity} · ${icon('flag')} ${1 + z.fields}`
+            : open
+              ? `${icon('people')} 1v1 · ${icon('flag')} 1`
+              : b.stage > s.expansions
+                ? `${icon('lock')} ${icon('expand')} ${b.stage}`
+                : `${icon('lock')} ${icon(need.sport.icon)} ${need.def.name}`,
         );
         const btn = row.querySelector<HTMLButtonElement>('[data-bspbtn]')!;
         if (z.owned) {
@@ -913,7 +975,7 @@ export class GameUI {
     if (this.sheet?.kind === 'beach') this.refs.beach.classList.remove('pulse');
     this.refs.coins.textContent = fmt(s.coins);
     this.refs.rate.textContent = `+${fmt(autoIncomePerSecond(s))}/s`;
-    this.refs.gems.textContent = String(s.skillPoints);
+    this.refs.gems.textContent = s.skillPoints >= 10_000 ? fmt(s.skillPoints) : String(s.skillPoints);
     const canSeeSkills = s.skillEarned > 0;
     this.refs.skills.classList.toggle('gone', !canSeeSkills);
     this.refs.skills.classList.toggle('pulse', canSeeSkills && hasAffordableSkill(s));
@@ -934,13 +996,20 @@ export class GameUI {
     this.refs.shop.classList.toggle('pulse', waiting);
     this.refs.skins.hidden = !(waiting || k.opened > 0);
     this.refs.skinsdot.hidden = true;
-    if (waiting && !s.hints.boxes && !this.coachOpen && this.refs.modal.hidden && !this.skillScreen.isOpen) this.coach(this.refs.shop, 'bag', 'Boxes!', 'boxes', () => this.openShop());
+    if (waiting && !s.hints.boxes && !this.coachOpen && this.refs.modal.hidden && !this.skillScreen.isOpen) this.coach(this.refs.shop, 'bag', 'Treasure boxes!', 'boxes', () => this.openShop());
     this.skins?.update();
+    // the daily rewards: a dot (and a pulse) while today's tile waits; the first time a day, once something earns coins, it opens by itself
+    const cal = calendarStatus(s, new Date());
+    this.refs.calendardot.hidden = !cal.canClaim;
+    this.refs.calendar.classList.toggle('pulse', cal.canClaim);
+    if (cal.canClaim && !this.calendarAuto && planeUnlocked(s) && !this.coachOpen && this.refs.modal.hidden && !this.skillScreen.isOpen) {
+      this.calendarAuto = true;
+      this.openCalendar();
+    }
     // the rebirth button shows once the whole game is done, and glows when a rebirth can be bought
     const showRebirth = rebirthShown(s);
     (this.refs.rebirth as HTMLButtonElement).hidden = !showRebirth;
-    if (showRebirth && !s.hints.rebirth && !this.coachOpen && this.refs.modal.hidden)
-      this.coach(this.refs.rebirth, 'rebirth', 'Rebirth!', 'rebirth', () => this.openExpand());
+    if (showRebirth && !s.hints.rebirth && !this.coachOpen && this.refs.modal.hidden) this.coach(this.refs.rebirth, 'rebirth', 'Rebirth!', 'rebirth', () => this.openExpand());
     this.refs.rebirth.classList.toggle('ready', canRebirth(s));
     const big = canExpand(s) || canRebirth(s);
     this.refs.expand.classList.toggle('ready', big);
@@ -1041,20 +1110,14 @@ export class GameUI {
   private wasExpandReady: boolean | null = null;
   private wasRebirthReady: boolean | null = null;
 
-  /** The "watch an ad" button: shows what it gives, then the seconds left while the boost runs. */
+  /** Coins x2 is running (from the rescue helicopter, the welcome back, the shop's ads): a badge with the time left in the coins-per-second counter. */
   private refreshBoost() {
     const s = this.game.state;
     const on = s.boost > 0;
-    const btn = this.refs.boost as HTMLButtonElement;
-    btn.classList.toggle('on', on);
-    btn.classList.toggle('busy', this.adBusy);
-    btn.disabled = on || this.adBusy;
-    const a = on ? `Coins x${BALANCE.boostMult}` : this.adBusy ? 'Loading...' : 'Watch ad';
-    // round button: under the icon just x2, or the time left while it runs
-    const b = on ? fmtClock(s.boost) : this.adBusy ? '...' : `x${BALANCE.boostMult}`;
-    if (this.refs.boostA.textContent !== a) this.refs.boostA.textContent = a;
-    if (this.refs.boostB.textContent !== b) this.refs.boostB.textContent = b;
-    this.refs.boostBar.style.width = (on ? Math.min(1, s.boost / BALANCE.boostSeconds) * 100 : 0) + '%';
+    const tag = this.refs.boostTag;
+    tag.hidden = !on;
+    const text = on ? `x${BALANCE.boostMult} ${fmtClock(s.boost)}` : '';
+    if (tag.textContent !== text) tag.textContent = text;
   }
 
   /** Show one ad and say how it went. Players who bought "Remove ads" skip the video and still get the reward. */
@@ -1070,22 +1133,6 @@ export class GameUI {
       this.lastAdBreak = performance.now(); // just watched an ad: no ad break right after it
       this.game.resync(); // the time spent in the ad does not count as time away
     }
-  }
-
-  private async watchAd() {
-    const s = this.game.state;
-    if (s.boost > 0 || this.adBusy) return;
-    const result = await this.playAd();
-    if (result === 'rewarded') {
-      startBoost(s);
-      sound.coin();
-      this.game.save();
-      this.confetti();
-      this.toast(`${COIN} x${BALANCE.boostMult} · ${fmtDuration(BALANCE.boostSeconds)}`);
-    } else if (result === 'failed') {
-      this.toast('No ad is ready right now. Try again in a minute.');
-    }
-    this.refreshBoost();
   }
 
   /** In a browser there is no ad network: show a short stand-in so the reward can be tried. The phone apps show real ads. */
@@ -1129,6 +1176,7 @@ export class GameUI {
     this.refreshSheet();
     this.skillScreen.update();
     this.shop?.update();
+    this.calendar?.update();
     this.skins?.update();
     if (this.game.offlineReport) this.showOffline(this.game.offlineReport);
   }
@@ -1153,6 +1201,7 @@ export class GameUI {
   private prizeHtml(p: PlanePrize): string {
     if (p.kind === 'coins') return `${COIN}<b>+${fmt(p.coins)}</b>`;
     if (p.kind === 'gems') return `${icon('gem')}<b>+${p.gems}</b>`;
+    if (p.kind === 'box') return `${boxArt('normal')}<b>+1</b>`;
     return `${COIN}<b>x2</b><b>· ${fmtDuration(p.seconds)}</b>`;
   }
 
@@ -1160,13 +1209,10 @@ export class GameUI {
     const prize = rollPlanePrize(this.game.state);
     this.planeFlying = true;
     this.cb.flyPlane({
-      kind: prize.kind,
-      text: prize.kind === 'coins' ? `+${fmt(prize.coins)}` : prize.kind === 'gems' ? `+${prize.gems}` : 'x2',
       seconds: PLANE.flightSeconds,
-      onTap: () => {
-        this.planeFlying = false;
-        this.openPlane(prize);
-      },
+      linger: PLANE.lingerSeconds,
+      // tapped: it hovers while the popup is open (still "flying": no second one comes)
+      onTap: () => this.openPlane(prize),
       onGone: () => {
         this.planeFlying = false;
         this.nextPlane('missed');
@@ -1185,8 +1231,9 @@ export class GameUI {
         <div class="plane-prize">${this.prizeHtml(prize)}</div>
         <button class="go big" data-plane>${free ? 'Claim' : `${icon('video')} Watch ad`}</button>
       </div>`);
+    // closed with X: it flies away at once (and the next one is planned)
     this.modalClosed = () => {
-      if (!claimed) this.nextPlane('missed');
+      if (!claimed) this.cb.planeLeave();
     };
     m.querySelector('[data-close]')!.addEventListener('click', () => this.closeModal());
     const btn = m.querySelector<HTMLButtonElement>('[data-plane]')!;
@@ -1197,11 +1244,27 @@ export class GameUI {
         claimed = true;
         claimPlanePrize(this.game.state, prize);
         this.nextPlane('claimed');
+        this.game.save();
+        this.refreshTop();
+        if (prize.kind === 'box') {
+          // the box is opened right here: shake, lid, the piece; a tap closes it
+          const shop = new BoxShop(m.querySelector('.modal') as HTMLElement, document.createElement('div'), {
+            game: this.game,
+            toast: (t) => this.toast(t),
+            confetti: () => this.confetti(),
+            refreshTop: () => this.refreshTop(),
+          });
+          shop.openNow('normal', () => {
+            this.closeModal();
+            this.cb.planeRescue(() => (this.planeFlying = false));
+          });
+          return;
+        }
         sound.coin();
         this.confetti();
-        this.game.save();
         this.closeModal();
-        this.refreshTop();
+        // then the rescue: it picks up a swimmer and flies away
+        this.cb.planeRescue(() => (this.planeFlying = false));
         return;
       }
       btn.disabled = false;
@@ -1259,7 +1322,12 @@ export class GameUI {
     // the first sport still short, and its next level to unlock (that is where the work is)
     const sp = SPORTS.filter((x) => areaById(x.area).expansion <= s.expansions).find((x) => !s.zones[zoneId(x.id, need)]?.owned);
     let next: string | null = null;
-    if (sp) for (let lv = 1; lv <= need; lv++) if (!s.zones[zoneId(sp.id, lv)]?.owned) { next = zoneId(sp.id, lv); break; }
+    if (sp)
+      for (let lv = 1; lv <= need; lv++)
+        if (!s.zones[zoneId(sp.id, lv)]?.owned) {
+          next = zoneId(sp.id, lv);
+          break;
+        }
     const m = this.modal(`
       <button class="x mist-x" data-close aria-label="Close">${icon('close')}</button>
       <div class="mist-pop">
@@ -1360,6 +1428,25 @@ export class GameUI {
 
   private shop: Shop | null = null;
   private skins: SkinScreen | null = null;
+
+  private calendar: CalendarScreen | null = null;
+  /** The calendar opened by itself this session already (only once). */
+  private calendarAuto = false;
+
+  openCalendar() {
+    const m = this.modal('');
+    this.calendar = new CalendarScreen(m.querySelector('.modal') as HTMLElement, {
+      game: this.game,
+      close: () => this.closeModal(),
+      toast: (t) => this.toast(t),
+      confetti: () => this.confetti(),
+      refreshTop: () => this.refreshTop(),
+      playAd: () => this.playAd('spin'),
+      busy: () => this.adBusy,
+    });
+    this.modalClosed = () => (this.calendar = null);
+    this.calendar.show();
+  }
 
   openSkins() {
     const m = this.modal('');

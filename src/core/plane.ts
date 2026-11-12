@@ -1,9 +1,10 @@
 import { PLANE } from '../config/plane';
 import { autoIncomePerSecond } from './economy';
 import { addSkillPoints } from './skills';
+import { giveBox } from './skins';
 import type { GameState } from './state';
 
-export type PlanePrize = { kind: 'coins'; coins: number } | { kind: 'boost'; seconds: number } | { kind: 'gems'; gems: number };
+export type PlanePrize = { kind: 'coins'; coins: number } | { kind: 'boost'; seconds: number } | { kind: 'box' } | { kind: 'gems'; gems: number };
 
 /** The plane only comes once a zone has a manager (so the coins counter is not 0). */
 export function planeUnlocked(state: GameState): boolean {
@@ -21,14 +22,16 @@ export function rollPlanePrize(state: GameState, r = Math.random()): PlanePrize 
   const p = PLANE.prizes;
   if (r < p.coins.chance) return { kind: 'coins', coins: autoIncomePerSecond(state) * p.coins.seconds };
   if (r < p.coins.chance + p.boost.chance) return { kind: 'boost', seconds: p.boost.seconds };
+  if (r < p.coins.chance + p.boost.chance + p.box.chance) return { kind: 'box' };
   return { kind: 'gems', gems: p.gems.gems };
 }
 
-/** Give the prize. The coins x2 time is added to the boost timer. */
+/** Give the prize. The coins x2 time is added to the boost timer; a box is added to the boxes (the screen opens it right away). */
 export function claimPlanePrize(state: GameState, prize: PlanePrize) {
   if (prize.kind === 'coins') {
     state.coins += prize.coins;
     state.totalCoins += prize.coins;
   } else if (prize.kind === 'boost') state.boost += prize.seconds;
+  else if (prize.kind === 'box') giveBox(state);
   else addSkillPoints(state, prize.gems);
 }

@@ -14,7 +14,8 @@ describe('skins: the collection', () => {
       const own = skinsOfZone(z.id);
       expect(own.length).toBe(3);
       expect(new Set(own.map((s) => s.name)).size).toBe(3);
-      own.forEach((s, k) => expect(s.rarity).toBe(k === 2 ? 'legendary' : byArea[z.sport.area]));
+      // the striped kites are Common (the author's choice)
+      own.forEach((s, k) => expect(s.rarity).toBe(k === 2 ? 'legendary' : z.sport.id === 'kitesurfing' && k === 0 ? 'common' : byArea[z.sport.area]));
     }
     const legendary = SKINS.filter((s) => s.rarity === 'legendary');
     expect(legendary.length).toBe(24);

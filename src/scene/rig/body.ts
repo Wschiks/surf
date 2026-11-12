@@ -1,11 +1,12 @@
 import Phaser from 'phaser';
 import type { GuestKind } from '../../config/sports';
 import type { SkinDef } from '../../config/skins';
-import { ATLAS, PIVOT, RES, skinTexture } from './atlas';
+import { ATLAS, PIVOT, RES, skinBoardTexture, skinSpinTexture, skinTexture } from './atlas';
 import { add, arms, head, len, lerp, mul, PAL, rot, shadowOffset, sub, TAU, v, type Outfit, type Pose, type V } from './geom';
 import { BOATS, K, KITE, WIND, type Boat, type Gear } from './models';
 import { rigPoint, type Look } from './sim';
-import { skinEdge } from './skinArt';
+import { UPRIGHT } from '../upright';
+import { figureTips, hasSpinSkin, hidesWingWindow, isFigure, skinBoard, skinEdge } from './skinArt';
 
 export { shadowOffset };
 
@@ -121,8 +122,19 @@ export class GuestBody {
   private look!: Look;
   /** The skin the section wears, laid over the main gear (board, sail, kite or wing). */
   private skinImg?: Img;
+  /** A skin's own board (the 1990 set), laid over the board. */
+  private skinBoardImg?: Img;
+  /** The skin's spinnaker (the offshore yachts). */
+  private skinSpinImg?: Img;
+  /** The skin brings a whole boat of its own (hide the boat under it). */
+  private boatSkin = false;
   private skinId = '';
   private gearTint: number | null = null;
+  /** The skin is a figure that takes the place of the gear. */
+  private figure = false;
+  /** The skin hides the wing's see-through window. */
+  private noWindow = false;
+  private figTips: [V, V] | null = null;
   /** 2 = everything, 1 = no hands, feet and small details, 0 = board, body, head and gear only. */
   private detail = 2;
 
@@ -275,20 +287,76 @@ export class GuestBody {
     if (id === this.skinId) return;
     this.skinId = id;
     this.skinImg?.destroy();
-    this.all = this.all.filter((im) => im !== this.skinImg);
+    this.skinBoardImg?.destroy();
+    this.skinSpinImg?.destroy();
+    this.all = this.all.filter((im) => im !== this.skinImg && im !== this.skinBoardImg && im !== this.skinSpinImg);
     this.skinImg = undefined;
+    this.skinBoardImg = undefined;
+    this.skinSpinImg = undefined;
     const gear = this.mainGear();
     if (gear && this.gearTint !== null) gear.setTint(this.gearTint);
     this.gearTint = null;
+    if (this.figure && this.shKite) {
+      const p = PIVOT.get('kite')!;
+      this.shKite.setTexture(ATLAS, 'kite').setOrigin(p.ox, p.oy);
+    }
+    if (this.figure && this.shGear && this.o.kind === 'foiler') {
+      const p = PIVOT.get('wing')!;
+      this.shGear.setTexture(ATLAS, 'wing').setOrigin(p.ox, p.oy);
+    }
+    if (this.figure && this.shBoard && this.boardFrame) {
+      const p = PIVOT.get(this.boardFrame)!;
+      this.shBoard.setTexture(ATLAS, this.boardFrame).setOrigin(p.ox, p.oy);
+    }
+    this.figure = false;
+    this.figTips = null;
+    this.boatSkin = false;
+    this.noWindow = !!skin && hidesWingWindow(skin);
     if (!skin || !gear) return;
-    // the gear's own colour would peek out along the edge: it takes the colour of the skin's edge
-    this.gearTint = gear.tintTopLeft;
-    gear.setTint(skinEdge(skin));
     const tex = skinTexture(this.scene, skin);
+    if (isFigure(skin)) {
+      // a figure (balloons, a bird, a dragon) takes the place of the gear: the gear hides, the shadow takes its shape
+      this.figure = true;
+      const [p, q] = figureTips(skin);
+      this.figTips = [v(p.x, p.y), v(q.x, q.y)];
+      if (gear === this.kite && this.shKite) this.shKite.setTexture(tex.key).setOrigin(tex.ox, tex.oy);
+      // an animal ridden instead of a board: the board's shadow takes its shape
+      if (gear === this.board && this.shBoard) this.shBoard.setTexture(tex.key).setOrigin(tex.ox, tex.oy);
+      // a wing figure (a bat, a dog): the wing's shadow takes its shape
+      if (gear === this.wing && this.shGear) this.shGear.setTexture(tex.key).setOrigin(tex.ox, tex.oy);
+    } else {
+      // the gear's own colour would peek out along the edge: it takes the colour of the skin's edge
+      this.gearTint = gear.tintTopLeft;
+      gear.setTint(skinEdge(skin));
+    }
     const im = this.scene.add.image(0, 0, tex.key) as Img;
-    im.setOrigin(tex.ox, tex.oy).setDepth(gear.depth + 0.00005).setVisible(false);
+    im.setOrigin(tex.ox, tex.oy)
+      .setDepth(gear.depth + 0.00005)
+      .setVisible(false);
     this.all.push(im);
     this.skinImg = im;
+    const sb = skin.board && this.board && this.boardFrame ? skinBoard(skin, this.boardFrame) : null;
+    this.boatSkin = !!sb && skin.sport === 'sailing';
+    if (sb && this.board) {
+      // a racing guest's own number goes on a hull that shows one (the same number as on the sail)
+      const num = this.o.gear?.number && (this.o.number ?? -1) >= 0 ? this.o.number : undefined;
+      const bt = skinBoardTexture(this.scene, skin, sb, num);
+      const bi = this.scene.add.image(0, 0, bt.key) as Img;
+      bi.setOrigin(bt.ox, bt.oy)
+        .setDepth(this.board.depth + 0.00005)
+        .setVisible(false);
+      this.all.push(bi);
+      this.skinBoardImg = bi;
+    }
+    if (this.spin && hasSpinSkin(skin)) {
+      const st = skinSpinTexture(this.scene, skin);
+      const si = this.scene.add.image(0, 0, st.key) as Img;
+      si.setOrigin(st.ox, st.oy)
+        .setDepth(this.spin.depth + 0.00005)
+        .setVisible(false);
+      this.all.push(si);
+      this.skinSpinImg = si;
+    }
   }
 
   /** The skin follows its gear exactly (same place, turn, size, alpha). */
@@ -296,7 +364,23 @@ export class GuestBody {
     const im = this.skinImg;
     const gear = this.mainGear();
     if (!im || !gear) return;
-    im.setPosition(gear.x, gear.y).setRotation(gear.rotation).setScale(gear.scaleX, gear.scaleY).setAlpha(gear.alpha).setVisible(gear.visible && this.visible);
+    im.setPosition(gear.x, gear.y)
+      .setRotation(gear.rotation)
+      .setScale(gear.scaleX, gear.scaleY)
+      .setAlpha(gear.alpha)
+      .setVisible(gear.visible && this.visible);
+    if (this.figure) gear.setVisible(false);
+    const bi = this.skinBoardImg;
+    const b = this.board;
+    if (bi && b) {
+      bi.setPosition(b.x, b.y)
+        .setRotation(b.rotation)
+        .setScale(b.scaleX, b.scaleY)
+        .setAlpha(b.alpha)
+        .setVisible(b.visible && this.visible);
+      // a skin's own boat (the sailing skins) takes the place of the boat: the boat underneath would peek out
+      if (this.boatSkin) b.setVisible(false);
+    }
   }
 
   setVisible(on: boolean) {
@@ -432,7 +516,8 @@ export class GuestBody {
       const sx = (W.flip ? -1 : 1) * W.scale;
       this.putShadow(this.shGear, W.at, W.rot, sx, W.scale, off([28, 38], [40, 52]));
       this.put(this.wing, W.at, W.rot, sx, W.scale, W.alpha ?? 1);
-      this.put(this.wingWin, W.at, W.rot, sx, W.scale, W.alpha ?? 1);
+      // a figure wing (and Matchday's logo) has no window
+      this.put(this.wingWin, W.at, W.rot, sx, W.scale, this.noWindow ? 0 : (W.alpha ?? 1));
     }
 
     // kite lines and kite, high above everything
@@ -451,8 +536,10 @@ export class GuestBody {
         return v(Kt.x + q.x, Kt.y + q.y);
       };
       const R = (p: V) => (rs === 1 ? p : add(P.t, mul(sub(p, P.t), rs)));
-      const tA = tip(KITE.tips[0]);
-      const tB = tip(KITE.tips[1]);
+      // a figure skin (balloons, a bird) has its lines tied to one spot, not to the two ends of a kite
+      const tips = this.figTips ?? KITE.tips;
+      const tA = tip(tips[0]);
+      const tB = tip(tips[1]);
       const e1 = this.w(R(add(L.bar.at, rot(v(-20, 0), L.bar.rot))));
       const e2 = this.w(R(add(L.bar.at, rot(v(20, 0), L.bar.rot))));
       const straight = len(sub(tA, e1)) + len(sub(tB, e2)) <= len(sub(tA, e2)) + len(sub(tB, e1));
@@ -573,15 +660,22 @@ export class GuestBody {
     this.put(this.sailHi, pivot, r, sx, sy, al * (1 - L.luff * 0.6));
     this.put(this.boom, pivot, r, side * size, sy, al);
     if (this.sailNum) {
-      // the number sits on the sail, upright to the boom
+      // the number sits on its spot on the sail but always stands upright on screen, so it reads right on either tack
       const at = add(pivot, mul(rigPoint(wind ? v(96, 120) : v(58, 104), drawn, a), size));
-      this.put(this.sailNum, at, r + side * 0.3, 1.4 * size, 1.4 * size, al);
+      this.put(this.sailNum, at, -this.look.h - UPRIGHT, 1.4 * size, 1.4 * size, al);
     }
     if (this.spin) {
       // the spinnaker flies in front of the bow, out to the side the boom is on
       const S = L.spin;
       if (S) this.put(this.spin, S.at, S.rot, (S.flip ? -1 : 1) * S.scale, S.scale, S.alpha);
       else this.hide(this.spin);
+      const si = this.skinSpinImg;
+      if (si)
+        si.setPosition(this.spin.x, this.spin.y)
+          .setRotation(this.spin.rotation)
+          .setScale(this.spin.scaleX, this.spin.scaleY)
+          .setAlpha(this.spin.alpha)
+          .setVisible(this.spin.visible && this.visible);
     }
     if (kind === 'sailor' && L.rider && boat) {
       // mainsheet: boom end -> block -> the sailor's front hand; tiller extension to the back hand

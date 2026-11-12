@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { SkinDef } from '../../config/skins';
 import { GEAR_PATHS as G, PATHS } from './models';
-import { drawSkin, skinShape } from './skinArt';
+import { drawSkin, drawSkinBoard, drawSkinSpin, skinBounds, skinShape, SPIN_BOUNDS, type SkinBoard } from './skinArt';
 
 // Every part of the guest models baked once into one texture ('rig'), so all guests draw in one batch.
 // Parts are drawn in spec px (README 1.1) at RES texture px per spec px; white parts are tinted per guest.
@@ -995,20 +995,58 @@ export function bakeRigAtlas(scene: Phaser.Scene) {
  * The texture of a skin (made when first worn): its pattern in the shape of its section's gear, at the atlas
  * resolution, with the same pivot as the gear picture, so it lies exactly over it. Returns the key and the origin.
  */
-export function skinTexture(scene: Phaser.Scene, skin: SkinDef): { key: string; ox: number; oy: number } {
-  const shape = skinShape(skin.sport, skin.level);
-  const key = `skin-${skin.id}`;
-  const w = shape.x1 - shape.x0;
-  const h = shape.y1 - shape.y0;
+/** The board of a skin that has one (the 1990 set), as a texture laid over the board picture. */
+export function skinBoardTexture(scene: Phaser.Scene, skin: SkinDef, b: SkinBoard, num?: number): { key: string; ox: number; oy: number } {
+  const key = `skinb-${skin.id}-${b.frame}${num !== undefined ? `-${num}` : ''}`;
+  const w = b.x1 - b.x0;
+  const h = b.y1 - b.y0;
   if (!scene.textures.exists(key)) {
     const canvas = document.createElement('canvas');
     canvas.width = Math.ceil(w * RES);
     canvas.height = Math.ceil(h * RES);
     const ctx = canvas.getContext('2d')!;
     ctx.scale(RES, RES);
-    ctx.translate(-shape.x0, -shape.y0);
+    ctx.translate(-b.x0, -b.y0);
+    drawSkinBoard(ctx, skin, b.frame, num);
+    scene.textures.addCanvas(key, canvas);
+  }
+  return { key, ox: -b.x0 / w, oy: -b.y0 / h };
+}
+
+/** The spinnaker of a skin that has one (the offshore yachts), laid over the spinnaker picture. */
+export function skinSpinTexture(scene: Phaser.Scene, skin: SkinDef): { key: string; ox: number; oy: number } {
+  const b = SPIN_BOUNDS;
+  const key = `skins-${skin.id}`;
+  const w = b.x1 - b.x0;
+  const h = b.y1 - b.y0;
+  if (!scene.textures.exists(key)) {
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.ceil(w * RES);
+    canvas.height = Math.ceil(h * RES);
+    const ctx = canvas.getContext('2d')!;
+    ctx.scale(RES, RES);
+    ctx.translate(-b.x0, -b.y0);
+    drawSkinSpin(ctx, skin);
+    scene.textures.addCanvas(key, canvas);
+  }
+  return { key, ox: -b.x0 / w, oy: -b.y0 / h };
+}
+
+export function skinTexture(scene: Phaser.Scene, skin: SkinDef): { key: string; ox: number; oy: number } {
+  const shape = skinShape(skin.sport, skin.level);
+  const box = skinBounds(skin, shape);
+  const key = `skin-${skin.id}`;
+  const w = box.x1 - box.x0;
+  const h = box.y1 - box.y0;
+  if (!scene.textures.exists(key)) {
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.ceil(w * RES);
+    canvas.height = Math.ceil(h * RES);
+    const ctx = canvas.getContext('2d')!;
+    ctx.scale(RES, RES);
+    ctx.translate(-box.x0, -box.y0);
     drawSkin(ctx, skin, shape);
     scene.textures.addCanvas(key, canvas);
   }
-  return { key, ox: -shape.x0 / w, oy: -shape.y0 / h };
+  return { key, ox: -box.x0 / w, oy: -box.y0 / h };
 }

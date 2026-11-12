@@ -75,3 +75,20 @@ export const CLUB = {
   /** Real seconds between two gem claims. */
   claimSeconds: 24 * 3600,
 } as const;
+
+/**
+ * Coins for gems: a pack is a number of hours of the player's own income (the coins-per-second counter x the hours),
+ * so it grows with the game and is never useless. The bigger pack is clearly the better deal per hour (2 h: 4 gems an
+ * hour, 8 h: 2.5, 24 h: about 2.1), and 8 hours is exactly the cheapest gem pack (20 gems), the easy first buy.
+ */
+export type CoinPackId = 'coins2h' | 'coins8h' | 'coins24h';
+export interface CoinPack {
+  id: CoinPackId;
+  hours: number;
+  gems: number;
+}
+export const COIN_PACKS: readonly CoinPack[] = [
+  { id: 'coins2h', hours: 2, gems: 8 },
+  { id: 'coins8h', hours: 8, gems: 20 },
+  { id: 'coins24h', hours: 24, gems: 50 },
+];

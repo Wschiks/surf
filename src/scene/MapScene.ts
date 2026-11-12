@@ -23,7 +23,7 @@ import { FxPool } from './rig/fx';
 import { SiteView } from './sites';
 import { OceanView } from './ocean';
 import { Scenery } from './scenery';
-import { PlaneView } from './plane';
+import { HeliView } from './heli';
 import { syncPurchases, watchPacks } from '../purchases';
 import { grantGemPack } from '../core/shop';
 import { unlockAllSkins } from '../core/skins';
@@ -44,7 +44,7 @@ export class MapScene extends Phaser.Scene {
   private sites!: SiteView;
   private ocean!: OceanView;
   private scenery!: Scenery;
-  private plane!: PlaneView;
+  private plane!: HeliView;
   private zones: ZoneView[] = [];
   private fx!: FxPool;
   private popCount = 0;
@@ -74,6 +74,8 @@ export class MapScene extends Phaser.Scene {
       onRebirth: () => this.onRebirth(),
       onExpandReady: () => this.onExpandReady(),
       flyPlane: (f) => this.plane.fly(f),
+      planeLeave: () => this.plane.leave(),
+      planeRescue: (done) => this.plane.rescue(done),
     });
     this.chips = new ZoneChips(this.labels, {
       onOpen: (id) => this.ui.openZone(id),
@@ -99,7 +101,7 @@ export class MapScene extends Phaser.Scene {
     this.scenery = new Scenery(this);
     this.fields = new FieldView(this);
     this.road = new RoadView(this);
-    this.plane = new PlaneView(this, this.view);
+    this.plane = new HeliView(this, this.view);
     bakeRigAtlas(this);
     this.fx = new FxPool(this, DEPTH.things - 0.25);
     for (const ref of ZONES) this.zones.push(new ZoneView(this, ref, this.fx, (id, coins) => this.pop(id, coins)));
@@ -147,7 +149,7 @@ export class MapScene extends Phaser.Scene {
   }
 
   private onMapTap(sx: number, sy: number) {
-    // the banner plane first: it flies over everything
+    // the rescue helicopter first: it flies over everything
     const pw = this.view.screenToWorld(sx, sy);
     if (this.plane.hit(pw.x, pw.y)) return this.plane.tap();
     // while a sheet (upgrades, beach, sports, expand) is open, tapping the map outside of it closes it

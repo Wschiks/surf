@@ -66,9 +66,70 @@ export type Pattern =
   | 'money'
   | 'lava'
   | 'cosmic'
+  | 'log'
+  | 'coral'
+  | 'dolphin'
+  | 'lighthouse'
+  | 'sardine'
+  | 'swordfish'
+  | 'puck'
+  | 'football'
+  | 'dartboard'
+  | 'diagonal'
+  | 'sunny'
+  | 'carrot'
+  | 'rocket'
+  | 'racing'
+  | 'bolt'
+  | 'cosmos'
+  | 'pinkSail'
+  | 'starMoon'
+  | 'leafSail'
+  | 'watermelon'
+  | 'iceCream'
+  | 'swan'
+  | 'chequered'
+  | 'retroRacer'
+  | 'compass'
+  | 'champion'
+  | 'viking'
+  | 'lemonade'
+  | 'matchday'
+  | 'crocodile'
+  | 'deepBlue'
+  | 'cherryPop'
+  | 'batWing'
+  | 'ember'
+  | 'mondrian'
+  | 'goodBoy'
+  | 'holland'
+  | 'blossom'
+  | 'jackpot'
+  | 'tigerSkin'
+  | 'mouse'
   | 'shark'
   | 'seagull'
-  | 'pirate';
+  | 'pirate'
+  | 'bands'
+  | 'starry'
+  | 'banana'
+  | 'road'
+  | 'ghost'
+  // figures: they take the place of the gear (a bunch of balloons instead of a kite)
+  | 'balloons'
+  | 'gull'
+  | 'falcon'
+  | 'wingDragon'
+  | 'cherry'
+  | 'cherryBands'
+  | 'drops'
+  | 'inferno'
+  | 'orca'
+  | 'redDots'
+  | 'leopard'
+  | 'sharkRide'
+  // the author's dad's windsurf sail of 1990 (and its board)
+  | 'dad90';
 
 export interface SkinDef {
   id: string;
@@ -81,6 +142,8 @@ export interface SkinDef {
   pattern: Pattern;
   /** Base, second and detail colour. */
   colors: [string, string, string];
+  /** The skin also has a design for the board or boat (the 1990 windsurf set; the sailing school's boats and rafts). */
+  board?: boolean;
 }
 
 /** Rarity by area (the author's choice): the wave sports are Common, the sea sports Rare, sailing (the ocean) Epic. On top of that every section has one Legendary: its last skin. */
@@ -115,49 +178,122 @@ const DESIGNS = {
   galaxy: { pattern: 'galaxy', colors: ['#1a0b3d', '#7c4dff', '#ffffff'], name: 'Galaxy' },
   rainbow: { pattern: 'rainbow', colors: ['#ff5252', '#ffd740', '#40c4ff'], name: 'Rainbow' },
   nightSky: { pattern: 'stars', colors: ['#0b1d3a', '#ffd54f', '#ffffff'], name: 'Night Sky' },
+  // the kitesurfing designs by the author's friend (Kite school, Freeride, Freestyle and big air, Big air and waves)
+  kiteSunny: { pattern: 'bands', colors: ['#ffd23f', '#3d8fe0', '#9fd8ff'], name: 'Sunny', rarity: 'common' },
+  kiteStars: { pattern: 'starry', colors: ['#1f2f6b', '#2a3d80', '#f2c94c'], name: 'Starry' },
+  // the surfing designs by the author's friend (Beginner class, Longboarders)
+  drops: { pattern: 'drops', colors: ['#3f8fe0', '#a8dcff', '#1f5fa8'], name: 'Water Drop' },
+  inferno: { pattern: 'inferno', colors: ['#15100e', '#c81e10', '#ffb300'], name: 'Flames' },
+  orca: { pattern: 'orca', colors: ['#16181d', '#f4f6f8', '#3a414c'], name: 'Orca' },
+  redDots: { pattern: 'redDots', colors: ['#f2491c', '#fffaf0', '#d3240f'], name: 'Mushroom' },
+  leopard: { pattern: 'leopard', colors: ['#e0a94e', '#2e1d0c', '#b5762a'], name: 'Panther' },
+  log: { pattern: 'log', colors: ['#c98a4a', '#8a5426', '#4a2a12'], name: 'Log' },
+  coral: { pattern: 'coral', colors: ['#f4e1bd', '#ff6f91', '#d9b98a'], name: 'Coral' },
+  dolphin: { pattern: 'dolphin', colors: ['#6f8597', '#b9c8d4', '#45576a'], name: 'Dolphin' },
+  lighthouse: { pattern: 'lighthouse', colors: ['#d62828', '#fbfbf8', '#ffd54a'], name: 'Lighthouse' },
+  sardine: { pattern: 'sardine', colors: ['#2e5f7c', '#e3ebf0', '#93b4c6'], name: 'Sardine' },
+  swordfish: { pattern: 'swordfish', colors: ['#2d3f6e', '#8fa0c2', '#3a4150'], name: 'Swordfish' },
+  // the skimboard designs by the author's friend (Shallows, Flatland, Shore break, Big shore break)
+  puck: { pattern: 'puck', colors: ['#1c1e23', '#dccba4', '#2e323b'], name: 'Puck' },
+  football: { pattern: 'football', colors: ['#f7f7f5', '#1c1d21', '#c9ccd2'], name: 'Football' },
+  dartboard: { pattern: 'dartboard', colors: ['#18181a', '#f1e6c8', '#d0312d'], name: 'Dartboard' },
+  tangerine: { pattern: 'diagonal', colors: ['#ff8a1f', '#ffd23f', '#e0601a'], name: 'Tangerine' },
+  carrot: { pattern: 'carrot', colors: ['#ff8a2a', '#e2600e', '#3f9a3a'], name: 'Carrot' },
+  rocket: { pattern: 'rocket', colors: ['#f2f4f7', '#d8312b', '#2f5fb3'], name: 'Rocket' },
+  racing: { pattern: 'racing', colors: ['#2a6fd6', '#ffffff', '#e0322f'], name: 'Racing Stripes' },
+  bolt: { pattern: 'bolt', colors: ['#20275a', '#ffd23f', '#11163a'], name: 'Lightning' },
+  cosmos: { pattern: 'cosmos', colors: ['#120a33', '#7b3fe4', '#ffb347'], name: 'Cosmos' },
+  sunny: { pattern: 'sunny', colors: ['#ffcf2e', '#ff9a1f', '#e0262c'], name: 'Sunny' },
+  tigerSkin: { pattern: 'tigerSkin', colors: ['#ffa41f', '#141414', '#e45a0c'], name: 'Tiger' },
+  mouse: { pattern: 'mouse', colors: ['#9aa0a8', '#f2a7b4', '#ffffff'], name: 'Mouse' },
+  // the sailing school designs by the author's friend: each brings its own boat (drawn over the Optimist)
+  bubblegum: { pattern: 'pinkSail', colors: ['#ff7eb6', '#ffd1e6', '#e0508f'], name: 'Bubblegum', board: true },
+  nightRaft: { pattern: 'starMoon', colors: ['#1d2a66', '#ffd23f', '#2f3f8f'], name: 'Night Raft', board: true },
+  leafRaft: { pattern: 'leafSail', colors: ['#4fb144', '#2e7d32', '#a5d86a'], name: 'Leaf Raft', board: true },
+  // the Boat hire, Club racing and Offshore regatta designs: each brings its own boat (dinghy, catamaran or yacht)
+  watermelon: { pattern: 'watermelon', colors: ['#ef3b4f', '#1d1d1d', '#2f9e44'], name: 'Watermelon', board: true },
+  iceCream: { pattern: 'iceCream', colors: ['#ffb3c7', '#fff1cf', '#bfe8a8'], name: 'Ice Cream', board: true },
+  swan: { pattern: 'swan', colors: ['#fbfbfa', '#d9dde3', '#ff8f1f'], name: 'Swan', board: true },
+  chequered: { pattern: 'chequered', colors: ['#ffffff', '#1b1b1e', '#c9ccd2'], name: 'Chequered Flag', board: true },
+  retroRacer: { pattern: 'retroRacer', colors: ['#e0262c', '#ffffff', '#14161a'], name: 'Retro Racer', board: true },
+  pirateShip: { pattern: 'pirate', colors: ['#15171c', '#ffffff', '#ffc83d'], name: 'Pirate', board: true },
+  compass: { pattern: 'compass', colors: ['#1c2c55', '#ffc83d', '#2c4380'], name: 'Compass', board: true },
+  champion: { pattern: 'champion', colors: ['#ffd54f', '#b8860b', '#fffde7'], name: 'Champion', board: true },
+  viking: { pattern: 'viking', colors: ['#c62828', '#f5f0e6', '#6b4423'], name: 'Viking', board: true },
+  // the wing designs by the author's friend (Foil school with its boards, Wing freeride, Downwind, Pro arena)
+  lemonade: { pattern: 'lemonade', colors: ['#1f3a6e', '#ffcf2e', '#2e4f8f'], name: 'Lemonade' },
+  matchday: { pattern: 'matchday', colors: ['#e8302d', '#ffffff', '#a51b18'], name: 'Matchday', board: true },
+  crocodile: { pattern: 'crocodile', colors: ['#3f8f3a', '#2f6e2c', '#a7d36a'], name: 'Crocodile' },
+  deepBlue: { pattern: 'deepBlue', colors: ['#143a8c', '#2ab3e6', '#0e2a66'], name: 'Deep Blue' },
+  cherryPop: { pattern: 'cherryPop', colors: ['#c9445e', '#e06a80', '#9c2c44'], name: 'Cherry Pop' },
+  batWing: { pattern: 'batWing', colors: ['#3a3d44', '#1f2126', '#5a5e68'], name: 'Bat' },
+  ember: { pattern: 'ember', colors: ['#8e1b22', '#f7941d', '#e3711a'], name: 'Ember' },
+  mondrian: { pattern: 'mondrian', colors: ['#f7f5ee', '#16161a', '#d6262b'], name: 'Mondrian' },
+  goodBoy: { pattern: 'goodBoy', colors: ['#e6e8eb', '#5f656d', '#f2c230'], name: 'Good Boy' },
+  holland: { pattern: 'holland', colors: ['#ae1c28', '#ffffff', '#21468b'], name: 'Holland' },
+  blossom: { pattern: 'blossom', colors: ['#1c2b52', '#f48fb1', '#ffffff'], name: 'Blossom' },
+  jackpot: { pattern: 'jackpot', colors: ['#2e8b3e', '#e0a800', '#a8e0a0'], name: 'Jackpot' },
+  sharkRide: { pattern: 'sharkRide', colors: ['#5d6b78', '#9aa8b4', '#ffffff'], name: 'Shark Ride' },
+  // a friend's idea: a wing in red, green and black bands with a pair of cherries in the middle
+  cherryWing: { pattern: 'cherryBands', colors: ['#d81e2c', '#1f8a3a', '#15171c'], name: 'Cherry' },
+  balloons: { pattern: 'balloons', colors: ['#e53935', '#fdd835', '#1e88e5'], name: 'Balloons' },
+  kiteLime: { pattern: 'bands', colors: ['#5cc85a', '#3d8fe0', '#b8f0a0'], name: 'Lime', rarity: 'common' },
+  banana: { pattern: 'banana', colors: ['#ffe14d', '#e3b21b', '#5a3a1a'], name: 'Banana' },
+  gull: { pattern: 'gull', colors: ['#f5f7f8', '#aab4bd', '#ffb300'], name: 'Seagull' },
+  kitePurple: { pattern: 'bands', colors: ['#3b8be8', '#8a3fd1', '#b9a2ff'], name: 'Purple Rain', rarity: 'common' },
+  road: { pattern: 'road', colors: ['#4a4f55', '#ffffff', '#d32f2f'], name: 'Highway' },
+  falcon: { pattern: 'falcon', colors: ['#7a6e64', '#4b4038', '#ffc107'], name: 'Falcon' },
+  bumblebee: { pattern: 'bands', colors: ['#ffd23f', '#1b1f24', '#ffe98a'], name: 'Bumblebee', rarity: 'common' },
+  ghost: { pattern: 'ghost', colors: ['#f4f6f8', '#d3dae0', '#15171c'], name: 'Ghost' },
+  wingDragon: { pattern: 'wingDragon', colors: ['#c62828', '#2e7d32', '#ffcc66'], name: 'Sky Dragon' },
+  // the author's dad's wave gear of 1990: a multicolour sail with a window, and a sun-faded cream wave board with striped deck pads
+  dad90: { pattern: 'dad90', colors: ['#ffa726', '#e8338f', '#29a8e0'], name: '1990 Classic', board: true },
   thunder: { pattern: 'lightning', colors: ['#1b1f24', '#ffd54f', '#ff5a1f'], name: 'Thunder' },
   platinum: { pattern: 'gold', colors: ['#e0e0e0', '#9e9e9e', '#ffffff'], name: 'Platinum' },
   pirate: { pattern: 'pirate', colors: ['#15171c', '#ffffff', '#ffc83d'], name: 'Pirate Gold' },
-} satisfies Record<string, { pattern: Pattern; colors: [string, string, string]; name: string }>;
+} satisfies Record<
+  string,
+  { pattern: Pattern; colors: [string, string, string]; name: string; /** A rarity of its own instead of the area's (the author's choice). */ rarity?: Rarity; board?: boolean }
+>;
 type DesignId = keyof typeof DESIGNS;
 
 /** The three designs of every section, per sport and section (school first). No design repeats inside a sport. The last design of every section is its Legendary. */
 const SETS: Record<SportId, [DesignId, DesignId, DesignId][]> = {
   wave: [
-    ['stripes', 'sprinkles', 'golden'],
-    ['waves', 'camo', 'rainbow'],
-    ['flames', 'lightning', 'dragon'],
-    ['money', 'tiger', 'cosmic'],
+    ['drops', 'inferno', 'orca'],
+    ['redDots', 'leopard', 'sharkRide'],
+    ['log', 'coral', 'dolphin'],
+    ['lighthouse', 'sardine', 'swordfish'],
   ],
   skimboarding: [
-    ['checkers', 'mint', 'platinum'],
-    ['arrows', 'palmSunset', 'galaxy'],
-    ['zebra', 'neon', 'lava'],
-    ['dragon', 'retro', 'golden'],
+    ['puck', 'football', 'dartboard'],
+    ['tangerine', 'carrot', 'rocket'],
+    ['racing', 'bolt', 'cosmos'],
+    ['sunny', 'tigerSkin', 'mouse'],
   ],
   windsurfing: [
     ['stripes', 'arrows', 'rainbow'],
     ['waves', 'lightning', 'nightSky'],
     ['flames', 'hibiscus', 'fireDragon'],
-    ['money', 'blueFire', 'thunder'],
+    ['dad90', 'blueFire', 'thunder'],
   ],
   kitesurfing: [
-    ['sprinkles', 'mint', 'golden'],
-    ['seagull', 'shark', 'cosmic'],
-    ['lava', 'lightning', 'money'],
-    ['neon', 'retro', 'fireDragon'],
+    ['kiteSunny', 'kiteStars', 'balloons'],
+    ['kiteLime', 'banana', 'gull'],
+    ['kitePurple', 'road', 'falcon'],
+    ['bumblebee', 'ghost', 'wingDragon'],
   ],
   foil: [
-    ['checkers', 'sprinkles', 'platinum'],
-    ['arrows', 'hibiscus', 'nightSky'],
-    ['flames', 'camo', 'dragon'],
-    ['money', 'tiger', 'cosmic'],
+    ['lemonade', 'matchday', 'crocodile'],
+    ['deepBlue', 'cherryPop', 'batWing'],
+    ['ember', 'mondrian', 'goodBoy'],
+    ['holland', 'blossom', 'jackpot'],
   ],
   sailing: [
-    ['waves', 'stripes', 'golden'],
-    ['mint', 'palmSunset', 'galaxy'],
-    ['zebra', 'lightning', 'money'],
-    ['dragon', 'blueFire', 'pirate'],
+    ['bubblegum', 'nightRaft', 'leafRaft'],
+    ['watermelon', 'iceCream', 'swan'],
+    ['chequered', 'retroRacer', 'pirateShip'],
+    ['compass', 'champion', 'viking'],
   ],
 };
 
@@ -173,9 +309,10 @@ export const SKINS: SkinDef[] = SPORTS.flatMap((sport) =>
         zone: zoneId(sport.id, level),
         sport: sport.id,
         level,
-        rarity: k === 2 ? 'legendary' : RARITY_BY_AREA[sport.area],
+        rarity: k === 2 ? 'legendary' : (('rarity' in d ? d.rarity : undefined) ?? RARITY_BY_AREA[sport.area]),
         pattern: d.pattern,
         colors: [...d.colors] as [string, string, string],
+        ...('board' in d && d.board ? { board: true } : {}),
       };
     });
   }),

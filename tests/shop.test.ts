@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { AD_COOLDOWN_SECONDS, AD_STEPS, CLUB, GEM_PACKS } from '../src/config/shop';
+import { AD_COOLDOWN_SECONDS, AD_STEPS, CLUB, COIN_PACKS, GEM_PACKS } from '../src/config/shop';
 import { BALANCE } from '../src/config/balance';
 import { adBreakDue, adFree, loadPerks, PERKS_KEY, refreshClub, savePerks } from '../src/core/perks';
 import { AD_BREAK } from '../src/config/ads';
 import { loadGame, saveGame } from '../src/core/save';
-import { adStreak, claimAdStep, claimClubGems, clubStatus, grantGemPack } from '../src/core/shop';
-import { multipliers, offlineCap } from '../src/core/economy';
+import { adStreak, buyCoinPack, claimAdStep, claimClubGems, clubStatus, coinPackValue, grantGemPack } from '../src/core/shop';
+import { autoIncomePerSecond, multipliers, offlineCap } from '../src/core/economy';
 import { newGame } from '../src/core/state';
 
 const fresh = () => {
@@ -186,5 +186,36 @@ describe('ad breaks', () => {
   });
   it('never come for players without ads', () => {
     expect(adBreakDue({ ...ok, adFree: true })).toBe(false);
+  });
+});
+
+
+describe('coins for gems', () => {
+  const earning = () => {
+    const s = newGame(0);
+    s.zones['wave-1'].manager = true;
+    return s;
+  };
+
+  it('a pack is hours of the coins-per-second counter, and the bigger pack is cheaper per hour', () => {
+    const s = earning();
+    for (const p of COIN_PACKS) expect(coinPackValue(s, p.id)).toBeCloseTo(autoIncomePerSecond(s) * p.hours * 3600, 6);
+    const perHour = COIN_PACKS.map((p) => p.gems / p.hours);
+    for (let i = 1; i < perHour.length; i++) expect(perHour[i]).toBeLessThan(perHour[i - 1]);
+  });
+
+  it('buying spends the gems and adds the coins; not without gems or income', () => {
+    const s = earning();
+    s.skillPoints = 30;
+    const c = s.coins;
+    const got = buyCoinPack(s, 'coins8h');
+    expect(got).toBeGreaterThan(0);
+    expect(s.coins).toBeCloseTo(c + got, 6);
+    expect(s.skillPoints).toBe(10);
+    expect(buyCoinPack(s, 'coins8h')).toBe(0);
+    const none = newGame(0);
+    none.skillPoints = 100;
+    expect(buyCoinPack(none, 'coins2h')).toBe(0);
+    expect(none.skillPoints).toBe(100);
   });
 });

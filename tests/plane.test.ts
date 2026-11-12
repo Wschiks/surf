@@ -18,23 +18,26 @@ describe('banner plane', () => {
     expect(planeUnlocked(s)).toBe(true);
   });
 
-  it('first after 2-3 min, after a claim 5-8 min, after a miss 3-4 min', () => {
-    expect(planeDelay('first', 0)).toBe(120);
-    expect(planeDelay('first', 1)).toBe(180);
-    expect(planeDelay('claimed', 0)).toBe(300);
-    expect(planeDelay('claimed', 1)).toBe(480);
-    expect(planeDelay('missed', 0)).toBe(180);
-    expect(planeDelay('missed', 1)).toBe(240);
+  it('first after 20-50 s, after a claim 2-3 min, after a miss 1.5-2 min (it replaces the x2 button)', () => {
+    expect(planeDelay('first', 0)).toBe(20);
+    expect(planeDelay('first', 1)).toBe(50);
+    expect(planeDelay('claimed', 0)).toBe(120);
+    expect(planeDelay('claimed', 1)).toBe(180);
+    expect(planeDelay('missed', 0)).toBe(90);
+    expect(planeDelay('missed', 1)).toBe(120);
   });
 
-  it('prizes: 50% coins, 40% x2 for 5 min, 10% 3 gems', () => {
+  it('prizes: 25% coins, 55% x2 for 5 min, 12% a skin box, 8% 3 gems', () => {
     const s = withManager();
     expect(rollPlanePrize(s, 0).kind).toBe('coins');
-    expect(rollPlanePrize(s, 0.49).kind).toBe('coins');
-    expect(rollPlanePrize(s, 0.5)).toEqual({ kind: 'boost', seconds: 300 });
-    expect(rollPlanePrize(s, 0.89).kind).toBe('boost');
-    expect(rollPlanePrize(s, 0.9)).toEqual({ kind: 'gems', gems: 3 });
-    expect(PLANE.prizes.coins.chance + PLANE.prizes.boost.chance + PLANE.prizes.gems.chance).toBeCloseTo(1, 9);
+    expect(rollPlanePrize(s, 0.24).kind).toBe('coins');
+    expect(rollPlanePrize(s, 0.25)).toEqual({ kind: 'boost', seconds: 300 });
+    expect(rollPlanePrize(s, 0.79).kind).toBe('boost');
+    expect(rollPlanePrize(s, 0.8)).toEqual({ kind: 'box' });
+    expect(rollPlanePrize(s, 0.91).kind).toBe('box');
+    expect(rollPlanePrize(s, 0.92)).toEqual({ kind: 'gems', gems: 3 });
+    const p = PLANE.prizes;
+    expect(p.coins.chance + p.boost.chance + p.box.chance + p.gems.chance).toBeCloseTo(1, 9);
   });
 
   it('coins are the coins-per-second counter times 5 minutes', () => {
@@ -55,5 +58,8 @@ describe('banner plane', () => {
     const g = s.skillPoints;
     claimPlanePrize(s, { kind: 'gems', gems: 3 });
     expect(s.skillPoints).toBe(g + 3);
+    const b = s.skins.boxes;
+    claimPlanePrize(s, { kind: 'box' });
+    expect(s.skins.boxes).toBe(b + 1);
   });
 });

@@ -17,33 +17,42 @@ const SHAPES: Record<string, string> = {
   flag: '<path d="M6 21V3.5" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M6.6 4.5h11.4l-2.6 4 2.6 4H6.6z" fill="currentColor"/>',
   trophy:
     '<path d="M7 3.5h10v6a5 5 0 01-10 0z" fill="currentColor"/><path d="M7 5.5H3.8c0 3 1.5 4.6 3.6 5M17 5.5h3.2c0 3-1.5 4.6-3.6 5" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 14.5V18M8 20.5h8" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/>',
-  sound: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 8.6a4.8 4.8 0 010 6.8M18.2 6a8.4 8.4 0 010 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
+  sound:
+    '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M15.5 8.6a4.8 4.8 0 010 6.8M18.2 6a8.4 8.4 0 010 12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
   mute: '<path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z" fill="currentColor"/><path d="M16 9.5l5 5M21 9.5l-5 5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
-  people: '<circle cx="9" cy="8" r="3.4" fill="currentColor"/><path d="M2.5 19.5c0-4 3-6.2 6.5-6.2s6.5 2.2 6.5 6.2z" fill="currentColor"/><circle cx="17" cy="9" r="2.7" fill="currentColor" opacity=".55"/><path d="M16.6 13.5c3 .3 4.9 2.2 4.9 5.5h-4.6" fill="currentColor" opacity=".55"/>',
+  people:
+    '<circle cx="9" cy="8" r="3.4" fill="currentColor"/><path d="M2.5 19.5c0-4 3-6.2 6.5-6.2s6.5 2.2 6.5 6.2z" fill="currentColor"/><circle cx="17" cy="9" r="2.7" fill="currentColor" opacity=".55"/><path d="M16.6 13.5c3 .3 4.9 2.2 4.9 5.5h-4.6" fill="currentColor" opacity=".55"/>',
   tag: '<path d="M3.5 12V4.5a1 1 0 011-1H12a1 1 0 01.7.3l7.6 7.6a1 1 0 010 1.4l-6.9 6.9a1 1 0 01-1.4 0L3.8 12.7a1 1 0 01-.3-.7z" fill="currentColor"/><circle cx="8.2" cy="8.2" r="1.8" fill="#fff"/>',
   bolt: '<path d="M13.6 2.5L5 13.6h6l-1.6 7.9L19 10h-6.2z" fill="currentColor" stroke="currentColor" stroke-width="1.2" stroke-linejoin="round"/>',
   manager:
     '<circle cx="12" cy="7.5" r="3.7" fill="currentColor"/><path d="M4.5 21c0-4.6 3-7.2 7.5-7.2s7.5 2.6 7.5 7.2z" fill="currentColor"/><path d="M12 15.4l.9 1.8 2 .3-1.4 1.4.3 2-1.8-.9-1.8.9.3-2-1.4-1.4 2-.3z" fill="#ffc233"/>',
   video: '<rect x="3" y="5" width="18" height="14" rx="3.5" fill="currentColor"/><path d="M10 9.2v5.6l4.8-2.8z" fill="#0b5d8a"/>',
   bag: '<path d="M5.2 8.2h13.6l1.1 11.3a1.4 1.4 0 01-1.4 1.5H5.5a1.4 1.4 0 01-1.4-1.5z" fill="currentColor"/><path d="M8.6 10.5V7.4a3.4 3.4 0 016.8 0v3.1" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
-  expand: '<path d="M14 3.5h6.5V10M10 20.5H3.5V14" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 4l-6.5 6.5M4 20l6.5-6.5" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>',
+  expand:
+    '<path d="M14 3.5h6.5V10M10 20.5H3.5V14" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M20 4l-6.5 6.5M4 20l6.5-6.5" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/>',
   info: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M12 11v6" stroke="currentColor" stroke-width="2.8" stroke-linecap="round"/><circle cx="12" cy="7.6" r="1.6" fill="currentColor"/>',
   help: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M9.3 9.6a2.8 2.8 0 015.4 1c0 1.8-2.7 2.2-2.7 4" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><circle cx="12" cy="17.6" r="1.5" fill="currentColor"/>',
   doc: '<path d="M6 3.5h8l4 4v13a1 1 0 01-1 1H6a1 1 0 01-1-1v-16a1 1 0 011-1z" fill="currentColor"/><path d="M8.5 11h7M8.5 14.5h7M8.5 18h4.5" stroke="rgba(255,255,255,.75)" stroke-width="1.8" stroke-linecap="round"/>',
-  shield: '<path d="M12 2.8l7.5 2.7v6c0 4.6-3.1 8.2-7.5 9.7-4.4-1.5-7.5-5.1-7.5-9.7v-6z" fill="currentColor"/><path d="M8.6 12l2.7 2.7 4.3-5.2" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>',
+  shield:
+    '<path d="M12 2.8l7.5 2.7v6c0 4.6-3.1 8.2-7.5 9.7-4.4-1.5-7.5-5.1-7.5-9.7v-6z" fill="currentColor"/><path d="M8.6 12l2.7 2.7 4.3-5.2" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>',
   heart: '<path d="M12 20.5C5 15.5 3 12.2 3 9a4.7 4.7 0 018.3-3 .9.9 0 001.4 0A4.7 4.7 0 0121 9c0 3.2-2 6.5-9 11.5z" fill="currentColor"/>',
   download: '<path d="M12 3.5v12M7 11l5 5 5-5M4.5 20.5h15" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>',
   upload: '<path d="M12 16.5v-12M7 9.5l5-5 5 5M4.5 20.5h15" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>',
-  chart: '<path d="M4 20.5h16" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="5.5" y="12" width="3.6" height="7" rx="1" fill="currentColor"/><rect x="10.2" y="6.5" width="3.6" height="12.5" rx="1" fill="currentColor"/><rect x="14.9" y="9.5" width="3.6" height="9.5" rx="1" fill="currentColor"/>',
+  chart:
+    '<path d="M4 20.5h16" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><rect x="5.5" y="12" width="3.6" height="7" rx="1" fill="currentColor"/><rect x="10.2" y="6.5" width="3.6" height="12.5" rx="1" fill="currentColor"/><rect x="14.9" y="9.5" width="3.6" height="9.5" rx="1" fill="currentColor"/>',
   back: '<path d="M19 12H6M11.5 6.5L6 12l5.5 5.5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>',
   chevron: '<path d="M9 5.5l6.5 6.5L9 18.5" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>',
   copy: '<rect x="8.5" y="8.5" width="11" height="12" rx="2.2" fill="currentColor"/><path d="M15.5 5.5h-9a2 2 0 00-2 2v10" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/>',
   wrench: '<path d="M14.5 4a5 5 0 00-4.8 6.6L3.8 16.5a2 2 0 002.8 2.8l5.9-5.9A5 5 0 0020 9.5l-3 3-2.5-.5-.5-2.5 3-3A5 5 0 0014.5 4z" fill="currentColor"/>',
   gem: '<path d="M12 21.5L2.8 9.6 6.6 3.5h10.8l3.8 6.1z" fill="#a66bff" stroke="#5b34c4" stroke-width="1.6" stroke-linejoin="round"/><path d="M2.8 9.6h18.4M8.6 3.5L7.2 9.6 12 21.5M15.4 3.5l1.4 6.1L12 21.5" fill="none" stroke="#5b34c4" stroke-width="1.1" stroke-linejoin="round"/><path d="M8.7 4.6l-1.1 3.6" stroke="#e6d4ff" stroke-width="1.4" stroke-linecap="round"/>',
-  clock: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M12 6.8V12l3.6 2.2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
+  calendar:
+    '<rect x="3.5" y="5" width="17" height="15.5" rx="3" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M12 12.6l1 2.1 2.3.3-1.7 1.6.4 2.3-2-1.1-2 1.1.4-2.3-1.7-1.6 2.3-.3z" fill="currentColor"/>',
+  clock:
+    '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M12 6.8V12l3.6 2.2" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>',
   tree: '<path d="M12 20.5V12.5M12 14.5L6.5 9.8M12 14.5l5.5-4.7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" fill="none"/><circle cx="12" cy="20" r="2.2" fill="currentColor"/><circle cx="6.2" cy="7.6" r="2.6" fill="currentColor"/><circle cx="17.8" cy="7.6" r="2.6" fill="currentColor"/><circle cx="12" cy="9" r="2.6" fill="currentColor"/>',
   // --- home screen buttons
-  beach: '<path d="M3 12.5a9 9 0 0118 0z" fill="currentColor"/><path d="M12 12.5V20" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M3.5 21.2h17" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".55"/>',
+  beach:
+    '<path d="M3 12.5a9 9 0 0118 0z" fill="currentColor"/><path d="M12 12.5V20" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M3.5 21.2h17" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" opacity=".55"/>',
   sports:
     '<ellipse cx="12" cy="11" rx="3.3" ry="9" transform="rotate(38 12 11)" fill="currentColor"/><path d="M9.4 5.8l5.2 10.4" stroke="rgba(255,255,255,.7)" stroke-width="1.3" stroke-linecap="round"/><path d="M2.5 21c2-1.5 3.5-1.5 5.5 0s3.5 1.5 5.5 0 3.5-1.5 5.5 0" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".7"/>',
   // --- the six sports
@@ -59,15 +68,21 @@ const SHAPES: Record<string, string> = {
   // --- beach buildings
   shop: '<path d="M3 9.5L4.6 4h14.8L21 9.5z" fill="currentColor"/><path d="M3 9.5h18a3 3 0 01-6 0 3 3 0 01-6 0 3 3 0 01-6 0z" fill="currentColor" opacity=".6"/><rect x="5" y="12.5" width="14" height="8" rx="1.2" fill="currentColor"/>',
   cafe: '<path d="M4.5 9.5h11V14a4 4 0 01-4 4h-3a4 4 0 01-4-4z" fill="currentColor"/><path d="M15.5 10.8h1.4a2.4 2.4 0 010 4.8h-1.4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M8 3.5c-1 1.3 1 2.1 0 3.6M12 3.5c-1 1.3 1 2.1 0 3.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" opacity=".65"/>',
-  shower: '<path d="M4 21V9.5a5.5 5.5 0 0110.5-2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M12 9h9.5L20 12.6h-6.4z" fill="currentColor"/><path d="M14.5 15.5v2.2M17.2 15.5v3.4M19.9 15.5v2.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
-  lifeguard: '<circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="5"/><circle cx="12" cy="12" r="7.5" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="5" stroke-dasharray="5.9 5.9"/>',
+  shower:
+    '<path d="M4 21V9.5a5.5 5.5 0 0110.5-2" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/><path d="M12 9h9.5L20 12.6h-6.4z" fill="currentColor"/><path d="M14.5 15.5v2.2M17.2 15.5v3.4M19.9 15.5v2.2" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>',
+  lifeguard:
+    '<circle cx="12" cy="12" r="7.5" fill="none" stroke="currentColor" stroke-width="5"/><circle cx="12" cy="12" r="7.5" fill="none" stroke="rgba(255,255,255,.85)" stroke-width="5" stroke-dasharray="5.9 5.9"/>',
   bill: '<rect x="2.5" y="6" width="19" height="12" rx="2" fill="currentColor"/><rect x="4.6" y="8.1" width="14.8" height="7.8" rx="1.2" fill="none" stroke="#fff" stroke-width="1.2" opacity=".55"/><circle cx="12" cy="12" r="2.8" fill="#fff" opacity=".85"/>',
-  volleyball: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 3c-1.5 3.5-1.2 7 1 9.5M4.2 8.5c3.6.2 6.6 1.6 8.8 3.5m0 0c-.4 3.6-2 6.6-4.6 8.3M13 12c3.3 1.4 5.6 3.9 6.6 6.6M13 12c2.2-2.6 5.4-4.1 8-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
-  soccer: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 8.3l3.5 2.5-1.3 4.1H9.8l-1.3-4.1z" fill="currentColor"/><path d="M12 8.3V3.4M15.5 10.8l4.6-1.6M14.2 14.9l2.8 4M9.8 14.9l-2.8 4M8.5 10.8L3.9 9.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
+  volleyball:
+    '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 3c-1.5 3.5-1.2 7 1 9.5M4.2 8.5c3.6.2 6.6 1.6 8.8 3.5m0 0c-.4 3.6-2 6.6-4.6 8.3M13 12c3.3 1.4 5.6 3.9 6.6 6.6M13 12c2.2-2.6 5.4-4.1 8-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>',
+  soccer:
+    '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.2"/><path d="M12 8.3l3.5 2.5-1.3 4.1H9.8l-1.3-4.1z" fill="currentColor"/><path d="M12 8.3V3.4M15.5 10.8l4.6-1.6M14.2 14.9l2.8 4M9.8 14.9l-2.8 4M8.5 10.8L3.9 9.2" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>',
   spin: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="2.4"/><path d="M12 3v18M3 12h18M5.6 5.6l12.8 12.8M18.4 5.6L5.6 18.4" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="2.6" fill="currentColor"/><path d="M12 0.8l-2.2 3.2h4.4z" fill="currentColor"/>',
   skin: '<path d="M12 2.4c3.4 2.6 5 7.2 4.4 12.2-.4 3.6-2 6.2-4.4 7-2.4-.8-4-3.4-4.4-7-.6-5 1-9.6 4.4-12.2z" fill="currentColor"/><path d="M12 5.5v14" stroke="#fff" stroke-width="1.6" stroke-linecap="round" opacity=".7"/>',
-  rebirth: '<path d="M19 12a7 7 0 01-12.2 4.7M5 12a7 7 0 0112.2-4.7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M17.8 3.6v4.3h-4.3M6.2 20.4v-4.3h4.3" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.4" fill="currentColor"/>',
-  hotel: '<rect x="5" y="3.5" width="14" height="17" rx="1.6" fill="currentColor"/><path d="M8 7h2M14 7h2M8 10.5h2M14 10.5h2M8 14h2M14 14h2" stroke="rgba(255,255,255,.8)" stroke-width="1.8" stroke-linecap="round"/><rect x="10.3" y="16.5" width="3.4" height="4" fill="rgba(255,255,255,.8)"/>',
+  rebirth:
+    '<path d="M19 12a7 7 0 01-12.2 4.7M5 12a7 7 0 0112.2-4.7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"/><path d="M17.8 3.6v4.3h-4.3M6.2 20.4v-4.3h4.3" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="12" r="2.4" fill="currentColor"/>',
+  hotel:
+    '<rect x="5" y="3.5" width="14" height="17" rx="1.6" fill="currentColor"/><path d="M8 7h2M14 7h2M8 10.5h2M14 10.5h2M8 14h2M14 14h2" stroke="rgba(255,255,255,.8)" stroke-width="1.8" stroke-linecap="round"/><rect x="10.3" y="16.5" width="3.4" height="4" fill="rgba(255,255,255,.8)"/>',
 };
 
 export type IconName = keyof typeof SHAPES;

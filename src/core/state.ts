@@ -1,5 +1,6 @@
 import type { Perks } from './perks';
 import { ensureSkins, newSkins, type SkinState } from './skins';
+import { ensureCalendar, newCalendar, type CalendarState } from './calendar';
 import { FACILITIES } from '../config/facilities';
 import { areaById } from '../config/areas';
 import { rootSkills } from './skills';
@@ -59,6 +60,8 @@ export interface GameState {
   hints: Record<string, boolean>;
   /** Skins and boxes. Kept for good: expansions and rebirths do not touch them. */
   skins: SkinState;
+  /** The daily rewards calendar. */
+  calendar: CalendarState;
   /** Real time (ms since 1970) when the game was last saved or updated. */
   savedAt: number;
   startedAt: number;
@@ -92,6 +95,7 @@ export function newGame(now: number): GameState {
     skills: rootSkills(),
     hints: {},
     skins: newSkins(),
+    calendar: newCalendar(),
     savedAt: now,
     startedAt: now,
   };
@@ -138,6 +142,7 @@ export function ensureState(state: GameState): GameState {
   state.clubNext ??= 0;
   state.perks = {}; // never taken from a save
   ensureSkins(state);
+  ensureCalendar(state);
 
   state.skills = { ...rootSkills(), ...(state.skills ?? {}) };
   return state;
