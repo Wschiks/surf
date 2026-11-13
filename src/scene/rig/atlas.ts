@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import type { SkinDef } from '../../config/skins';
 import { GEAR_PATHS as G, PATHS } from './models';
-import { drawSkin, drawSkinBoard, drawSkinSpin, skinBounds, skinShape, SPIN_BOUNDS, type SkinBoard } from './skinArt';
+import { drawSkin, drawSkinBoard, drawSkinSpin, drawTrailBit, skinBounds, skinShape, SPIN_BOUNDS, TRAIL_SIZE, type SkinBoard, type TrailKind } from './skinArt';
 
 // Every part of the guest models baked once into one texture ('rig'), so all guests draw in one batch.
 // Parts are drawn in spec px (README 1.1) at RES texture px per spec px; white parts are tinted per guest.
@@ -1049,4 +1049,19 @@ export function skinTexture(scene: Phaser.Scene, skin: SkinDef): { key: string; 
     scene.textures.addCanvas(key, canvas);
   }
   return { key, ox: -box.x0 / w, oy: -box.y0 / h };
+}
+
+/** One bit of a Club skin's trail (a leaf, a snowflake, ...), centred. */
+export function trailTexture(scene: Phaser.Scene, kind: TrailKind, variant: number): string {
+  const key = `trail-${kind}-${variant}`;
+  if (!scene.textures.exists(key)) {
+    const canvas = document.createElement('canvas');
+    canvas.width = canvas.height = Math.ceil(TRAIL_SIZE * RES);
+    const ctx = canvas.getContext('2d')!;
+    ctx.scale(RES, RES);
+    ctx.translate(TRAIL_SIZE / 2, TRAIL_SIZE / 2);
+    drawTrailBit(ctx, kind, variant);
+    scene.textures.addCanvas(key, canvas);
+  }
+  return key;
 }

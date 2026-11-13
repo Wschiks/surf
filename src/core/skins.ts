@@ -2,7 +2,7 @@
 // Boxes are the second random thing in the game (the author's choice, like the banner plane): what a box gives is
 // drawn with the odds in config/skins.ts, from a random generator kept in the save (so a reload cannot reroll it).
 
-import { BOX_ODDS, BOXES, MAX_PIECES, RARITIES, SKINS, skinById, STARTER_SKIN, TIERS, type BoxKind, type Rarity, type SkinDef } from '../config/skins';
+import { BOX_ODDS, BOXES, CLUB_SKINS, MAX_PIECES, RARITIES, RARITY_SPEED, SKINS, skinById, type ClubSkinDef, STARTER_SKIN, TIERS, type BoxKind, type BoxRarity, type SkinDef } from '../config/skins';
 import type { GameState } from './state';
 
 export interface SkinState {
@@ -75,6 +75,14 @@ export function skinBoost(state: GameState, zone: string): number {
   return tierBoost(tierOf(state.skins.pieces[id] ?? 0));
 }
 
+/** Speed of a section from the rarity of the skin it wears: its sessions go this many times faster (1 = none). */
+export function skinSpeed(state: GameState, zone: string): number {
+  const id = state.skins?.worn[zone];
+  const skin = id ? skinById(id) : undefined;
+  if (!skin || tierOf(state.skins.pieces[skin.id] ?? 0) < 1) return 1;
+  return RARITY_SPEED[skin.rarity];
+}
+
 export interface BoxResult {
   skin: SkinDef;
   before: number;
@@ -84,7 +92,7 @@ export interface BoxResult {
 }
 
 /** Draw a rarity with the odds of a box. */
-function drawRarity(state: GameState, kind: BoxKind): Rarity {
+function drawRarity(state: GameState, kind: BoxKind): BoxRarity {
   const odds = BOX_ODDS[kind];
   let r = random(state) * 100;
   for (const rarity of RARITIES) {
@@ -194,4 +202,42 @@ export function giveBox(state: GameState, n = 1) {
 /** How much of the collection is unlocked, and how many skins there are. */
 export function collectionCount(state: GameState): { unlocked: number; total: number } {
   return { unlocked: SKINS.filter((k) => tierOf(state.skins.pieces[k.id] ?? 0) >= 1).length, total: SKINS.length };
+}
+
+// ---- the Surf Club's monthly skins
+
+/** The month (YYYY-MM) of a moment, by the player's own clock. */
+export function monthOf(now: number): string {
+  const d = new Date(now);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+}
+
+/** This month's Club skin (undefined in a month without one). */
+export function clubSkinOfMonth(now: number): ClubSkinDef | undefined {
+  const m = monthOf(now);
+  return CLUB_SKINS.find((k) => k.month === m);
+}
+
+/**
+ * A member gets this month's Club skin, complete (Silver), and puts it on. Only the current month: a missed month is
+ * gone. Returns the skin when it was just given (null otherwise). Call it often (joining mid-month gives it at once).
+ */
+export function grantClubSkin(state: GameState, now: number): ClubSkinDef | null {
+  if (!state.perks.club) return null;
+  const skin = clubSkinOfMonth(now);
+  if (!skin || (state.skins.pieces[skin.id] ?? 0) >= MAX_PIECES) return null;
+  state.skins.pieces[skin.id] = MAX_PIECES;
+  state.skins.worn[skin.zone] = skin.id;
+  return skin;
+}
+
+/** The Club skins the collection shows: every month up to this one (a missed one shows locked); with `all` the coming months too (testing). */
+export function clubSkinsShown(now: number, all = false): ClubSkinDef[] {
+  const m = monthOf(now);
+  return CLUB_SKINS.filter((k) => all || k.month <= m);
+}
+
+/** Testing only: every Club skin complete. */
+export function unlockClubSkins(state: GameState) {
+  for (const k of CLUB_SKINS) if ((state.skins.pieces[k.id] ?? 0) < MAX_PIECES) state.skins.pieces[k.id] = MAX_PIECES;
 }

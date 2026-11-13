@@ -1,8 +1,9 @@
-import { BOX_ODDS, BOXES, RARITIES, RARITY_LOOK, SKINS, TIERS, skinsOfZone, type BoxKind, type SkinDef } from '../config/skins';
+import { BOX_ODDS, BOXES, MAX_PIECES, RARITIES, RARITY_LOOK, RARITY_SPEED, SKINS, TIERS, skinById, skinsOfZone, type BoxKind, type ClubSkinDef, type SkinDef } from '../config/skins';
+import { DEV_CLUB_PREVIEW } from '../config/dev';
 import { SPORTS, ZONES } from '../config/sports';
 import type { Game } from '../core/game';
-import { buyCoinBox, buyGemBoxes, coinBoxPrice, collectionCount, openBox, skinProgress, tierBoost, wearSkin, type BoxResult } from '../core/skins';
-import { drawSkin, drawSkinHullSide, isRide, skinShape, type SkinShape } from '../scene/rig/skinArt';
+import { buyCoinBox, buyGemBoxes, clubSkinOfMonth, clubSkinsShown, coinBoxPrice, collectionCount, openBox, skinProgress, tierBoost, wearSkin, type BoxResult } from '../core/skins';
+import { drawSkin, drawSkinHullSide, drawTrailBit, isFigure, skinShape, trailOf, type SkinShape, type TrailKind } from '../scene/rig/skinArt';
 import { fmt } from './format';
 import { icon, tile } from './icons';
 import { playOpening } from './boxOpen';
@@ -11,6 +12,8 @@ import { sound } from './sound';
 export interface SkinContext {
   game: Game;
   close: () => void;
+  /** Open the shop at the Surf Club (from the skin of the month). */
+  openClub: () => void;
   toast: (text: string) => void;
   confetti: () => void;
   refreshTop: () => void;
@@ -222,7 +225,8 @@ function drawPicture(c: CanvasRenderingContext2D, skin: SkinDef, shape: SkinShap
 /** Where the gear really sits in its own coordinates (measured once per shape from the drawn picture). */
 const gearBoxes = new Map<string, { cx: number; cy: number; w: number; h: number }>();
 function gearBox(skin: SkinDef) {
-  const key = `${skin.sport}-${skin.level}${skin.board ? `-board-${skin.id}` : ''}${isRide(skin) ? `-${skin.id}` : ''}`;
+  // a figure (an animal ridden, a bird kite, the moon sail) has its own outline: measured on its own
+  const key = `${skin.sport}-${skin.level}${skin.board ? `-board-${skin.id}` : ''}${isFigure(skin) ? `-${skin.id}` : ''}`;
   let box = gearBoxes.get(key);
   if (box) return box;
   const shape = pictureShape(skin);
@@ -459,6 +463,11 @@ export function skinCanvas(skin: SkinDef, locked: boolean, size = 64): HTMLCanva
  * The Skins screen: the collection, every section of every sport with its three skins (pieces, tier, boost), and how
  * many skins reached each tier. Tap an unlocked skin to wear it. The boxes are in the shop.
  */
+/** The speed a rarity gives a section that wears it: a clock and x1.5. */
+function speedChip(r: SkinDef['rarity']): string {
+  return `${icon('clock')}×${RARITY_SPEED[r]}`;
+}
+
 export class SkinScreen {
   private signature = '';
 
@@ -477,6 +486,8 @@ export class SkinScreen {
         <div class="menu-title"><h2>Skins</h2><small class="sk-tally" data-count></small></div>
         <button class="x" data-close aria-label="Close">${icon('close')}</button>
       </div>
+      <div data-month></div>
+      <div class="sk-rar" data-rarities></div>
       <div data-collection></div>`;
     this.root.querySelector('[data-close]')!.addEventListener('click', () => this.ctx.close());
     this.update();
@@ -486,14 +497,138 @@ export class SkinScreen {
   update() {
     const s = this.ctx.game.state;
     const k = s.skins;
-    const sig = [Object.values(k.pieces).join(','), Object.values(k.worn).join(',')].join('|');
+    const sig = [Object.values(k.pieces).join(','), Object.values(k.worn).join(','), s.perks.club, monthOfNow()].join('|');
     if (sig === this.signature) return;
     this.signature = sig;
     this.drawCollection();
+    this.drawMonth();
     const n = collectionCount(s);
     // like the Idle Farming Empire collection: how many skins reached each tier
     const at = (t: number) => SKINS.filter((k) => skinProgress(s, k.id).tier >= t).length;
     this.root.querySelector('[data-count]')!.innerHTML = TIERS.map((_, i) => `<span class="t${i + 1}"><i></i>${at(i + 1)}<em>/${n.total}</em></span>`).join('');
+    // how many of each rarity are unlocked, in the rarity's colour, and the speed that rarity gives
+    this.root.querySelector('[data-rarities]')!.innerHTML = RARITIES.map((r) => {
+      const all = SKINS.filter((k) => k.rarity === r);
+      const got = all.filter((k) => skinProgress(s, k.id).tier >= 1).length;
+      return `<div style="--rar:${RARITY_LOOK[r].color}"><b>${got}<em>/${all.length}</em></b><small>${speedChip(r)}</small></div>`;
+    }).join('');
+  }
+
+  /**
+   * The showcase of a Club skin (like the friend's cards): big, on a background in the month's theme (an autumn glow
+   * with falling leaves, red velvet with snow, a night of fireworks, petals, clovers), with what it gives and Wear or Join.
+   */
+  showcase(skin: ClubSkinDef) {
+    this.root.querySelector('.sk-show')?.remove();
+    const s = this.ctx.game.state;
+    const zone = ZONES.find((z) => z.id === skin.zone)!;
+    const have = (s.skins.pieces[skin.id] ?? 0) >= MAX_PIECES;
+    const worn = s.skins.worn[skin.zone] === skin.id;
+    const kind = trailOf(skin) ?? 'spark';
+    const el = document.createElement('div');
+    el.className = `sk-show theme-${kind}`;
+    const [y] = skin.month.split('-');
+    el.innerHTML = `
+      <div class="sk-show-card">
+        <div class="sk-show-fall">${fallingBits(kind)}</div>
+        <div class="sk-show-rays"></div>
+        <button class="x sk-show-x" data-show-close aria-label="Close">${icon('close')}</button>
+        <div class="sk-show-ribbon">${icon('star')} Surf Club</div>
+        <div class="sk-show-pic"></div>
+        <b class="sk-show-name">${skin.name}</b>
+        <small class="sk-show-sub">${monthName(skin)} ${y} · ${icon(zone.sport.icon)} ${zone.def.name}</small>
+        <span class="sk-gives">${givesChips(skin, 3)}</span>
+        ${
+          have
+            ? `<button class="go big ${worn ? 'auto' : ''}" data-show-wear>${worn ? `${icon('check')} Worn` : 'Wear'}</button>`
+            : `<button class="go big ready" data-show-join>${icon('star')} Join the Surf Club</button>`
+        }
+      </div>`;
+    el.querySelector('.sk-show-pic')!.appendChild(skinGear(skin, 230));
+    const close = () => el.remove();
+    el.addEventListener('click', (e) => {
+      if (e.target === el) close();
+    });
+    el.querySelector('[data-show-close]')!.addEventListener('click', close);
+    el.querySelector('[data-show-join]')?.addEventListener('click', () => {
+      sound.tap();
+      this.ctx.openClub();
+    });
+    el.querySelector('[data-show-wear]')?.addEventListener('click', () => {
+      if (!worn && wearSkin(s, skin.id)) {
+        sound.tap();
+        this.ctx.game.save();
+        this.signature = '';
+        this.update();
+      }
+      close();
+    });
+    this.root.appendChild(el);
+    sound.tap();
+  }
+
+  /** The Surf Club row at the end of the collection. */
+  private clubRow(): string {
+    const s = this.ctx.game.state;
+    const shown = clubSkinsShown(Date.now(), clubPreview());
+    if (!shown.length) return '';
+    return `
+      <h4 class="sk-club-h">${icon('star')} Surf Club</h4>
+      <div class="sk-row"><div class="sk-three">${shown
+        .map((skin) => {
+          const p = skinProgress(s, skin.id);
+          const worn = s.skins.worn[skin.zone] === skin.id;
+          return `<button class="sk-skin club ${worn ? 'worn' : ''} ${p.tier ? '' : 'locked'}" data-skin="${skin.id}" style="--rar:${CLUB_COLOR}" ${p.tier ? '' : 'aria-disabled="true"'}>
+            <span class="sk-pic" data-pic="${skin.id}"></span>
+            ${worn ? `<em class="sk-worn">${icon('check')}</em>` : ''}
+            <span class="sk-gives">${givesChips(skin, p.tier)}</span>
+            <small>${p.tier ? '' : icon('lock')} ${monthName(skin, false)}</small>
+          </button>`;
+        })
+        .join('')}</div></div>`;
+  }
+
+  /** The skin of the month at the top, for everyone to see: members have it, others can join the Surf Club for it. */
+  private drawMonth() {
+    const s = this.ctx.game.state;
+    const el = this.root.querySelector<HTMLElement>('[data-month]')!;
+    const skin = clubSkinOfMonth(Date.now());
+    if (!skin) {
+      el.innerHTML = '';
+      return;
+    }
+    const zone = ZONES.find((z) => z.id === skin.zone)!;
+    const have = (s.skins.pieces[skin.id] ?? 0) >= MAX_PIECES;
+    const worn = s.skins.worn[skin.zone] === skin.id;
+    el.innerHTML = `
+      <div class="sk-month ${have ? 'have' : ''}" style="--rar:${CLUB_COLOR}">
+        <div class="sk-month-pic"></div>
+        <div class="sk-month-info">
+          <small class="sk-month-tag">${icon('star')} Surf Club · ${monthName(skin)}</small>
+          <b>${skin.name}</b>
+          <small>${icon(zone.sport.icon)} ${zone.def.name}</small>
+          <span class="sk-gives">${givesChips(skin, have ? 3 : 0)}${have ? '' : `<em class="sk-boost">${icon('coin')}+${tierBoost(3) * 100}%</em>`}</span>
+        </div>
+        ${
+          have
+            ? `<button class="go sk-month-go ${worn ? 'auto' : ''}" data-month-wear>${worn ? icon('check') : 'Wear'}</button>`
+            : `<button class="go ready sk-month-go" data-month-join>${icon('star')} Join</button>`
+        }
+      </div>`;
+    el.querySelector('.sk-month-pic')!.appendChild(skinGear(skin, 96));
+    for (const part of el.querySelectorAll('.sk-month-pic, .sk-month-info')) part.addEventListener('click', () => this.showcase(skin));
+    el.querySelector('[data-month-join]')?.addEventListener('click', () => {
+      sound.tap();
+      this.ctx.openClub();
+    });
+    el.querySelector('[data-month-wear]')?.addEventListener('click', () => {
+      if (!worn && wearSkin(s, skin.id)) {
+        sound.tap();
+        this.ctx.game.save();
+        this.signature = '';
+        this.update();
+      }
+    });
   }
 
   private drawCollection() {
@@ -515,8 +650,8 @@ export class SkinScreen {
               const tierName = p.tier >= 1 ? TIERS[p.tier - 1].name.toLowerCase() : 'locked';
               return `<button class="sk-skin ${worn ? 'worn' : ''} ${tierName}" data-skin="${skin.id}" style="--rar:${RARITY_LOOK[skin.rarity].color}" ${p.tier ? '' : 'aria-disabled="true"'}>
                 <span class="sk-pic" data-pic="${skin.id}"></span>
-                ${p.tier >= 2 ? `<em class="sk-boost">+${tierBoost(p.tier) * 100}%</em>` : ''}
                 ${worn ? `<em class="sk-worn">${icon('check')}</em>` : ''}
+                <span class="sk-gives">${givesChips(skin, p.tier)}</span>
                 <i class="sk-bar"><u style="width:${pct}%"></u></i>
                 <small>${p.to === null ? icon('star') : `${p.pieces}/${p.to}`}</small>
               </button>`;
@@ -525,13 +660,18 @@ export class SkinScreen {
         </div>`,
         )
         .join('')}`,
-    ).join('');
+    ).join('') + this.clubRow();
     el.querySelectorAll<HTMLElement>('[data-pic]').forEach((holder) => {
-      const skin = SKINS.find((k) => k.id === holder.dataset.pic)!;
+      const skin = skinById(holder.dataset.pic!)!;
       holder.appendChild(puzzleCanvas(skin, skinProgress(s, skin.id).pieces, 60));
     });
     el.querySelectorAll<HTMLElement>('[data-skin]').forEach((b) =>
       b.addEventListener('click', () => {
+        // a Club skin opens its showcase (Wear is in there)
+        if (b.classList.contains('club')) {
+          this.showcase(skinById(b.dataset.skin!) as ClubSkinDef);
+          return;
+        }
         if (wearSkin(this.ctx.game.state, b.dataset.skin!)) {
           sound.tap();
           this.ctx.game.save();
@@ -541,6 +681,69 @@ export class SkinScreen {
       }),
     );
   }
+}
+
+/** The Surf Club's monthly skins as a row at the end of the collection: the months so far (a missed one dark with a lock). */
+const CLUB_COLOR = RARITY_LOOK.club.color;
+
+/** Testing: every month's Club skin shows (also the coming ones). Never in a store build. */
+function clubPreview(): boolean {
+  return (import.meta.env.DEV || import.meta.env.VITE_TEST_COINS === '1') && DEV_CLUB_PREVIEW;
+}
+
+function monthOfNow(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${d.getMonth()}`;
+}
+
+/** "November" for a Club skin's month. */
+function monthName(skin: ClubSkinDef, long = true): string {
+  const [y, m] = skin.month.split('-').map(Number);
+  return new Date(y, m - 1, 1).toLocaleString('en', long ? { month: 'long' } : { month: 'short', year: 'numeric' });
+}
+
+/** The bits falling over a showcase (leaves, snow, petals, clovers fall; sparks twinkle), at fixed places and times. */
+const bitUrls = new Map<string, string>();
+function bitUrl(kind: TrailKind, variant: number): string {
+  const key = `${kind}-${variant}`;
+  let url = bitUrls.get(key);
+  if (!url) {
+    const c = document.createElement('canvas');
+    c.width = c.height = 64;
+    const g = c.getContext('2d')!;
+    g.translate(32, 32);
+    g.scale(2.1, 2.1);
+    drawTrailBit(g, kind, variant);
+    url = c.toDataURL();
+    bitUrls.set(key, url);
+  }
+  return url;
+}
+function fallingBits(kind: TrailKind): string {
+  const n = kind === 'snow' ? 22 : 16;
+  return Array.from({ length: n }, (_, i) => {
+    const left = (i * 37 + 11) % 100;
+    const dur = 4.2 + ((i * 7) % 5) * 0.7;
+    const delay = -((i * 1.37) % dur);
+    const size = 16 + ((i * 5) % 4) * 6;
+    const top = (i * 53 + 7) % 92;
+    return `<img src="${bitUrl(kind, i % 3)}" alt="" style="left:${left}%;top:${kind === 'spark' ? `${top}%` : '-12%'};width:${size}px;height:${size}px;animation-duration:${dur}s;animation-delay:${delay}s">`;
+  }).join('');
+}
+
+/** A Club skin's poster (the shop's Surf Club header): the month's themed background with falling bits and light rays, the skin big in it. */
+export function clubPoster(skin: ClubSkinDef, px: number): HTMLElement {
+  const kind = trailOf(skin) ?? 'spark';
+  const el = document.createElement('div');
+  el.className = `club-poster theme-${kind}`;
+  el.innerHTML = `<div class="sk-show-fall">${fallingBits(kind)}</div><div class="sk-show-rays"></div><div class="club-poster-pic"></div>`;
+  el.querySelector('.club-poster-pic')!.appendChild(skinGear(skin, px));
+  return el;
+}
+
+/** What a skin gives as chips: its rarity's speed and, from Bronze, its income boost. */
+function givesChips(skin: SkinDef, tier: number): string {
+  return `${RARITY_SPEED[skin.rarity] > 1 ? `<em class="sk-spd">${speedChip(skin.rarity)}</em>` : ''}${tier >= 2 ? `<em class="sk-boost">${icon('coin')}+${tierBoost(tier) * 100}%</em>` : ''}`;
 }
 
 /** What the box shop needs from the game screen. */

@@ -1,12 +1,12 @@
 import Phaser from 'phaser';
 import type { GuestKind } from '../../config/sports';
 import type { SkinDef } from '../../config/skins';
-import { ATLAS, PIVOT, RES, skinBoardTexture, skinSpinTexture, skinTexture } from './atlas';
+import { ATLAS, PIVOT, RES, skinBoardTexture, skinSpinTexture, skinTexture, trailTexture } from './atlas';
 import { add, arms, head, len, lerp, mul, PAL, rot, shadowOffset, sub, TAU, v, type Outfit, type Pose, type V } from './geom';
 import { BOATS, K, KITE, WIND, type Boat, type Gear } from './models';
 import { rigPoint, type Look } from './sim';
 import { UPRIGHT } from '../upright';
-import { figureTips, hasSpinSkin, hidesWingWindow, isFigure, skinBoard, skinEdge } from './skinArt';
+import { figureTips, hasSpinSkin, hidesWindow, isFigure, skinBoard, skinEdge, trailOf, TRAIL_SIZE, type TrailKind } from './skinArt';
 
 export { shadowOffset };
 
@@ -122,6 +122,9 @@ export class GuestBody {
   private look!: Look;
   /** The skin the section wears, laid over the main gear (board, sail, kite or wing). */
   private skinImg?: Img;
+  /** A Club skin's touch: the bits it drops (leaves, snow, sparks, petals, clovers), each where it was let go. */
+  private trail: { im: Img; x: number; y: number; cycle: number }[] = [];
+  private trailKind: TrailKind | null = null;
   /** A skin's own board (the 1990 set), laid over the board. */
   private skinBoardImg?: Img;
   /** The skin's spinnaker (the offshore yachts). */
@@ -287,6 +290,10 @@ export class GuestBody {
     if (id === this.skinId) return;
     this.skinId = id;
     this.skinImg?.destroy();
+    for (const p of this.trail) p.im.destroy();
+    this.all = this.all.filter((im) => !this.trail.some((p) => p.im === im));
+    this.trail = [];
+    this.trailKind = null;
     this.skinBoardImg?.destroy();
     this.skinSpinImg?.destroy();
     this.all = this.all.filter((im) => im !== this.skinImg && im !== this.skinBoardImg && im !== this.skinSpinImg);
@@ -300,9 +307,10 @@ export class GuestBody {
       const p = PIVOT.get('kite')!;
       this.shKite.setTexture(ATLAS, 'kite').setOrigin(p.ox, p.oy);
     }
-    if (this.figure && this.shGear && this.o.kind === 'foiler') {
-      const p = PIVOT.get('wing')!;
-      this.shGear.setTexture(ATLAS, 'wing').setOrigin(p.ox, p.oy);
+    if (this.figure && this.shGear && (this.o.kind === 'foiler' || this.o.kind === 'windsurfer')) {
+      const f = this.o.kind === 'foiler' ? 'wing' : 'wsail';
+      const p = PIVOT.get(f)!;
+      this.shGear.setTexture(ATLAS, f).setOrigin(p.ox, p.oy);
     }
     if (this.figure && this.shBoard && this.boardFrame) {
       const p = PIVOT.get(this.boardFrame)!;
@@ -311,7 +319,7 @@ export class GuestBody {
     this.figure = false;
     this.figTips = null;
     this.boatSkin = false;
-    this.noWindow = !!skin && hidesWingWindow(skin);
+    this.noWindow = !!skin && hidesWindow(skin);
     if (!skin || !gear) return;
     const tex = skinTexture(this.scene, skin);
     if (isFigure(skin)) {
@@ -322,8 +330,8 @@ export class GuestBody {
       if (gear === this.kite && this.shKite) this.shKite.setTexture(tex.key).setOrigin(tex.ox, tex.oy);
       // an animal ridden instead of a board: the board's shadow takes its shape
       if (gear === this.board && this.shBoard) this.shBoard.setTexture(tex.key).setOrigin(tex.ox, tex.oy);
-      // a wing figure (a bat, a dog): the wing's shadow takes its shape
-      if (gear === this.wing && this.shGear) this.shGear.setTexture(tex.key).setOrigin(tex.ox, tex.oy);
+      // a wing figure (a bat, a dog) or the moon sail: the gear's shadow takes its shape
+      if ((gear === this.wing || gear === this.sail) && this.shGear) this.shGear.setTexture(tex.key).setOrigin(tex.ox, tex.oy);
     } else {
       // the gear's own colour would peek out along the edge: it takes the colour of the skin's edge
       this.gearTint = gear.tintTopLeft;
@@ -347,6 +355,19 @@ export class GuestBody {
         .setVisible(false);
       this.all.push(bi);
       this.skinBoardImg = bi;
+    }
+    const kind = trailOf(skin);
+    if (kind) {
+      // the bits fall from the sky (leaves, sparks, snow: just under the kite) or stay on the water behind the board
+      this.trailKind = kind;
+      const onWater = kind === 'petal' || kind === 'clover';
+      const N = kind === 'snow' ? 9 : 7;
+      for (let i = 0; i < N; i++) {
+        const im = this.scene.add.image(0, 0, trailTexture(this.scene, kind, i % 3)) as Img;
+        im.setDepth(onWater ? this.o.depth - 0.0005 : this.o.skyDepth - 0.0005).setVisible(false);
+        this.all.push(im);
+        this.trail.push({ im, x: 0, y: 0, cycle: -1 });
+      }
     }
     if (this.spin && hasSpinSkin(skin)) {
       const st = skinSpinTexture(this.scene, skin);
@@ -461,6 +482,89 @@ export class GuestBody {
   draw(L: Look, t: number, detail = 2) {
     this.drawParts(L, t, detail);
     this.syncSkin();
+    this.drawTrail(L, t);
+  }
+
+  /**
+   * A Club skin's trail: a few bits, each let go in turn at a fixed rhythm (nothing random) from the kite or the board,
+   * then moving on their own: leaves sway down from the phoenix to the water, sparks pop round the 2027 kite, snow
+   * drifts down round the Christmas tree, petals and clovers stay on the water behind the board and fade.
+   */
+  private drawTrail(L: Look, t: number) {
+    const kind = this.trailKind;
+    if (!kind || !this.trail.length) return;
+    const fromKite = kind === 'leaf' || kind === 'spark';
+    const src = fromKite ? this.kite : this.board;
+    const show = this.visible && this.detail >= 1 && !!src && (fromKite ? !!L.kite : !!this.board?.visible || !!this.skinImg?.visible);
+    if (!show || !src) {
+      for (const p of this.trail) p.im.setVisible(false);
+      return;
+    }
+    const N = this.trail.length;
+    const period = kind === 'spark' ? 1.6 : kind === 'leaf' ? 3.2 : kind === 'snow' ? 3 : 2.4;
+    const scale = fromKite ? (L.kite?.scale ?? 1) : L.scale;
+    const unit = this.k * scale;
+    const px = unit / RES;
+    const hash = (i: number, c: number, k: number) => {
+      let x = Math.imul((i + 1) * 0x9e3779b9 + c * 0x85ebca6b + k * 0xc2b2ae35, 0x27d4eb2f);
+      x ^= x >>> 15;
+      x = Math.imul(x, 0x165667b1);
+      x ^= x >>> 13;
+      return (x >>> 0) / 4294967296;
+    };
+    this.trail.forEach((p, i) => {
+      const ph = t / period + i / N;
+      const age = ph - Math.floor(ph);
+      const cycle = Math.floor(ph);
+      if (cycle !== p.cycle) {
+        // let go now, from a spot on the gear
+        p.cycle = cycle;
+        const ju = hash(i, cycle, 1) - 0.5;
+        const jv = hash(i, cycle, 2) - 0.5;
+        const spot = fromKite ? rot(v(ju * 190, jv * 50), src.rotation) : kind === 'snow' ? v(ju * 90, jv * 150) : rot(v(ju * 30, 60 + jv * 40), src.rotation);
+        p.x = src.x + spot.x * unit;
+        p.y = src.y + spot.y * unit;
+      }
+      let x = p.x;
+      let y = p.y;
+      let alpha = 1;
+      let size = 1;
+      let r = 0;
+      if (kind === 'leaf') {
+        // down to the water under the kite (where its shadow is), swaying and turning
+        const alt = L.kite?.alt ?? 1;
+        const drop = shadowOffset(18 + 20 * alt, 64 * alt, this.k);
+        const sway = Math.sin(age * TAU * 1.4 + i) * 14 * unit;
+        x += drop.x * age + sway;
+        y += drop.y * age;
+        r = age * 5 + i;
+        alpha = Math.min(1, age / 0.12) * Math.min(1, (1 - age) / 0.3);
+        size = 1.6 - 0.4 * age;
+      } else if (kind === 'spark') {
+        // a pop: grows, turns a little, fades
+        size = 0.5 + 1.3 * Math.min(1, age / 0.4);
+        alpha = age < 0.5 ? 1 : Math.max(0, 1 - (age - 0.5) / 0.5);
+        r = age * 1.5;
+      } else if (kind === 'snow') {
+        const drop = shadowOffset(0, 50, this.k);
+        x += drop.x * age + Math.sin(age * TAU + i) * 6 * unit;
+        y += drop.y * age;
+        alpha = Math.sin(age * Math.PI) * 0.95;
+        size = 0.9 + 0.4 * hash(i, p.cycle, 3);
+        r = age * 2 + i;
+      } else {
+        // petals and clovers: left on the water, turning slowly, fading
+        alpha = Math.min(1, age / 0.08) * (1 - age);
+        r = age * 1.2 + i * 0.9;
+        size = 1.05;
+      }
+      p.im
+        .setPosition(x, y)
+        .setRotation(r)
+        .setScale(px * size * (TRAIL_SIZE / 28))
+        .setAlpha(alpha * L.alpha)
+        .setVisible(alpha > 0.02);
+    });
   }
 
   private drawParts(L: Look, t: number, detail: number) {
@@ -656,8 +760,9 @@ export class GuestBody {
     const al = L.rigAlpha;
     this.putShadow(this.shGear, pivot, r, sx, sy, off([28, 38]), al);
     this.put(this.sail, pivot, r, sx, sy, al);
-    this.put(this.sailWin, pivot, r, sx, sy, al);
-    this.put(this.sailHi, pivot, r, sx, sy, al * (1 - L.luff * 0.6));
+    this.put(this.sailWin, pivot, r, sx, sy, this.noWindow ? 0 : al);
+    // the moon sail has no window and no sail seams
+    this.put(this.sailHi, pivot, r, sx, sy, this.figure ? 0 : al * (1 - L.luff * 0.6));
     this.put(this.boom, pivot, r, side * size, sy, al);
     if (this.sailNum) {
       // the number sits on its spot on the sail but always stands upright on screen, so it reads right on either tack

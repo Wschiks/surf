@@ -466,22 +466,142 @@ function rosette(c: Ctx, x: number, y: number, r: number, rot: number, seed: num
 
 /** Skins that take the place of the gear: a figure is drawn instead of a pattern on the gear's shape. */
 export function isFigure(skin: SkinDef): boolean {
-  return skin.pattern === 'balloons' || skin.pattern === 'gull' || skin.pattern === 'falcon' || skin.pattern === 'wingDragon' || skin.pattern === 'cherry' || isRide(skin) || isWingFigure(skin);
+  return skin.pattern === 'balloons' || skin.pattern === 'gull' || skin.pattern === 'falcon' || skin.pattern === 'wingDragon' || skin.pattern === 'cherry' || skin.pattern === 'moon' || skin.pattern === 'phoenix' || isRide(skin) || isWingFigure(skin);
 }
 
 /** The animals a surfer rides instead of a board (seen from above, snout to the front): their fins and tail stick out past the board. */
 export function isRide(skin: SkinDef): boolean {
-  return ['sharkRide', 'orca', 'dolphin', 'swordfish', 'carrot', 'rocket', 'mouse'].includes(skin.pattern);
+  return ['sharkRide', 'orca', 'dolphin', 'swordfish', 'carrot', 'rocket', 'mouse', 'xmasTree'].includes(skin.pattern);
 }
 
-/** Wing skins that hide the wing's see-through window (the figures, and Matchday so its club logo shows whole). */
-export function hidesWingWindow(skin: SkinDef): boolean {
-  return isWingFigure(skin) || skin.pattern === 'matchday';
+/** Skins that hide the gear's see-through window (the wing figures, Matchday so its club logo shows whole, the moon sail). */
+export function hidesWindow(skin: SkinDef): boolean {
+  return isWingFigure(skin) || skin.pattern === 'matchday' || skin.pattern === 'moon';
 }
 
 /** Wing skins drawn as a figure instead of a pattern on the wing (the crocodile's spikes, the bat, the dog, the money). */
 export function isWingFigure(skin: SkinDef): boolean {
   return ['crocodile', 'batWing', 'goodBoy', 'jackpot'].includes(skin.pattern);
+}
+
+/**
+ * The Moonlight sail: the crescent moon after a telescope photo. Its horns sit where the sail's corners are (the mast foot
+ * at 0,0 and the clew), the lit edge bulges out like a half circle and the terminator is the shallow inner curve. Grey
+ * highlands, darker smooth seas, a bright lit edge and craters everywhere, with sharp shadows near the terminator where
+ * the sun is low.
+ */
+function drawMoonSail(c: Ctx, skin: SkinDef) {
+  const [surf, lit, dark] = skin.colors;
+  const seed = 0x3007;
+  // a frame along the chord between the horns: x along the chord, y out toward the lit edge
+  const ax = 143;
+  const ay = 202;
+  const L = Math.hypot(ax, ay) / 2;
+  const SO = L * 0.7; // the lit edge (a half ellipse: the moon seen a little from the side, about the size of the sail)
+  const SI = L * 0.16; // the terminator
+  c.save();
+  c.translate(ax / 2, ay / 2);
+  c.rotate(Math.atan2(ay, ax));
+  c.scale(1, -1);
+  const moon = new Path2D();
+  moon.ellipse(0, 0, L, SO, 0, 0, Math.PI);
+  moon.ellipse(0, 0, L, SI, 0, Math.PI, 0, true);
+  moon.closePath();
+  c.save();
+  c.clip(moon);
+  // the lit edge is bright, the surface darkens toward the terminator
+  const g = c.createLinearGradient(0, SO, 0, SI * 0.4);
+  g.addColorStop(0, lit);
+  g.addColorStop(0.55, surf);
+  g.addColorStop(1, darker(surf, 0.28));
+  c.fillStyle = g;
+  c.fillRect(-L - 4, -4, 2 * L + 8, SO + 8);
+  for (let k = 0; k < 14; k++) {
+    const sk = SI + (SO - SI) * 0.42 * (1 - k / 14);
+    c.fillStyle = 'rgba(30,32,36,0.045)';
+    c.beginPath();
+    c.ellipse(0, 0, L * (1 - k * 0.004), sk, 0, 0, Math.PI);
+    c.fill();
+  }
+  /** A point on the moon: t -1..1 along the chord, f 0 (terminator) .. 1 (lit edge) across. */
+  const at = (t: number, f: number) => {
+    const r = Math.sqrt(Math.max(0, 1 - t * t));
+    return { x: t * L, y: (SI + (SO - SI) * f) * r, w: (SO - SI) * r };
+  };
+  // the dark seas: smooth soft patches in the middle and lower half, toward the lit side
+  const seas: [number, number, number][] = [
+    [0.1, 0.6, 0.26],
+    [0.36, 0.58, 0.2],
+    [-0.14, 0.7, 0.16],
+    [0.58, 0.46, 0.13],
+    [-0.42, 0.62, 0.1],
+  ];
+  for (const [t, f, r] of seas) {
+    const p = at(t, f);
+    const R = r * L;
+    for (let i = 0; i < 6; i++) {
+      const qx = p.x + (h(seed, i + t * 100) - 0.5) * R * 0.7;
+      const qy = p.y + (h(seed, i + 40 + f * 100) - 0.5) * R * 0.45;
+      const rg = c.createRadialGradient(qx, qy, 0, qx, qy, R * 0.85);
+      rg.addColorStop(0, `${dark}40`);
+      rg.addColorStop(0.55, `${dark}30`);
+      rg.addColorStop(1, `${dark}00`);
+      c.fillStyle = rg;
+      c.fillRect(qx - R, qy - R, 2 * R, 2 * R);
+    }
+  }
+  // craters: the sun shines from the lit edge, so each one has a dark wall on that side and a bright rim on the other.
+  // Near the terminator they are many and sharp, near the lit edge faint and squashed (seen from the side).
+  for (let i = 0; i < 260; i++) {
+    const t = (h(seed, i + 200) * 2 - 1) * 0.95;
+    const f = Math.pow(h(seed, i + 500), 2.2) * 0.92 + 0.02;
+    const p = at(t, f);
+    const big = i % 26 === 0;
+    const r = Math.min(p.w * 0.2, big ? 3.6 + 2.4 * h(seed, i + 800) : 0.7 + 1.5 * Math.pow(h(seed, i + 800), 2));
+    if (r < 0.6) continue;
+    const squash = 1 - 0.55 * f;
+    const strength = 1 - 0.8 * f;
+    c.save();
+    c.translate(p.x, p.y);
+    // the floor, a little darker
+    c.fillStyle = `rgba(40,42,46,${0.18 * strength})`;
+    c.beginPath();
+    c.ellipse(0, 0, r, r * squash, 0, 0, Math.PI * 2);
+    c.fill();
+    // the shadow inside, against the wall toward the sun
+    c.fillStyle = `rgba(20,22,26,${0.55 * strength})`;
+    c.beginPath();
+    c.ellipse(0, r * squash * 0.18, r * 0.92, r * squash * 0.78, 0, 0, Math.PI);
+    c.ellipse(0, r * squash * 0.18, r * 0.92, r * squash * 0.3, 0, Math.PI, 0, true);
+    c.fill();
+    // the lit rim on the far side
+    c.strokeStyle = `rgba(250,250,252,${0.75 * strength})`;
+    c.lineWidth = Math.max(0.6, r * 0.28);
+    c.beginPath();
+    c.ellipse(0, 0, r, r * squash, 0, Math.PI * 1.08, Math.PI * 1.92);
+    c.stroke();
+    if (big) {
+      // a bright little peak in the middle
+      c.fillStyle = `rgba(250,250,252,${0.6 * strength})`;
+      c.beginPath();
+      c.arc(0, -r * 0.05, r * 0.16, 0, Math.PI * 2);
+      c.fill();
+    }
+    c.restore();
+  }
+  // a soft fade into the dark along the terminator, and the bright lit edge
+  c.strokeStyle = 'rgba(20,22,26,0.28)';
+  c.lineWidth = 5;
+  c.beginPath();
+  c.ellipse(0, 0, L, SI, 0, 0, Math.PI);
+  c.stroke();
+  c.strokeStyle = 'rgba(255,255,255,0.85)';
+  c.lineWidth = 2.6;
+  c.beginPath();
+  c.ellipse(0, 0, L, SO, 0, 0, Math.PI);
+  c.stroke();
+  c.restore();
+  c.restore();
 }
 
 /** How far an animal's tail reaches past the end of the board (spec px). */
@@ -491,6 +611,9 @@ const RIDE_TAIL = 64;
 export function skinBounds(skin: SkinDef, shape: SkinShape): { x0: number; y0: number; x1: number; y1: number } {
   if (isRide(skin)) return { x0: shape.x0 - 48, y0: shape.y0 - 4, x1: shape.x1 + 48, y1: shape.y1 + RIDE_TAIL + 6 };
   if (isWingFigure(skin)) return { x0: shape.x0 - 40, y0: shape.y0 - 50, x1: shape.x1 + 40, y1: shape.y1 + 44 };
+  if (skin.pattern === 'moon') return { x0: -6, y0: -16, x1: 180, y1: 208 };
+  // the phoenix's raised wings, flame trails and long tail reach past the kite
+  if (skin.pattern === 'phoenix') return { x0: -160, y0: -134, x1: 160, y1: 86 };
   return shape;
 }
 
@@ -1695,6 +1818,21 @@ function drawFigure(c: Ctx, skin: SkinDef, shape: SkinShape) {
     c.restore();
     return;
   }
+  if (skin.pattern === 'moon') {
+    drawMoonSail(c, skin);
+    c.restore();
+    return;
+  }
+  if (skin.pattern === 'phoenix') {
+    drawPhoenix(c, skin);
+    c.restore();
+    return;
+  }
+  if (skin.pattern === 'xmasTree') {
+    drawXmasTree(c, skin, shape);
+    c.restore();
+    return;
+  }
   if (skin.pattern === 'cherry') {
     // two glossy cherries away from the rider, their stems meeting where the lines are tied, a leaf on top
     cherryPair(c, 0, 40, 1);
@@ -1954,11 +2092,103 @@ const BOAT_BOARDS: Record<string, SkinBoard> = {
 /** The board or boat a skin brings for the gear frame a guest has (null: nothing for that frame). */
 /** The foil school's big board (Matchday's football pitch). */
 const FOIL_BOARD: SkinBoard = { frame: 'b-foil-big', path: GEAR_PATHS.foilBig, x0: -56, y0: -122, x1: 56, y1: 122 };
+/** The freestyle windsurf board (the Moonlight galaxy board). */
+const FREE_BOARD: SkinBoard = { frame: 'b-wind-free', path: GEAR_PATHS.windFree, x0: -52, y0: -120, x1: 52, y1: 122 };
 export function skinBoard(skin: SkinDef, frame: string): SkinBoard | null {
   if (!skin.board) return null;
   if (skin.sport === 'foil') return frame === FOIL_BOARD.frame ? FOIL_BOARD : null;
   if (skin.sport === 'sailing') return BOAT_BOARDS[frame] ?? null;
-  return frame === DAD_BOARD.frame ? DAD_BOARD : null;
+  if (skin.pattern === 'dad90') return frame === DAD_BOARD.frame ? DAD_BOARD : null;
+  if (skin.pattern === 'moon') return frame === FREE_BOARD.frame ? FREE_BOARD : null;
+  return windBoard(skin, frame);
+}
+
+/** The Moonlight board: the Milky Way at night, a dark sky full of white stars with the bright, dusty band of the galaxy across it. */
+function drawGalaxyBoard(c: Ctx) {
+  const outline = new Path2D(FREE_BOARD.path);
+  const { x0, y0, x1, y1 } = FREE_BOARD;
+  const W = x1 - x0;
+  const H = y1 - y0;
+  const seed = 0x6a1a;
+  c.save();
+  c.clip(outline);
+  c.fillStyle = '#05060c';
+  c.fillRect(x0 - 4, y0 - 4, W + 8, H + 8);
+  // the galaxy band, slanting across the board from the nose on the right to the tail on the left
+  const band = (t: number) => ({ x: 34 - 64 * t + 9 * Math.sin(t * 7), y: y0 - 6 + (H + 12) * t });
+  for (let i = 0; i < 60; i++) {
+    const t = i / 59;
+    const p = band(t);
+    const r = 22 + 10 * h(seed, i);
+    const g = c.createRadialGradient(p.x, p.y, 0, p.x, p.y, r);
+    g.addColorStop(0, 'rgba(196,200,224,0.16)');
+    g.addColorStop(1, 'rgba(196,200,224,0)');
+    c.fillStyle = g;
+    c.fillRect(p.x - r, p.y - r, r * 2, r * 2);
+  }
+  // the bright core low on the board, a little warmer
+  const core = band(0.78);
+  const cg = c.createRadialGradient(core.x, core.y, 0, core.x, core.y, 34);
+  cg.addColorStop(0, 'rgba(236,226,214,0.38)');
+  cg.addColorStop(1, 'rgba(236,226,214,0)');
+  c.fillStyle = cg;
+  c.fillRect(core.x - 34, core.y - 34, 68, 68);
+  // the dark dust lane: soft, cloudy dark patches along one side of the band's middle
+  for (let i = 0; i < 46; i++) {
+    const t = 0.12 + (i / 45) * 0.82;
+    const p = band(t);
+    const x = p.x + 3 + 5 * (h(seed, i + 90) - 0.5);
+    const r = 4 + 5 * h(seed, i + 70);
+    const g = c.createRadialGradient(x, p.y, 0, x, p.y, r);
+    g.addColorStop(0, 'rgba(5,6,12,0.32)');
+    g.addColorStop(1, 'rgba(5,6,12,0)');
+    c.fillStyle = g;
+    c.fillRect(x - r, p.y - r, r * 2, r * 2);
+  }
+  // a crowd of faint stars in the band
+  c.fillStyle = 'rgba(255,255,255,0.75)';
+  for (let i = 0; i < 220; i++) {
+    const p = band(h(seed, i + 200));
+    const off = (h(seed, i + 500) + h(seed, i + 800) - 1) * 24;
+    c.beginPath();
+    c.arc(p.x + off, p.y + (h(seed, i + 1100) - 0.5) * 8, 0.45 + 0.5 * h(seed, i + 1400), 0, Math.PI * 2);
+    c.fill();
+  }
+  // stars all over the sky, some big and bright with a soft glow
+  for (let i = 0; i < 150; i++) {
+    const x = x0 + h(seed, i + 2000) * W;
+    const y = y0 + h(seed, i + 2300) * H;
+    const big = i % 9 === 0;
+    const r = big ? 1.9 + 0.6 * h(seed, i + 2600) : 0.6 + 0.8 * h(seed, i + 2600);
+    if (big) {
+      const g = c.createRadialGradient(x, y, 0, x, y, r * 3.2);
+      g.addColorStop(0, 'rgba(255,255,255,0.55)');
+      g.addColorStop(1, 'rgba(255,255,255,0)');
+      c.fillStyle = g;
+      c.fillRect(x - r * 3.2, y - r * 3.2, r * 6.4, r * 6.4);
+    }
+    c.fillStyle = '#ffffff';
+    c.beginPath();
+    c.arc(x, y, r, 0, Math.PI * 2);
+    c.fill();
+  }
+  // a dark deck pad (the stars show faintly through it) and the mast foot
+  c.fillStyle = 'rgba(0,0,0,0.45)';
+  c.beginPath();
+  c.roundRect(-30, 10, 60, 100, 18);
+  c.fill();
+  c.restore();
+  c.strokeStyle = 'rgba(160,170,210,0.45)';
+  c.lineWidth = 1.5;
+  c.stroke(outline);
+  c.fillStyle = '#2b2f33';
+  c.beginPath();
+  c.arc(0, -16, 6, 0, Math.PI * 2);
+  c.fill();
+  c.fillStyle = '#5b6168';
+  c.beginPath();
+  c.arc(0, -16, 2.5, 0, Math.PI * 2);
+  c.fill();
 }
 
 /** Draw a skin's board design (the author's dad's 1990 wave board): sun-faded cream, a blue logo at the nose, the mast track, black and white striped deck pads. */
@@ -1972,6 +2202,14 @@ export function drawSkinBoard(c: Ctx, skin: SkinDef, frame: string, num?: number
   if (skin.sport === 'sailing') {
     if (frame === 'b-opti') drawSkinBoat(c, skin);
     else drawBigBoat(c, skin, frame, num);
+    return;
+  }
+  if (skin.pattern === 'moon') {
+    drawGalaxyBoard(c);
+    return;
+  }
+  if (skin.pattern !== 'dad90') {
+    drawWindBoard(c, skin, frame);
     return;
   }
   const outline = new Path2D(DAD_BOARD.path);
@@ -5509,6 +5747,304 @@ export function drawSkin(c: Ctx, skin: SkinDef, shape: SkinShape) {
       }
       break;
     }
+    case 'windSun': {
+      // a plain sunny yellow sail
+      const sp = spineOf(shape);
+      fill(a);
+      spineGlow(c, sp, '#fff3a0', 0.55);
+      railShade(c, shape, '#e0a000', 0.45);
+      break;
+    }
+    case 'windCamo': {
+      // a plain leaf-green sail (the camo is on the board)
+      const sp = spineOf(shape);
+      fill(a);
+      spineGlow(c, sp, '#8fd46e', 0.4);
+      railShade(c, shape, '#2f7a2a', 0.5);
+      break;
+    }
+    case 'jungle': {
+      // a deep jungle-green sail, full of the dark shapes of leaves
+      fill(a);
+      for (let i = 0; i < 60; i++) {
+        const col = i % 3 === 0 ? b : d;
+        jungleLeaf(c, x0 + h(seed, i) * w, y0 + h(seed, i + 300) * hh, (12 + 12 * h(seed, i + 600)) * s, h(seed, i + 900) * 6.3, col, 0.55);
+      }
+      railShade(c, shape, d, 0.6);
+      break;
+    }
+    case 'tigerRace': {
+      // black with slanted pairs of red and orange stripes
+      fill(a);
+      tigerBands(c, (x0 + x1) / 2, (y0 + y1) / 2, s, b, d);
+      break;
+    }
+    case 'checkerWind': {
+      // a black and white chequered flag
+      const q = 14 * s;
+      for (let y = y0 - q; y < y1 + q; y += q)
+        for (let x = x0 - q; x < x1 + q; x += q) {
+          c.fillStyle = Math.round((x - x0) / q + (y - y0) / q) % 2 ? b : a;
+          c.fillRect(x, y, q + 0.5, q + 0.5);
+        }
+      break;
+    }
+    case 'driftwood': {
+      // a sail of leaves: a mass of small leaves in many greens, a brown branch with its twigs across it
+      const sp = spineOf(shape);
+      fill(b);
+      const greens = ['#3f8a2a', '#6cbf4a', '#2f6e22', '#58a83c', '#7fcf5a'];
+      for (let i = 0; i < 260; i++) {
+        const x = x0 + h(seed, i) * w;
+        const y = y0 + h(seed, i + 400) * hh;
+        jungleLeaf(c, x, y, (7 + 5 * h(seed, i + 800)) * s, h(seed, i + 1200) * 6.3, greens[i % greens.length], 1);
+      }
+      railShade(c, shape, '#24561a', 0.45);
+      branch(c, sp, d, s);
+      break;
+    }
+    case 'polka': {
+      // white with yellow and blue polka dots
+      const sp = spineOf(shape);
+      fill(a);
+      railShade(c, shape, '#c9d2da', 0.3);
+      for (const [i, p] of scatter(sp, seed, 500, () => 4.2 * s, 2.3).entries()) {
+        c.fillStyle = h(seed, i + 77) > 0.5 ? b : d;
+        c.beginPath();
+        c.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+        c.fill();
+      }
+      break;
+    }
+    case 'hearts': {
+      // a playing card: white with red hearts (some upside down, like the pips), the 8 and a heart in two corners
+      const sp = spineOf(shape);
+      fill(a);
+      railShade(c, shape, '#d6d9de', 0.3);
+      c.fillStyle = b;
+      for (const [i, p] of scatter(sp, seed, 400, () => 7 * s, 2.1).entries()) heart(c, p.x, p.y, p.r, h(seed, i + 55) > 0.5 ? Math.PI : 0);
+      for (const [u, flip] of [
+        [0.1, 0],
+        [0.88, Math.PI],
+      ] as const) {
+        const q = beside(sp, u, 0);
+        cardIndex(c, q.x, q.y, 9 * s, flip, b);
+      }
+      break;
+    }
+    case 'fruit': {
+      // green, full of fruit: oranges, cherries, bananas, grapes and strawberries
+      const sp = spineOf(shape);
+      fill(a);
+      spineGlow(c, sp, '#5fbf55', 0.4);
+      railShade(c, shape, d, 0.45);
+      for (const [i, p] of scatter(sp, seed, 500, () => 8 * s, 1.55).entries()) fruitIcon(c, i % 5, p.x, p.y, p.r, (h(seed, i + 31) - 0.5) * 1.6);
+      break;
+    }
+    case 'bigFish': {
+      // a blue fish: scales all over, its tail at the top of the sail and its head with the eye down at the clew
+      const sp = spineOf(shape);
+      fill(a);
+      railShade(c, shape, d, 0.55);
+      fishScales(c, sp, 0.22, 0.66, b, s);
+      // the tail fin
+      const t0 = beside(sp, 0.24, -1.4);
+      const t1 = beside(sp, 0.24, 1.4);
+      const tail = new Path2D();
+      tail.moveTo(t0.x, t0.y);
+      tail.lineTo(t1.x, t1.y);
+      const tt = beside(sp, 0.0, 1.6);
+      const tn = beside(sp, 0.12, 0);
+      const tb = beside(sp, 0.0, -1.6);
+      tail.lineTo(tt.x, tt.y);
+      tail.lineTo(tn.x, tn.y);
+      tail.lineTo(tb.x, tb.y);
+      tail.closePath();
+      c.fillStyle = d;
+      c.fill(tail);
+      c.strokeStyle = 'rgba(160,200,245,0.6)';
+      c.lineWidth = 1.2 * s;
+      for (let k = -4; k <= 4; k++) {
+        const p = beside(sp, 0.24, k * 0.3);
+        const q = beside(sp, 0.04, k * 0.42);
+        c.beginPath();
+        c.moveTo(p.x, p.y);
+        c.lineTo(q.x, q.y);
+        c.stroke();
+      }
+      // the gill and the eye at the clew
+      c.strokeStyle = d;
+      c.lineWidth = 2 * s;
+      c.stroke(gillArc(sp, 0.66, 1));
+      const e = beside(sp, 0.76, 0);
+      fishEye(c, e.x, e.y, e.half * 0.5);
+      // the mouth near the clew
+      c.strokeStyle = d;
+      c.lineWidth = 1.6 * s;
+      c.stroke(lineU(sp, 0.86, 0.93, 0.25));
+      break;
+    }
+    case 'kite2027': {
+      // January: a night-blue kite full of fireworks, gold tips, and 2027 in big gold numbers along it
+      const sp = spineOf(shape);
+      const g = c.createLinearGradient(0, y0, 0, y1);
+      g.addColorStop(0, d);
+      g.addColorStop(1, a);
+      c.fillStyle = g;
+      c.fillRect(x0 - 10, y0 - 10, w + 20, hh + 20);
+      const cols = ['#ff5a5a', '#ffd23f', '#5be08f', '#5ab8ff', '#ff7ab8', '#ffffff'];
+      for (let i = 0; i < 9; i++) {
+        const q = beside(sp, 0.08 + i * 0.105, (h(seed, i + 10) - 0.5) * 1.2);
+        fireworkBurst(c, q.x, q.y, (9 + 7 * h(seed, i + 20)) * s, cols[i % cols.length]);
+      }
+      for (let i = 0; i < 40; i++) {
+        c.fillStyle = 'rgba(255,255,255,0.8)';
+        c.beginPath();
+        c.arc(x0 + h(seed, i + 100) * w, y0 + h(seed, i + 200) * hh, 0.8 * s, 0, Math.PI * 2);
+        c.fill();
+      }
+      // gold tips at both ends
+      c.fillStyle = b;
+      for (const [u0, u1] of [
+        [-0.1, 0.09],
+        [0.91, 1.1],
+      ]) {
+        const p = new Path2D();
+        const p1 = beside(sp, u0, -2.5);
+        const p2 = beside(sp, u1, -2.5);
+        const p3 = beside(sp, u1, 2.5);
+        const p4 = beside(sp, u0, 2.5);
+        p.moveTo(p1.x, p1.y);
+        p.lineTo(p2.x, p2.y);
+        p.lineTo(p3.x, p3.y);
+        p.lineTo(p4.x, p4.y);
+        p.closePath();
+        c.fill(p);
+      }
+      // 2027 along the kite, upright on its curve
+      const digits = '2027';
+      for (let i = 0; i < 4; i++) {
+        const q = beside(sp, 0.32 + i * 0.12, 0.05);
+        const size = q.half * 1.7;
+        c.save();
+        c.translate(q.x, q.y);
+        c.rotate(q.ang);
+        c.font = `900 ${size}px Arial, sans-serif`;
+        c.textAlign = 'center';
+        c.textBaseline = 'middle';
+        c.lineJoin = 'round';
+        c.strokeStyle = '#3a2406';
+        c.lineWidth = size * 0.16;
+        c.strokeText(digits[i], 0, 0);
+        const tg = c.createLinearGradient(0, -size / 2, 0, size / 2);
+        tg.addColorStop(0, '#fff1a8');
+        tg.addColorStop(0.5, b);
+        tg.addColorStop(1, '#d08a10');
+        c.fillStyle = tg;
+        c.fillText(digits[i], 0, 0);
+        c.restore();
+      }
+      // a gold rim
+      c.strokeStyle = b;
+      c.lineWidth = 6 * s;
+      c.stroke(outline);
+      break;
+    }
+    case 'rose': {
+      // February: a round board with a black rim, a gold ring and a big red rose with leaves
+      fill(a);
+      const R = Math.min(w, hh) / 2;
+      c.fillStyle = '#5a0c12';
+      c.beginPath();
+      c.arc(0, 0, R * 0.78, 0, Math.PI * 2);
+      c.fill();
+      // leaves peeking out between the petals
+      for (let k = 0; k < 4; k++) {
+        const ang = Math.PI / 4 + (k * Math.PI) / 2;
+        jungleLeaf(c, Math.cos(ang) * R * 0.42, Math.sin(ang) * R * 0.42, R * 0.34, ang, '#4f9a34', 1);
+      }
+      // the rose: rings of round, cupped petals (a shadow on the inner side, a light lip outside), a swirl in the middle
+      const rings: [number, number, number, string, number][] = [
+        [0.5, 0.3, 5, '#b3121c', 0],
+        [0.32, 0.22, 5, '#d0202a', 0.63],
+        [0.17, 0.15, 4, '#e33a35', 0.2],
+      ];
+      for (const [rc, lobe, n, col, off] of rings)
+        for (let k = 0; k < n; k++) {
+          const ang = off + (k / n) * Math.PI * 2;
+          const px = Math.cos(ang) * R * rc;
+          const py = Math.sin(ang) * R * rc;
+          const L = R * lobe;
+          const petal = new Path2D();
+          petal.arc(px, py, L, 0, Math.PI * 2);
+          c.fillStyle = col;
+          c.fill(petal);
+          c.save();
+          c.clip(petal);
+          // the shadow where it curls in toward the middle
+          c.strokeStyle = 'rgba(70,0,8,0.5)';
+          c.lineWidth = L * 0.55;
+          c.beginPath();
+          c.arc(px - Math.cos(ang) * L * 0.25, py - Math.sin(ang) * L * 0.25, L * 0.95, ang + Math.PI - 1.1, ang + Math.PI + 1.1);
+          c.stroke();
+          // a light lip on the outer edge
+          c.strokeStyle = 'rgba(255,140,120,0.6)';
+          c.lineWidth = L * 0.16;
+          c.beginPath();
+          c.arc(px, py, L * 0.92, ang - 1, ang + 1);
+          c.stroke();
+          c.restore();
+          c.strokeStyle = 'rgba(70,0,8,0.8)';
+          c.lineWidth = 0.9;
+          c.stroke(petal);
+        }
+      // the tight bud in the middle, a swirl
+      c.fillStyle = '#9c0e18';
+      c.beginPath();
+      c.arc(0, 0, R * 0.12, 0, Math.PI * 2);
+      c.fill();
+      c.strokeStyle = '#ff7a64';
+      c.lineWidth = 1.1;
+      c.beginPath();
+      for (let k = 0; k <= 30; k++) {
+        const t = k / 30;
+        const ang = t * Math.PI * 3.2;
+        const rr = R * 0.11 * t;
+        if (k === 0) c.moveTo(0, 0);
+        else c.lineTo(Math.cos(ang) * rr, Math.sin(ang) * rr);
+      }
+      c.stroke();
+      // the gold ring, and little gold leaves on the black rim
+      c.strokeStyle = d;
+      c.lineWidth = 2.2;
+      c.beginPath();
+      c.arc(0, 0, R * 0.8, 0, Math.PI * 2);
+      c.stroke();
+      for (let k = 0; k < 4; k++) {
+        const ang = (k * Math.PI) / 2;
+        const x = Math.cos(ang) * R * 0.9;
+        const y = Math.sin(ang) * R * 0.9;
+        jungleLeaf(c, x, y, R * 0.12, ang + Math.PI / 2, d, 1);
+        jungleLeaf(c, x, y, R * 0.12, ang - Math.PI / 2, d, 1);
+      }
+      break;
+    }
+    case 'stPatrick': {
+      // March: a rainbow sail with sparkles
+      fill('#ffffff');
+      const bands = ['#e53935', '#fb8c00', '#fdd835', '#43a047', '#1e88e5', '#8e24aa'];
+      c.save();
+      c.translate((x0 + x1) / 2, (y0 + y1) / 2);
+      c.rotate(-0.95);
+      const bw = 13 * s;
+      for (let k = -9; k < 9; k++) {
+        c.fillStyle = bands[((k % 6) + 6) % 6];
+        c.fillRect(-400, k * bw, 800, bw + 0.5);
+      }
+      c.restore();
+      for (let i = 0; i < 14; i++) sparkle(c, x0 + h(seed, i + 300) * w, y0 + h(seed, i + 400) * hh, (2.5 + 2.5 * h(seed, i + 500)) * s, '#ffffff');
+      break;
+    }
     case 'dad90': {
       // the 1990 sail seen from above, mast (u 0) to clew (u 1): magenta luff, a blue stripe, big orange panels, a clear window,
       // a lime leech strip and a red-orange clew, white battens
@@ -5593,6 +6129,1414 @@ export function drawSkin(c: Ctx, skin: SkinDef, shape: SkinShape) {
     c.strokeStyle = darker(a, 0.35);
     c.lineWidth = 2.5 * s;
     c.stroke(outline);
+  }
+  c.restore();
+}
+
+// ---- the windsurf designs by the author's friend
+
+/** A leaf (a pointed oval) from (x, y) along rot, len long. */
+function jungleLeaf(c: Ctx, x: number, y: number, len: number, rot: number, col: string, alpha: number) {
+  c.save();
+  c.translate(x, y);
+  c.rotate(rot);
+  c.globalAlpha = alpha;
+  c.fillStyle = col;
+  c.beginPath();
+  c.moveTo(0, 0);
+  c.quadraticCurveTo(len * 0.5, -len * 0.32, len, 0);
+  c.quadraticCurveTo(len * 0.5, len * 0.32, 0, 0);
+  c.fill();
+  c.restore();
+}
+
+/** Slanted pairs of stripes (red, then orange) round (cx, cy). */
+function tigerBands(c: Ctx, cx: number, cy: number, s: number, orange: string, red: string) {
+  c.save();
+  c.translate(cx, cy);
+  c.rotate(-0.75);
+  const P = 40 * s;
+  for (let k = -14; k < 14; k++) {
+    const y = k * P;
+    c.fillStyle = red;
+    c.beginPath();
+    c.moveTo(-500, y);
+    c.lineTo(500, y + 4 * s);
+    c.lineTo(500, y + 15 * s);
+    c.lineTo(-500, y + 10 * s);
+    c.fill();
+    c.fillStyle = orange;
+    c.beginPath();
+    c.moveTo(-500, y + 10 * s);
+    c.lineTo(500, y + 15 * s);
+    c.lineTo(500, y + 25 * s);
+    c.lineTo(-500, y + 19 * s);
+    c.fill();
+  }
+  c.restore();
+}
+
+/** A brown branch along the gear with twigs off both sides (the leaf sail). */
+function branch(c: Ctx, sp: Spine, col: string, s: number) {
+  c.save();
+  c.strokeStyle = col;
+  c.lineCap = 'round';
+  c.lineJoin = 'round';
+  const at = (u: number) => beside(sp, u, 0.12 * Math.sin(u * 9));
+  c.lineWidth = 3.6 * s;
+  c.beginPath();
+  for (let i = 0; i <= 40; i++) {
+    const q = at(0.04 + (0.92 * i) / 40);
+    if (i === 0) c.moveTo(q.x, q.y);
+    else c.lineTo(q.x, q.y);
+  }
+  c.stroke();
+  for (let k = 0; k < 8; k++) {
+    const u = 0.1 + k * 0.105;
+    const sd = k % 2 ? 1 : -1;
+    const p = at(u);
+    const m = beside(sp, u + 0.05, sd * 0.5);
+    const q = beside(sp, u + 0.1, sd * 0.95);
+    c.lineWidth = 2 * s;
+    c.beginPath();
+    c.moveTo(p.x, p.y);
+    c.quadraticCurveTo(m.x, m.y, q.x, q.y);
+    c.stroke();
+    // a little side twig
+    const r = beside(sp, u + 0.09, sd * 0.4);
+    c.lineWidth = 1.2 * s;
+    c.beginPath();
+    c.moveTo(m.x, m.y);
+    c.lineTo(r.x, r.y);
+    c.stroke();
+  }
+  c.restore();
+}
+
+/** A heart of size r at (x, y), its point turned by rot (0 = point down). */
+function heart(c: Ctx, x: number, y: number, r: number, rot: number) {
+  c.save();
+  c.translate(x, y);
+  c.rotate(rot);
+  c.beginPath();
+  c.moveTo(0, r * 0.95);
+  c.bezierCurveTo(-r * 1.35, -r * 0.05, -r * 0.65, -r * 1.1, 0, -r * 0.42);
+  c.bezierCurveTo(r * 0.65, -r * 1.1, r * 1.35, -r * 0.05, 0, r * 0.95);
+  c.fill();
+  c.restore();
+}
+
+/** A playing card's corner: the 8 with a small heart under it. */
+function cardIndex(c: Ctx, x: number, y: number, size: number, rot: number, col: string) {
+  c.save();
+  c.translate(x, y);
+  c.rotate(rot);
+  c.fillStyle = col;
+  c.font = `900 ${size * 1.5}px Arial, sans-serif`;
+  c.textAlign = 'center';
+  c.textBaseline = 'middle';
+  c.fillText('8', 0, -size * 0.55);
+  heart(c, 0, size * 0.75, size * 0.5, 0);
+  c.restore();
+}
+
+/** One of five fruits at (x, y), about r round: an orange, cherries, a banana, grapes or a strawberry. */
+function fruitIcon(c: Ctx, kind: number, x: number, y: number, r: number, rot: number) {
+  c.save();
+  c.translate(x, y);
+  c.rotate(rot);
+  c.lineJoin = 'round';
+  c.lineCap = 'round';
+  const leaf = (lx: number, ly: number, len: number, a: number) => jungleLeaf(c, lx, ly, len, a, '#4caf50', 1);
+  const shine = (sx: number, sy: number, sr: number) => {
+    c.fillStyle = 'rgba(255,255,255,0.55)';
+    c.beginPath();
+    c.arc(sx, sy, sr, 0, Math.PI * 2);
+    c.fill();
+  };
+  c.lineWidth = r * 0.12;
+  if (kind === 0) {
+    c.fillStyle = '#ff9a1f';
+    c.strokeStyle = '#c45a0a';
+    c.beginPath();
+    c.arc(0, 0, r * 0.85, 0, Math.PI * 2);
+    c.fill();
+    c.stroke();
+    leaf(0, -r * 0.8, r * 0.7, -0.5);
+    shine(-r * 0.3, -r * 0.3, r * 0.18);
+  } else if (kind === 1) {
+    c.strokeStyle = '#3d6b1f';
+    c.beginPath();
+    c.moveTo(-r * 0.45, r * 0.2);
+    c.quadraticCurveTo(-r * 0.2, -r * 0.5, r * 0.1, -r * 0.85);
+    c.moveTo(r * 0.45, r * 0.25);
+    c.quadraticCurveTo(r * 0.3, -r * 0.4, r * 0.1, -r * 0.85);
+    c.stroke();
+    leaf(r * 0.1, -r * 0.85, r * 0.6, -0.3);
+    for (const [cx, cy] of [
+      [-r * 0.45, r * 0.4],
+      [r * 0.45, r * 0.45],
+    ]) {
+      c.fillStyle = '#d81e2c';
+      c.strokeStyle = '#8a0f18';
+      c.beginPath();
+      c.arc(cx, cy, r * 0.42, 0, Math.PI * 2);
+      c.fill();
+      c.stroke();
+      shine(cx - r * 0.14, cy - r * 0.14, r * 0.1);
+    }
+  } else if (kind === 2) {
+    c.fillStyle = '#ffd23f';
+    c.strokeStyle = '#b8860b';
+    c.beginPath();
+    c.moveTo(-r * 0.9, -r * 0.5);
+    c.quadraticCurveTo(-r * 0.2, r * 1.0, r * 0.9, -r * 0.4);
+    c.quadraticCurveTo(-r * 0.1, r * 0.4, -r * 0.9, -r * 0.5);
+    c.fill();
+    c.stroke();
+    c.fillStyle = '#5a3a1a';
+    c.beginPath();
+    c.arc(-r * 0.88, -r * 0.5, r * 0.1, 0, Math.PI * 2);
+    c.arc(r * 0.88, -r * 0.4, r * 0.1, 0, Math.PI * 2);
+    c.fill();
+  } else if (kind === 3) {
+    c.strokeStyle = '#3d6b1f';
+    c.beginPath();
+    c.moveTo(0, -r * 0.6);
+    c.lineTo(r * 0.1, -r * 0.95);
+    c.stroke();
+    leaf(r * 0.1, -r * 0.8, r * 0.55, -0.4);
+    c.fillStyle = '#8e44ad';
+    c.strokeStyle = '#5b2370';
+    c.lineWidth = r * 0.08;
+    for (const [gx, gy] of [
+      [-0.36, -0.42],
+      [0, -0.42],
+      [0.36, -0.42],
+      [-0.18, -0.08],
+      [0.18, -0.08],
+      [-0.36, 0.26],
+      [0, 0.26],
+      [0.36, 0.26],
+      [-0.18, 0.6],
+      [0.18, 0.6],
+      [0, 0.92],
+    ].filter((_, i) => i !== 5 && i !== 7)) {
+      c.beginPath();
+      c.arc(gx * r, gy * r, r * 0.22, 0, Math.PI * 2);
+      c.fill();
+      c.stroke();
+    }
+  } else {
+    c.fillStyle = '#e8262c';
+    c.strokeStyle = '#9c1218';
+    c.beginPath();
+    c.moveTo(0, r * 0.95);
+    c.bezierCurveTo(-r * 0.9, r * 0.3, -r * 0.95, -r * 0.65, 0, -r * 0.6);
+    c.bezierCurveTo(r * 0.95, -r * 0.65, r * 0.9, r * 0.3, 0, r * 0.95);
+    c.fill();
+    c.stroke();
+    c.fillStyle = '#ffe680';
+    for (const [sx, sy] of [
+      [-0.35, -0.2],
+      [0.3, -0.25],
+      [0, 0.1],
+      [-0.25, 0.4],
+      [0.25, 0.4],
+      [0, 0.68],
+    ]) {
+      c.beginPath();
+      c.arc(sx * r, sy * r, r * 0.07, 0, Math.PI * 2);
+      c.fill();
+    }
+    for (const a of [-0.9, -0.3, 0.3, 0.9]) jungleLeaf(c, 0, -r * 0.6, r * 0.5, -Math.PI / 2 + a, '#3f9a3a', 1);
+  }
+  c.restore();
+}
+
+/** Overlapping scales on the gear from u0 to u1, lighter edges. */
+function fishScales(c: Ctx, sp: Spine, u0: number, u1: number, col: string, s: number) {
+  const R = sp.at(0.5).half;
+  c.save();
+  c.strokeStyle = col;
+  c.globalAlpha = 0.75;
+  c.lineWidth = 1.1 * s;
+  const rows = Math.round((u1 - u0) / 0.03);
+  for (let row = 0; row <= rows; row++) {
+    const u = u0 + row * 0.03;
+    for (let k = -7; k <= 7; k++) {
+      const q = beside(sp, u, k * 0.2 + (row % 2) * 0.1);
+      c.beginPath();
+      c.arc(q.x, q.y, R * 0.12, q.ang - Math.PI * 0.35, q.ang + Math.PI * 0.35);
+      c.stroke();
+    }
+  }
+  c.restore();
+}
+
+/** A curved gill line across the gear at u (bulging toward the tail when dir is 1). */
+function gillArc(sp: Spine, u: number, dir: number): Path2D {
+  const p = new Path2D();
+  for (let i = 0; i <= 16; i++) {
+    const o = -1.2 + (2.4 * i) / 16;
+    const q = beside(sp, u - dir * 0.04 * o * o, o);
+    if (i === 0) p.moveTo(q.x, q.y);
+    else p.lineTo(q.x, q.y);
+  }
+  return p;
+}
+
+/** A round cartoon fish eye. */
+function fishEye(c: Ctx, x: number, y: number, r: number) {
+  c.fillStyle = '#ffffff';
+  c.strokeStyle = '#1d2a44';
+  c.lineWidth = r * 0.22;
+  c.beginPath();
+  c.arc(x, y, r, 0, Math.PI * 2);
+  c.fill();
+  c.stroke();
+  c.fillStyle = '#10161c';
+  c.beginPath();
+  c.arc(x, y, r * 0.55, 0, Math.PI * 2);
+  c.fill();
+  c.fillStyle = '#ffffff';
+  c.beginPath();
+  c.arc(x - r * 0.2, y - r * 0.2, r * 0.18, 0, Math.PI * 2);
+  c.fill();
+}
+
+/** The four windsurf boards (Beginner class, Slalom, Freestyle, Wave zone) a windsurf skin's own board lies over. */
+const WIND_BOARDS: Record<string, SkinBoard> = {
+  'b-wind-wide': { frame: 'b-wind-wide', path: GEAR_PATHS.windWide, x0: -68, y0: -152, x1: 68, y1: 156 },
+  'b-wind-race': { frame: 'b-wind-race', path: GEAR_PATHS.windRace, x0: -46, y0: -152, x1: 46, y1: 152 },
+  'b-wind-free': FREE_BOARD,
+  'b-wind-wave': DAD_BOARD,
+};
+
+/** A windsurf skin's board: the board of the guest's frame, with room for a snake round the tail or a fish's fins and tail. */
+function windBoard(skin: SkinDef, frame: string): SkinBoard | null {
+  const base = WIND_BOARDS[frame];
+  if (!base) return null;
+  if (skin.pattern === 'jungle') return { ...base, x0: base.x0 - 20, x1: base.x1 + 20, y1: base.y1 + 8 };
+  if (skin.pattern === 'bigFish') return { ...base, x0: base.x0 - 20, x1: base.x1 + 20, y1: base.y1 + 44 };
+  return base;
+}
+
+/** Draw a windsurf skin's own board (the friend's designs) on the board of its frame. */
+function drawWindBoard(c: Ctx, skin: SkinDef, frame: string) {
+  const base = WIND_BOARDS[frame];
+  if (!base) return;
+  const shape: SkinShape = { path: base.path, dy: 0, x0: base.x0, y0: base.y0, x1: base.x1, y1: base.y1 };
+  const outline = new Path2D(base.path);
+  const { x0, y0, x1, y1 } = base;
+  const W = x1 - x0;
+  const H = y1 - y0;
+  const s = Math.max(W, H) / 200;
+  const sp = spineOf(shape);
+  const seed = [...skin.id].reduce((acc, ch) => acc * 31 + ch.charCodeAt(0), 7) >>> 0;
+  const [, b, d] = skin.colors;
+  const fillAll = (col: string) => {
+    c.fillStyle = col;
+    c.fillRect(x0 - 4, y0 - 4, W + 8, H + 8);
+  };
+  const nose = (col: string, f: number) => {
+    c.fillStyle = col;
+    c.fillRect(x0 - 4, y0 - 4, W + 8, H * f + 4);
+  };
+  if (skin.pattern === 'bigFish') fishFinsAndTail(c, sp, skin.colors, s, y1);
+  switch (skin.pattern) {
+    case 'tigerRace':
+    case 'checkerWind':
+    case 'fruit':
+    case 'polka':
+    case 'hearts':
+      // the same pattern as the sail
+      drawSkin(c, skin, shape);
+      break;
+    case 'driftwood':
+      // a plank of brown wood
+      drawSkin(c, { ...skin, pattern: 'log', colors: ['#c98a4a', '#8a5426', '#4a2a12'], rarity: 'epic' }, shape);
+      c.save();
+      c.clip(outline);
+      c.globalCompositeOperation = 'multiply';
+      c.fillStyle = '#b98252';
+      c.fillRect(x0 - 4, y0 - 4, W + 8, H + 8);
+      c.restore();
+      break;
+  }
+  c.save();
+  c.clip(outline);
+  switch (skin.pattern) {
+    case 'windSun':
+      // a plain blue board
+      fillAll(b);
+      spineGlow(c, sp, '#62acf2', 0.5);
+      railShade(c, shape, d, 0.55);
+      break;
+    case 'windCamo': {
+      // camouflage: blobs of olive, dark green, brown and khaki
+      fillAll('#7d8c46');
+      const cols = ['#3d4a22', '#8a6a3a', '#a3a86a', '#56662c'];
+      for (let i = 0; i < 70; i++) {
+        const cx = x0 + h(seed, i) * W;
+        const cy = y0 + h(seed, i + 100) * H;
+        const r = (9 + 9 * h(seed, i + 200)) * s;
+        const pts: [number, number][] = [];
+        for (let k = 0; k < 7; k++) {
+          const a = (k / 7) * Math.PI * 2;
+          const rr = r * (0.6 + 0.6 * h(seed, i * 7 + k + 300));
+          pts.push([cx + Math.cos(a) * rr * 1.3, cy + Math.sin(a) * rr]);
+        }
+        c.fillStyle = cols[i % cols.length];
+        c.fill(smoothPts(pts));
+      }
+      railShade(c, shape, '#2a3318', 0.4);
+      break;
+    }
+    case 'jungle':
+      drawJungle(c, x0, y0, W, H, s, seed);
+      railShade(c, shape, '#0f2009', 0.6);
+      break;
+    case 'polka':
+      // the purple nose with a light-blue stripe
+      nose('#7e57c2', 0.17);
+      c.fillStyle = '#26c6da';
+      c.fillRect(x0 - 4, y0 + H * 0.17, W + 8, H * 0.035);
+      break;
+    case 'hearts': {
+      // the red nose, and the card's 8 with a heart near the tail on both sides
+      nose(b, 0.14);
+      for (const sd of [-1, 1]) {
+        const q = beside(sp, 0.84, sd * 0.55);
+        // a clean white corner for the index, clear of the hearts
+        c.fillStyle = '#ffffff';
+        c.beginPath();
+        c.roundRect(q.x - 7 * s, q.y - 13 * s, 14 * s, 25 * s, 3 * s);
+        c.fill();
+        cardIndex(c, q.x, q.y, 8 * s, 0, b);
+      }
+      break;
+    }
+    case 'bigFish':
+      drawFishBoard(c, sp, skin.colors, s);
+      break;
+    case 'stPatrick':
+      drawPotBoard(c, sp, shape, s, b);
+      break;
+  }
+  c.restore();
+  if (skin.pattern === 'windSun' || skin.pattern === 'windCamo' || skin.pattern === 'jungle' || skin.pattern === 'bigFish' || skin.pattern === 'stPatrick') {
+    // a crisp darker edge, like the boards drawn with a pattern
+    c.strokeStyle = skin.pattern === 'windSun' ? darker(b, 0.45) : skin.pattern === 'bigFish' ? '#1d3a6a' : skin.pattern === 'stPatrick' ? '#16181b' : '#1f2a12';
+    c.lineWidth = 2.2 * s;
+    c.stroke(outline);
+  }
+  if (skin.pattern === 'jungle') snakeCoil(c, sp, outline, x0, y0, W, H, s);
+  // the mast foot
+  c.fillStyle = '#2b2f33';
+  c.beginPath();
+  c.arc(0, -16, 6, 0, Math.PI * 2);
+  c.fill();
+  c.fillStyle = '#5b6168';
+  c.beginPath();
+  c.arc(0, -16, 2.5, 0, Math.PI * 2);
+  c.fill();
+}
+
+/** A jungle seen in the board: dark green deep inside, brown trunks and branches, hanging vines, big leaves. */
+function drawJungle(c: Ctx, x0: number, y0: number, W: number, H: number, s: number, seed: number) {
+  const g = c.createLinearGradient(x0, 0, x0 + W, 0);
+  g.addColorStop(0, '#1b3a14');
+  g.addColorStop(0.5, '#3f7a2c');
+  g.addColorStop(1, '#1b3a14');
+  c.fillStyle = g;
+  c.fillRect(x0 - 4, y0 - 4, W + 8, H + 8);
+  // light far away in the middle
+  const glow = c.createRadialGradient(0, y0 + H * 0.4, 0, 0, y0 + H * 0.4, W * 0.7);
+  glow.addColorStop(0, 'rgba(190,230,120,0.45)');
+  glow.addColorStop(1, 'rgba(190,230,120,0)');
+  c.fillStyle = glow;
+  c.fillRect(x0 - 4, y0 - 4, W + 8, H + 8);
+  // far leaves
+  for (let i = 0; i < 70; i++)
+    jungleLeaf(c, x0 + h(seed, i + 40) * W, y0 + h(seed, i + 140) * H, (10 + 10 * h(seed, i + 240)) * s, h(seed, i + 340) * 6.3, '#2a5a1e', 0.7);
+  // trunks and branches
+  c.strokeStyle = '#5a3a1e';
+  c.lineCap = 'round';
+  for (const [tx, lean, wd] of [
+    [-0.36, 0.12, 9],
+    [0.3, -0.1, 7],
+  ] as const) {
+    c.lineWidth = wd * s;
+    c.beginPath();
+    c.moveTo(tx * W, y0 + H);
+    c.bezierCurveTo(tx * W + lean * W, y0 + H * 0.6, tx * W - lean * W, y0 + H * 0.35, tx * W + lean * W * 0.5, y0);
+    c.stroke();
+  }
+  c.lineWidth = 3.5 * s;
+  for (const [bx, by, ex, ey] of [
+    [-0.32, 0.45, 0.1, 0.32],
+    [0.28, 0.3, -0.15, 0.2],
+    [-0.3, 0.72, 0.05, 0.62],
+  ]) {
+    c.beginPath();
+    c.moveTo(bx * W, y0 + by * H);
+    c.quadraticCurveTo(((bx + ex) / 2) * W, y0 + (by - 0.06) * H, ex * W, y0 + ey * H);
+    c.stroke();
+  }
+  // vines hanging down, with small leaves
+  c.strokeStyle = '#6aa83a';
+  c.lineWidth = 1.4 * s;
+  for (let k = 0; k < 5; k++) {
+    const vx = (-0.3 + k * 0.15) * W;
+    const top = y0 + (0.1 + 0.1 * h(seed, k + 500)) * H;
+    const len = (0.25 + 0.2 * h(seed, k + 520)) * H;
+    c.beginPath();
+    c.moveTo(vx, top);
+    c.quadraticCurveTo(vx + 8 * s, top + len / 2, vx - 2 * s, top + len);
+    c.stroke();
+    for (let j = 1; j < 6; j++) {
+      const t = j / 6;
+      jungleLeaf(c, vx + 3 * s * Math.sin(t * 3), top + len * t, 5 * s, j % 2 ? 0.6 : 2.5, '#7fc04a', 1);
+    }
+  }
+  // big near leaves along the rails
+  for (let i = 0; i < 26; i++) {
+    const sd = i % 2 ? 1 : -1;
+    const lx = sd * W * (0.38 + 0.12 * h(seed, i + 700));
+    const ly = y0 + h(seed, i + 720) * H;
+    jungleLeaf(c, lx, ly, (14 + 10 * h(seed, i + 740)) * s, sd > 0 ? Math.PI + (h(seed, i + 760) - 0.5) : h(seed, i + 760) - 0.5, i % 3 ? '#4f9a34' : '#6cbf4a', 1);
+  }
+}
+
+/** A python wrapped round the tail of the board, its head resting on the deck facing the nose. */
+function snakeCoil(c: Ctx, sp: Spine, outline: Path2D, x0: number, y0: number, W: number, H: number, s: number) {
+  const k = Math.min(1, W / 136) * 1.1;
+  const rb = 6.2 * k * Math.max(1, s / 1.5);
+  const halfAt = (y: number) => sp.at((y - y0) / H).half;
+  type P = { x: number; y: number; r: number; top: boolean };
+  const pts: P[] = [];
+  const turns = 2.5;
+  const yStart = y0 + H * 0.95;
+  const pitch = H * 0.11;
+  const N = 240;
+  for (let i = 0; i <= N; i++) {
+    const th = (i / N) * turns * Math.PI * 2 - Math.PI / 2;
+    const y = yStart - (pitch * (th + Math.PI / 2)) / (Math.PI * 2);
+    const R = halfAt(y) + rb * 0.9;
+    const r = rb * Math.min(1, 0.25 + (i / N) * 4);
+    pts.push({ x: R * Math.cos(th), y, r, top: Math.sin(th) > 0 });
+  }
+  // the neck: from the last turn (on top of the deck, middle) up toward the nose with a gentle S
+  const last = pts[pts.length - 1];
+  for (let i = 1; i <= 40; i++) {
+    const t = i / 40;
+    pts.push({ x: last.x + Math.sin(t * Math.PI * 1.2) * 10 * k, y: last.y - t * H * 0.14, r: rb, top: true });
+  }
+  const body = (list: P[], clipOut: boolean) => {
+    c.save();
+    if (clipOut) {
+      const outside = new Path2D();
+      outside.rect(x0 - 60, y0 - 60, W + 120, H + 140);
+      outside.addPath(outline);
+      c.clip(outside, 'evenodd');
+    }
+    for (const [col, extra] of [
+      ['#2c3a12', 1.3],
+      ['#7d9a2e', 0],
+    ] as const) {
+      c.fillStyle = col;
+      for (const p of list) {
+        c.beginPath();
+        c.arc(p.x, p.y, p.r + extra * k, 0, Math.PI * 2);
+        c.fill();
+      }
+    }
+    // dark blotches and light speckles down the back
+    list.forEach((p, i) => {
+      if (i % 9 === 0) {
+        c.fillStyle = '#44561a';
+        c.beginPath();
+        c.ellipse(p.x, p.y, p.r * 0.7, p.r * 0.45, i, 0, Math.PI * 2);
+        c.fill();
+      } else if (i % 9 === 5) {
+        c.fillStyle = '#d6cf6a';
+        c.beginPath();
+        c.arc(p.x, p.y, p.r * 0.22, 0, Math.PI * 2);
+        c.fill();
+      }
+    });
+    c.restore();
+  };
+  // under the board only the parts past the rails show; then the parts over the deck
+  const under: P[] = [];
+  const over: P[] = [];
+  for (const p of pts) (p.top ? over : under).push(p);
+  body(under, true);
+  // draw the top parts as separate runs so each crossing is a clean stroke
+  let run: P[] = [];
+  for (const p of pts) {
+    if (p.top) run.push(p);
+    else if (run.length) {
+      body(run, false);
+      run = [];
+    }
+  }
+  if (run.length) body(run, false);
+  // the head
+  const hp = pts[pts.length - 1];
+  const hx = hp.x;
+  const hy = hp.y - rb * 0.8;
+  c.fillStyle = '#2c3a12';
+  c.beginPath();
+  c.ellipse(hx, hy, rb * 1.25, rb * 1.6, 0, 0, Math.PI * 2);
+  c.fill();
+  c.fillStyle = '#7d9a2e';
+  c.beginPath();
+  c.ellipse(hx, hy, rb * 1.1, rb * 1.45, 0, 0, Math.PI * 2);
+  c.fill();
+  c.fillStyle = '#44561a';
+  c.beginPath();
+  c.ellipse(hx, hy + rb * 0.2, rb * 0.45, rb * 0.7, 0, 0, Math.PI * 2);
+  c.fill();
+  for (const sd of [-1, 1]) {
+    c.fillStyle = '#ffd23f';
+    c.beginPath();
+    c.arc(hx + sd * rb * 0.75, hy - rb * 0.55, rb * 0.36, 0, Math.PI * 2);
+    c.fill();
+    c.fillStyle = '#111';
+    c.beginPath();
+    c.ellipse(hx + sd * rb * 0.75, hy - rb * 0.55, rb * 0.1, rb * 0.28, 0, 0, Math.PI * 2);
+    c.fill();
+  }
+  // the forked tongue
+  c.strokeStyle = '#e0262c';
+  c.lineWidth = 1.1 * k;
+  c.lineCap = 'round';
+  c.beginPath();
+  c.moveTo(hx, hy - rb * 1.5);
+  c.lineTo(hx, hy - rb * 2.3);
+  c.lineTo(hx - rb * 0.35, hy - rb * 2.75);
+  c.moveTo(hx, hy - rb * 2.3);
+  c.lineTo(hx + rb * 0.35, hy - rb * 2.75);
+  c.stroke();
+}
+
+/** The fish board's fins out of the rails and its forked tail past the tail (drawn under the body). */
+function fishFinsAndTail(c: Ctx, sp: Spine, colors: [string, string, string], s: number, tailY: number) {
+  const [, b, d] = colors;
+  c.save();
+  c.lineJoin = 'round';
+  const fin = (path: Path2D) => {
+    c.fillStyle = d;
+    c.fill(path);
+    c.strokeStyle = '#1d3a6a';
+    c.lineWidth = 1.4;
+    c.stroke(path);
+  };
+  for (const sd of [-1, 1]) {
+    const p = beside(sp, 0.28, sd * 0.9);
+    const q = beside(sp, 0.42, sd * 0.9);
+    const tip = beside(sp, 0.44, sd * 1.55);
+    const f = new Path2D();
+    f.moveTo(p.x, p.y);
+    f.quadraticCurveTo(tip.x, p.y + (tip.y - p.y) * 0.3, tip.x, tip.y);
+    f.lineTo(q.x, q.y);
+    f.closePath();
+    fin(f);
+    // a small pelvic fin further back
+    const p2 = beside(sp, 0.66, sd * 0.85);
+    const q2 = beside(sp, 0.74, sd * 0.85);
+    const t2 = beside(sp, 0.76, sd * 1.35);
+    const f2 = new Path2D();
+    f2.moveTo(p2.x, p2.y);
+    f2.lineTo(t2.x, t2.y);
+    f2.lineTo(q2.x, q2.y);
+    f2.closePath();
+    fin(f2);
+  }
+  const root = sp.at(0.93);
+  const half = root.half;
+  const tail = new Path2D();
+  tail.moveTo(-half * 0.55, root.y);
+  tail.quadraticCurveTo(-half * 1.2, tailY + 10, -half * 1.35, tailY + 38);
+  tail.quadraticCurveTo(-half * 0.4, tailY + 20, 0, tailY + 12);
+  tail.quadraticCurveTo(half * 0.4, tailY + 20, half * 1.35, tailY + 38);
+  tail.quadraticCurveTo(half * 1.2, tailY + 10, half * 0.55, root.y);
+  tail.closePath();
+  fin(tail);
+  c.save();
+  c.clip(tail);
+  c.strokeStyle = b;
+  c.globalAlpha = 0.6;
+  c.lineWidth = 1.2 * s;
+  for (let k = -5; k <= 5; k++) {
+    c.beginPath();
+    c.moveTo(k * half * 0.08, root.y);
+    c.lineTo(k * half * 0.27, tailY + 40);
+    c.stroke();
+  }
+  c.restore();
+  c.restore();
+}
+
+/** The fish board's body: a darker back, scales, the gills and the eyes at the nose. */
+function drawFishBoard(c: Ctx, sp: Spine, colors: [string, string, string], s: number) {
+  const [a, b, d] = colors;
+  c.fillStyle = a;
+  c.fillRect(-200, -400, 400, 900);
+  spineGlow(c, sp, d, 0.7);
+  fishScales(c, sp, 0.24, 0.92, b, s);
+  c.strokeStyle = '#1d3a6a';
+  c.lineWidth = 2 * s;
+  c.stroke(gillArc(sp, 0.22, -1));
+  // a light line along each side
+  c.strokeStyle = 'rgba(220,238,255,0.6)';
+  c.lineWidth = 1.4 * s;
+  for (const sd of [-1, 1]) c.stroke(lineU(sp, 0.24, 0.9, sd * 0.55));
+  for (const sd of [-1, 1]) {
+    const e = beside(sp, 0.11, sd * 0.55);
+    fishEye(c, e.x, e.y, e.half * 0.3);
+  }
+  // the mouth at the nose
+  const m = sp.at(0.02);
+  c.strokeStyle = '#1d3a6a';
+  c.lineWidth = 1.6 * s;
+  c.beginPath();
+  c.moveTo(m.x - 6 * s, m.y + 3 * s);
+  c.quadraticCurveTo(m.x, m.y + 7 * s, m.x + 6 * s, m.y + 3 * s);
+  c.stroke();
+}
+
+// ---- the Surf Club's monthly skins (the author's friend's designs)
+
+/**
+ * November: a phoenix kite after the friend's card. Big smooth shapes, lit from behind: a golden glow, wings raised high
+ * in a V (one smooth silhouette each, ending in long finger feathers, a lighter layer of coverts over it), light gold
+ * inside and deep bronze at the tips; an upright golden body, the head in profile facing left with a hooked beak and a
+ * crest of curly plumes, talons spread forward, long flowing tail plumes curling to one side with peacock eyes, golden
+ * sparkles and a few maple leaves. Kite coordinates: flying toward -y, the lines at its talons.
+ */
+function drawPhoenix(c: Ctx, skin: SkinDef) {
+  const [a] = skin.colors;
+  const ink = '#4a220a';
+  type P = [number, number];
+  const bez = (p0: P, p1: P, p2: P, p3: P, t: number): P => {
+    const u = 1 - t;
+    return [u * u * u * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t * t * t * p3[0], u * u * u * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t * t * t * p3[1]];
+  };
+  /** A ribbon along a curve: tapered at both ends, widest toward its end (a plume). */
+  const ribbon = (pts: P[], wmax: number): Path2D => {
+    const left: P[] = [];
+    const right: P[] = [];
+    pts.forEach((q, i) => {
+      const t = i / (pts.length - 1);
+      const n0 = pts[Math.max(0, i - 1)];
+      const n1 = pts[Math.min(pts.length - 1, i + 1)];
+      const dx = n1[0] - n0[0];
+      const dy = n1[1] - n0[1];
+      const l = Math.hypot(dx, dy) || 1;
+      const w = wmax * Math.pow(Math.sin(Math.PI * Math.min(1, t * 0.82 + 0.06)), 0.7) * (t > 0.92 ? (1 - t) / 0.08 : 1);
+      left.push([q[0] - (dy / l) * w, q[1] + (dx / l) * w]);
+      right.push([q[0] + (dy / l) * w, q[1] - (dx / l) * w]);
+    });
+    const p = new Path2D();
+    p.moveTo(left[0][0], left[0][1]);
+    for (const q of left) p.lineTo(q[0], q[1]);
+    for (const q of right.reverse()) p.lineTo(q[0], q[1]);
+    p.closePath();
+    return p;
+  };
+
+  // the glow behind it all: the bird is lit from behind
+  // (an ellipse that fades out inside the picture's bounds, so no edge shows)
+  c.save();
+  c.translate(0, -26);
+  c.scale(1.45, 1);
+  const glow = c.createRadialGradient(0, -14, 3, 0, -10, 88);
+  glow.addColorStop(0, 'rgba(255,232,160,0.85)');
+  glow.addColorStop(0.3, 'rgba(255,200,100,0.42)');
+  glow.addColorStop(0.6, 'rgba(255,170,70,0.12)');
+  glow.addColorStop(0.85, 'rgba(255,170,70,0)');
+  c.fillStyle = glow;
+  c.beginPath();
+  c.arc(0, -10, 88, 0, Math.PI * 2);
+  c.fill();
+  c.restore();
+
+  // the tail: long plumes flowing down and curling to the right, two to the left, peacock eyes near their ends
+  const plumes: [P, P, P, P, number, boolean][] = [
+    [[2, 10], [26, 34], [60, 36], [92, 56], 7, true],
+    [[2, 12], [14, 46], [44, 60], [62, 80], 8, true],
+    [[0, 12], [4, 44], [16, 66], [24, 84], 7.5, true],
+    [[-2, 12], [-10, 42], [-28, 58], [-46, 72], 6.5, true],
+    [[-2, 10], [-22, 30], [-50, 34], [-74, 48], 5.5, false],
+  ];
+  for (const [p0, p1, p2, p3, w, eye] of plumes) {
+    const pts: P[] = [];
+    for (let k = 0; k <= 30; k++) pts.push(bez(p0, p1, p2, p3, k / 30));
+    const path = ribbon(pts, w);
+    const g = c.createLinearGradient(p0[0], p0[1], p3[0], p3[1]);
+    g.addColorStop(0, '#ffb43c');
+    g.addColorStop(0.5, '#d2701e');
+    g.addColorStop(1, '#6a2a0a');
+    c.fillStyle = g;
+    c.fill(path);
+    // soft barbs along the plume
+    c.save();
+    c.clip(path);
+    c.strokeStyle = 'rgba(255,236,180,0.45)';
+    c.lineWidth = 0.8;
+    for (let k = 3; k < 28; k += 2) {
+      const q = pts[k];
+      const n = pts[k + 1];
+      c.beginPath();
+      c.moveTo(q[0], q[1]);
+      c.lineTo(q[0] + (n[1] - q[1]) * 2.5 + (n[0] - q[0]) * 2, q[1] - (n[0] - q[0]) * 2.5 + (n[1] - q[1]) * 2);
+      c.stroke();
+    }
+    c.restore();
+    c.strokeStyle = 'rgba(74,34,10,0.7)';
+    c.lineWidth = 1.1;
+    c.stroke(path);
+    if (eye) {
+      const [ex, ey] = bez(p0, p1, p2, p3, 0.8);
+      c.fillStyle = '#ffd27a';
+      c.beginPath();
+      c.ellipse(ex, ey, w * 0.85, w * 0.7, 0, 0, Math.PI * 2);
+      c.fill();
+      c.fillStyle = '#1f6a74';
+      c.beginPath();
+      c.ellipse(ex, ey, w * 0.5, w * 0.4, 0, 0, Math.PI * 2);
+      c.fill();
+      c.fillStyle = '#18242a';
+      c.beginPath();
+      c.arc(ex, ey, w * 0.2, 0, Math.PI * 2);
+      c.fill();
+    }
+  }
+
+  // the wings: one smooth silhouette each, raised high, ending in long finger feathers
+  for (const side of [-1, 1]) {
+    c.save();
+    c.scale(side, 1);
+    const wing = new Path2D();
+    wing.moveTo(8, -30);
+    wing.quadraticCurveTo(34, -82, 64, -110);
+    // finger feathers round the top and the outside: [notch, tip]
+    const fingers: [P, P][] = [
+      [[70, -112], [76, -132]],
+      [[86, -106], [100, -128]],
+      [[100, -96], [122, -116]],
+      [[110, -82], [138, -96]],
+      [[116, -66], [148, -72]],
+      [[116, -50], [150, -46]],
+    ];
+    let prev: P = [64, -110];
+    for (const [notch, tip] of fingers) {
+      wing.quadraticCurveTo(prev[0] + (tip[0] - prev[0]) * 0.3, tip[1] + 2, tip[0], tip[1]);
+      wing.quadraticCurveTo(tip[0] - 2, tip[1] + 10, notch[0] + 8, notch[1] + 4);
+      prev = [notch[0] + 8, notch[1] + 4];
+    }
+    // the trailing edge: rounded secondaries back down to the body
+    const secs: P[] = [
+      [134, -26],
+      [112, -8],
+      [86, 2],
+      [58, 6],
+      [32, 4],
+    ];
+    for (const tip of secs) {
+      wing.quadraticCurveTo(prev[0] + 6, tip[1] - 2, tip[0], tip[1]);
+      const back: P = [tip[0] - 6, tip[1] - 10];
+      wing.quadraticCurveTo(tip[0] - 2, tip[1] - 4, back[0], back[1]);
+      prev = back;
+    }
+    wing.quadraticCurveTo(18, -6, 12, -14);
+    wing.closePath();
+    const wg = c.createRadialGradient(34, -56, 4, 46, -56, 118);
+    wg.addColorStop(0, '#ffd56a');
+    wg.addColorStop(0.3, '#f39a2e');
+    wg.addColorStop(0.6, '#c8621a');
+    wg.addColorStop(0.85, '#8a3410');
+    wg.addColorStop(1, '#4a1a06');
+    c.fillStyle = wg;
+    c.fill(wing);
+    c.save();
+    c.clip(wing);
+    // a soft shadow beside every long feather (depth), then the line between them
+    c.strokeStyle = 'rgba(90,30,6,0.2)';
+    c.lineWidth = 7;
+    for (const [notch] of fingers) {
+      c.beginPath();
+      c.moveTo(64, -62);
+      c.quadraticCurveTo((60 + notch[0]) / 2 + 10, (-66 + notch[1]) / 2 + 3, notch[0] + 11, notch[1] + 7);
+      c.stroke();
+    }
+    c.strokeStyle = 'rgba(90,36,8,0.6)';
+    c.lineWidth = 1.3;
+    for (const [notch] of fingers) {
+      c.beginPath();
+      c.moveTo(60, -66);
+      c.quadraticCurveTo((60 + notch[0]) / 2 + 6, (-66 + notch[1]) / 2, notch[0] + 8, notch[1] + 4);
+      c.stroke();
+    }
+    for (const tip of secs) {
+      c.beginPath();
+      c.moveTo(54, -50);
+      c.lineTo(tip[0] - 6, tip[1] - 10);
+      c.stroke();
+    }
+    // the light through the inner wing, and a bright rim along the top
+    c.strokeStyle = 'rgba(255,250,215,0.85)';
+    c.lineWidth = 3;
+    c.beginPath();
+    c.moveTo(12, -32);
+    c.quadraticCurveTo(36, -80, 64, -106);
+    c.stroke();
+    c.restore();
+    // the middle layer: a row of rounded feathers between the coverts and the long feathers
+    const midL = new Path2D();
+    midL.moveTo(8, -30);
+    midL.quadraticCurveTo(34, -82, 64, -110);
+    midL.quadraticCurveTo(90, -108, 98, -90);
+    const ms: P[] = [
+      [104, -72],
+      [104, -54],
+      [96, -38],
+      [82, -24],
+      [64, -14],
+      [44, -8],
+      [26, -8],
+    ];
+    let mp: P = [98, -90];
+    for (const q of ms) {
+      midL.quadraticCurveTo((mp[0] + q[0]) / 2 + 8, (mp[1] + q[1]) / 2 + 6, q[0], q[1]);
+      mp = q;
+    }
+    midL.quadraticCurveTo(16, -10, 12, -16);
+    midL.closePath();
+    const mg = c.createRadialGradient(30, -60, 4, 40, -56, 80);
+    mg.addColorStop(0, '#ffd56a');
+    mg.addColorStop(0.55, '#f39a2e');
+    mg.addColorStop(1, '#b8501a');
+    c.fillStyle = mg;
+    c.fill(midL);
+    c.save();
+    c.clip(midL);
+    c.strokeStyle = 'rgba(120,50,10,0.45)';
+    c.lineWidth = 1.1;
+    for (const q of ms) {
+      c.beginPath();
+      c.moveTo(40, -60);
+      c.lineTo(q[0], q[1]);
+      c.stroke();
+    }
+    c.restore();
+    c.strokeStyle = 'rgba(110,46,10,0.6)';
+    c.lineWidth = 1;
+    c.stroke(midL);
+    // a smooth layer of golden coverts over the inner wing, its lower edge in soft scallops
+    const cov = new Path2D();
+    cov.moveTo(8, -30);
+    cov.quadraticCurveTo(34, -82, 64, -110);
+    cov.quadraticCurveTo(74, -100, 76, -84);
+    const sc: P[] = [
+      [68, -70],
+      [58, -58],
+      [46, -46],
+      [34, -36],
+      [22, -26],
+    ];
+    let cp: P = [76, -84];
+    for (const q of sc) {
+      cov.quadraticCurveTo((cp[0] + q[0]) / 2 + 7, (cp[1] + q[1]) / 2 + 7, q[0], q[1]);
+      cp = q;
+    }
+    cov.quadraticCurveTo(18, -12, 12, -16);
+    cov.closePath();
+    const cg = c.createLinearGradient(20, -100, 80, -30);
+    cg.addColorStop(0, '#fff0b0');
+    cg.addColorStop(1, '#ffc24a');
+    c.fillStyle = cg;
+    c.globalAlpha = 0.95;
+    c.fill(cov);
+    c.globalAlpha = 1;
+    c.strokeStyle = 'rgba(150,80,20,0.5)';
+    c.lineWidth = 1;
+    c.stroke(cov);
+    c.strokeStyle = ink;
+    c.lineWidth = 1.6;
+    c.stroke(wing);
+    c.restore();
+  }
+
+  // the body: upright, golden, lit from behind
+  const body = new Path2D();
+  body.moveTo(-4, -44);
+  body.bezierCurveTo(14, -42, 19, -14, 10, 6);
+  body.quadraticCurveTo(0, 16, -10, 6);
+  body.bezierCurveTo(-19, -14, -18, -38, -4, -44);
+  const bg = c.createLinearGradient(-14, -40, 12, 12);
+  bg.addColorStop(0, '#fff0b0');
+  bg.addColorStop(0.45, '#ffb43c');
+  bg.addColorStop(1, '#c8621a');
+  c.fillStyle = bg;
+  c.fill(body);
+  c.save();
+  c.clip(body);
+  c.strokeStyle = 'rgba(150,80,20,0.3)';
+  c.lineWidth = 0.9;
+  for (let row = 0; row < 5; row++)
+    for (let k = -1; k <= 1; k++) {
+      c.beginPath();
+      c.arc(k * 7 + (row % 2) * 3.5 - 1, -28 + row * 8, 4, 0.2 * Math.PI, 0.8 * Math.PI);
+      c.stroke();
+    }
+  c.fillStyle = 'rgba(122,58,18,0.22)';
+  c.beginPath();
+  c.ellipse(10, -8, 8, 24, 0.15, 0, Math.PI * 2);
+  c.fill();
+  c.restore();
+  c.strokeStyle = ink;
+  c.lineWidth = 1.6;
+  c.stroke(body);
+
+  // the legs and spread talons, reaching forward to the lines
+  for (const sd of [-1, 1]) {
+    c.strokeStyle = '#8a4a1a';
+    c.lineWidth = 3.2;
+    c.beginPath();
+    c.moveTo(sd * 5, 6);
+    c.lineTo(sd * 8, 12);
+    c.stroke();
+    c.strokeStyle = '#2a140a';
+    c.lineWidth = 1.7;
+    for (const k of [-0.7, 0, 0.7]) {
+      const ang = -Math.PI / 2 + sd * 0.4 + k;
+      c.beginPath();
+      c.moveTo(sd * 8, 12);
+      c.quadraticCurveTo(sd * 8 + Math.cos(ang) * 5, 12 + Math.sin(ang) * 5 - 1, sd * 8 + Math.cos(ang + sd * 0.5) * 7, 12 + Math.sin(ang + sd * 0.5) * 7);
+      c.stroke();
+    }
+  }
+
+  // the neck and head in profile, facing left
+  const neck = new Path2D();
+  neck.moveTo(-12, -36);
+  neck.quadraticCurveTo(-15, -54, -9, -64);
+  neck.lineTo(3, -62);
+  neck.quadraticCurveTo(9, -50, 10, -36);
+  neck.closePath();
+  const ng = c.createLinearGradient(-12, -64, 8, -36);
+  ng.addColorStop(0, '#fff0b0');
+  ng.addColorStop(1, '#ffb43c');
+  c.fillStyle = ng;
+  c.fill(neck);
+  // the crest: curling feather plumes sweeping up and back from the crown, gold tips
+  for (const [p1, p2, p3, w] of [
+    [[2, -84], [16, -92], [22, -80], 3.4],
+    [[10, -78], [26, -84], [28, -70], 3.2],
+    [[12, -70], [28, -72], [26, -60], 3],
+  ] as [P, P, P, number][]) {
+    const pts: P[] = [];
+    for (let k = 0; k <= 20; k++) pts.push(bez([-3, -66], p1, p2, p3, k / 20));
+    const path = ribbon(pts, w);
+    const g = c.createLinearGradient(-3, -66, p3[0], p3[1]);
+    g.addColorStop(0, a);
+    g.addColorStop(1, '#ffd27a');
+    c.fillStyle = g;
+    c.fill(path);
+    c.strokeStyle = 'rgba(74,34,10,0.7)';
+    c.lineWidth = 0.9;
+    c.stroke(path);
+  }
+  const head = new Path2D();
+  head.ellipse(-4, -62, 10, 9, -0.2, 0, Math.PI * 2);
+  const hg = c.createRadialGradient(-7, -66, 1, -4, -62, 11);
+  hg.addColorStop(0, '#fff0b0');
+  hg.addColorStop(1, '#f39a2e');
+  c.fillStyle = hg;
+  c.fill(head);
+  c.strokeStyle = ink;
+  c.lineWidth = 1.5;
+  c.stroke(head);
+  // the hooked beak
+  const beak = new Path2D();
+  beak.moveTo(-11, -66);
+  beak.quadraticCurveTo(-22, -68, -25, -59);
+  beak.quadraticCurveTo(-21, -61, -18, -58);
+  beak.quadraticCurveTo(-14, -56, -11, -57);
+  beak.closePath();
+  const kg = c.createLinearGradient(-25, -66, -11, -57);
+  kg.addColorStop(0, '#c98a1a');
+  kg.addColorStop(1, '#ffe08a');
+  c.fillStyle = kg;
+  c.fill(beak);
+  c.strokeStyle = ink;
+  c.lineWidth = 1.2;
+  c.stroke(beak);
+  // the eye
+  c.fillStyle = '#fff6d8';
+  c.beginPath();
+  c.ellipse(-7, -64, 2.8, 2.4, 0, 0, Math.PI * 2);
+  c.fill();
+  c.fillStyle = '#1a0d06';
+  c.beginPath();
+  c.arc(-7.6, -64, 1.5, 0, Math.PI * 2);
+  c.fill();
+  c.fillStyle = '#fff';
+  c.beginPath();
+  c.arc(-8.1, -64.6, 0.55, 0, Math.PI * 2);
+  c.fill();
+  c.strokeStyle = ink;
+  c.lineWidth = 1.2;
+  c.beginPath();
+  c.moveTo(-11, -67.2);
+  c.quadraticCurveTo(-7, -68.4, -3.5, -66.6);
+  c.stroke();
+
+  // a few golden sparkles close round it (the showcase and the water add the falling leaves)
+  for (const [x, y, r] of [
+    [-40, -112, 3.4],
+    [44, -118, 3.8],
+    [0, -96, 3],
+    [-70, 20, 3],
+    [74, 24, 3],
+  ] as const)
+    sparkle(c, x, y, r, '#fff3c4');
+}
+
+/** December: the board is a Christmas tree: tiers of green branches out past the rails, a garland, baubles, the gold star at the nose and the trunk at the tail. */
+function drawXmasTree(c: Ctx, skin: SkinDef, shape: SkinShape) {
+  const [a, b, d] = skin.colors;
+  const { y0, y1 } = shape;
+  const H = y1 - y0;
+  // the board under the tree
+  const board = new Path2D(shape.path);
+  c.fillStyle = d;
+  c.fill(board);
+  c.strokeStyle = '#0f3a16';
+  c.lineWidth = 2.2;
+  c.stroke(board);
+  // the trunk at the tail
+  c.fillStyle = '#7a4a24';
+  c.strokeStyle = '#3d2210';
+  c.lineWidth = 1.8;
+  c.beginPath();
+  c.roundRect(-8, y1 - H * 0.17, 16, H * 0.16, 3);
+  c.fill();
+  c.stroke();
+  // the tiers, bottom first so the higher ones lie over them
+  const tiers = 6;
+  for (let i = tiers - 1; i >= 0; i--) {
+    const t0 = i / tiers;
+    const top = y0 + 18 + (H * 0.74 * t0) * 0.95;
+    const bottom = y0 + 18 + H * 0.74 * ((i + 1.45) / tiers);
+    const half = 24 + 54 * ((i + 1) / tiers);
+    const tier = new Path2D();
+    tier.moveTo(0, top);
+    tier.quadraticCurveTo(half * 0.45, top + (bottom - top) * 0.45, half, bottom);
+    // a jagged lower edge of branch tips
+    const teeth = 5 + i;
+    for (let k = 1; k <= teeth; k++) {
+      const x = half - (2 * half * k) / teeth;
+      tier.lineTo(x + half / teeth, bottom - 7);
+      tier.lineTo(x, bottom + (k % 2 ? 2 : 0));
+    }
+    tier.quadraticCurveTo(-half * 0.45, top + (bottom - top) * 0.45, 0, top);
+    tier.closePath();
+    const g = c.createLinearGradient(0, top, 0, bottom);
+    g.addColorStop(0, b);
+    g.addColorStop(1, a);
+    c.fillStyle = g;
+    c.fill(tier);
+    c.strokeStyle = '#123f1a';
+    c.lineWidth = 1.8;
+    c.stroke(tier);
+    // needles
+    c.save();
+    c.clip(tier);
+    c.strokeStyle = 'rgba(190,240,170,0.45)';
+    c.lineWidth = 1;
+    for (let k = -6; k <= 6; k++) {
+      c.beginPath();
+      c.moveTo(k * 3, top + (bottom - top) * 0.3);
+      c.lineTo(k * half * 0.16, bottom - 4);
+      c.stroke();
+    }
+    c.restore();
+    // the garland across this tier
+    c.strokeStyle = '#f2d16b';
+    c.lineWidth = 2;
+    c.beginPath();
+    const gy = top + (bottom - top) * 0.62;
+    const gw = half * 0.78;
+    c.moveTo(-gw, gy - 6);
+    c.quadraticCurveTo(0, gy + 8, gw, gy - 6);
+    c.stroke();
+    // baubles
+    const cols = ['#e0262c', '#2f7fd6', '#ffc83d', '#e0262c', '#9c4fd6'];
+    for (const [k, fx] of [-0.55, 0.05, 0.6].entries()) {
+      const x = fx * half;
+      const y = bottom - 9 - (k === 1 ? 6 : 0);
+      c.fillStyle = cols[(i + k) % cols.length];
+      c.beginPath();
+      c.arc(x, y, 4.2, 0, Math.PI * 2);
+      c.fill();
+      c.strokeStyle = 'rgba(0,0,0,0.35)';
+      c.lineWidth = 0.8;
+      c.stroke();
+      c.fillStyle = 'rgba(255,255,255,0.75)';
+      c.beginPath();
+      c.arc(x - 1.4, y - 1.4, 1.2, 0, Math.PI * 2);
+      c.fill();
+    }
+  }
+  // the star at the nose, glowing
+  const sy = y0 + 12;
+  const glow = c.createRadialGradient(0, sy, 0, 0, sy, 26);
+  glow.addColorStop(0, 'rgba(255,230,120,0.7)');
+  glow.addColorStop(1, 'rgba(255,230,120,0)');
+  c.fillStyle = glow;
+  c.fillRect(-26, sy - 26, 52, 52);
+  c.fillStyle = '#ffc83d';
+  star5(c, 0, sy, 13);
+  c.strokeStyle = '#a8740a';
+  c.lineWidth = 1.4;
+  c.stroke();
+}
+
+/** A firework: rays of dots from a point, in one colour. */
+function fireworkBurst(c: Ctx, x: number, y: number, r: number, col: string) {
+  c.save();
+  c.strokeStyle = col;
+  c.fillStyle = col;
+  c.lineCap = 'round';
+  c.globalAlpha = 0.9;
+  for (let k = 0; k < 12; k++) {
+    const ang = (k / 12) * Math.PI * 2;
+    c.lineWidth = r * 0.07;
+    c.beginPath();
+    c.moveTo(x + Math.cos(ang) * r * 0.25, y + Math.sin(ang) * r * 0.25);
+    c.lineTo(x + Math.cos(ang) * r * 0.85, y + Math.sin(ang) * r * 0.85);
+    c.stroke();
+    c.beginPath();
+    c.arc(x + Math.cos(ang) * r, y + Math.sin(ang) * r, r * 0.08, 0, Math.PI * 2);
+    c.fill();
+  }
+  c.restore();
+}
+
+/** A Celtic trinity knot in gold at (x, y), size r. */
+function trinityKnot(c: Ctx, x: number, y: number, r: number, col: string) {
+  c.save();
+  c.translate(x, y);
+  c.strokeStyle = '#3a2a06';
+  c.lineWidth = r * 0.34;
+  c.lineCap = 'round';
+  const loops = () => {
+    for (let k = 0; k < 3; k++) {
+      const ang = -Math.PI / 2 + (k * Math.PI * 2) / 3;
+      c.beginPath();
+      c.ellipse(Math.cos(ang) * r * 0.45, Math.sin(ang) * r * 0.45, r * 0.62, r * 0.3, ang, 0, Math.PI * 2);
+      c.stroke();
+    }
+    c.beginPath();
+    c.arc(0, 0, r * 0.62, 0, Math.PI * 2);
+    c.stroke();
+  };
+  loops();
+  c.strokeStyle = col;
+  c.lineWidth = r * 0.18;
+  loops();
+  c.restore();
+}
+
+/** March's board: a pot of gold: dark iron with a gold rim, a Celtic knot at the nose, a heap of gold coins and clovers on the deck. */
+function drawPotBoard(c: Ctx, sp: Spine, shape: SkinShape, s: number, gold: string) {
+  const { x0, y0, x1, y1 } = shape;
+  const g = c.createLinearGradient(x0, 0, x1, 0);
+  g.addColorStop(0, '#24272b');
+  g.addColorStop(0.5, '#4a4f56');
+  g.addColorStop(1, '#24272b');
+  c.fillStyle = g;
+  c.fillRect(x0 - 4, y0 - 4, x1 - x0 + 8, y1 - y0 + 8);
+  // gold rim inside the edge
+  c.strokeStyle = gold;
+  c.lineWidth = 6 * s;
+  c.stroke(new Path2D(shape.path));
+  const k = beside(sp, 0.14, 0);
+  trinityKnot(c, k.x, k.y, k.half * 0.6, gold);
+  // the heap of coins
+  const coins: { x: number; y: number }[] = [];
+  for (let i = 0; i < 46; i++) {
+    const u = 0.5 + 0.34 * h(0x90d, i);
+    const q = beside(sp, u, (h(0x90d, i + 100) - 0.5) * 1.5);
+    coins.push({ x: q.x, y: q.y });
+  }
+  coins.sort((p, q) => p.y - q.y);
+  for (const p of coins) {
+    c.fillStyle = gold;
+    c.strokeStyle = '#a8740a';
+    c.lineWidth = 1;
+    c.beginPath();
+    c.ellipse(p.x, p.y, 5 * s, 3.6 * s, 0, 0, Math.PI * 2);
+    c.fill();
+    c.stroke();
+    c.fillStyle = 'rgba(255,248,200,0.8)';
+    c.beginPath();
+    c.ellipse(p.x - 1.4 * s, p.y - 1 * s, 1.6 * s, 0.9 * s, 0, 0, Math.PI * 2);
+    c.fill();
+  }
+  // clovers in the gold
+  for (const [u, o] of [
+    [0.58, -0.35],
+    [0.7, 0.4],
+    [0.8, -0.2],
+  ]) {
+    const q = beside(sp, u, o);
+    for (let k = 0; k < 4; k++) {
+      c.fillStyle = '#2f9e44';
+      c.beginPath();
+      c.arc(q.x + Math.cos((k * Math.PI) / 2) * 3 * s, q.y + Math.sin((k * Math.PI) / 2) * 3 * s, 2.8 * s, 0, Math.PI * 2);
+      c.fill();
+    }
+  }
+}
+
+// ---- the Club skins' touch on the water: what each one drops
+
+/** What a Club skin drops on the water: autumn leaves from the phoenix, snow round the tree, sparks round the 2027 kite, rose petals, clovers and coins. */
+export type TrailKind = 'leaf' | 'snow' | 'spark' | 'petal' | 'clover';
+
+export function trailOf(skin: SkinDef): TrailKind | null {
+  const map: Partial<Record<SkinDef['pattern'], TrailKind>> = { phoenix: 'leaf', xmasTree: 'snow', kite2027: 'spark', rose: 'petal', stPatrick: 'clover' };
+  return map[skin.pattern] ?? null;
+}
+
+/** The size of one bit (spec px, square, centred on 0,0). */
+export const TRAIL_SIZE = 28;
+
+/** Draw one bit of a trail, centred on 0,0, about TRAIL_SIZE across; `variant` 0..2 gives a few looks (leaf colours, a coin among the clovers). */
+export function drawTrailBit(c: Ctx, kind: TrailKind, variant: number) {
+  c.save();
+  c.lineJoin = 'round';
+  c.lineCap = 'round';
+  if (kind === 'leaf') {
+    // a maple leaf: five pointed lobes, a stem, veins
+    const col = ['#e8691c', '#c2361a', '#f2b134'][variant % 3];
+    const p = new Path2D();
+    const lobes = [
+      [0, -12],
+      [7, -6],
+      [12, -7],
+      [9, 1],
+      [11, 5],
+      [3, 4],
+      [1, 9],
+      [-1, 9],
+      [-3, 4],
+      [-11, 5],
+      [-9, 1],
+      [-12, -7],
+      [-7, -6],
+    ];
+    lobes.forEach(([x, y], i) => (i ? p.lineTo(x, y) : p.moveTo(x, y)));
+    p.closePath();
+    c.fillStyle = col;
+    c.fill(p);
+    c.strokeStyle = darker(col, 0.35);
+    c.lineWidth = 1.1;
+    c.stroke(p);
+    c.beginPath();
+    c.moveTo(0, 12);
+    c.lineTo(0, -8);
+    c.moveTo(0, 2);
+    c.lineTo(8, -4);
+    c.moveTo(0, 2);
+    c.lineTo(-8, -4);
+    c.stroke();
+  } else if (kind === 'snow') {
+    // a six-armed snowflake
+    c.strokeStyle = '#ffffff';
+    c.lineWidth = 2;
+    for (let k = 0; k < 6; k++) {
+      c.save();
+      c.rotate((k * Math.PI) / 3);
+      c.beginPath();
+      c.moveTo(0, 0);
+      c.lineTo(0, -11);
+      c.moveTo(0, -6);
+      c.lineTo(3.5, -9);
+      c.moveTo(0, -6);
+      c.lineTo(-3.5, -9);
+      c.stroke();
+      c.restore();
+    }
+  } else if (kind === 'spark') {
+    // a firework star
+    const col = ['#ffd23f', '#ff5a5a', '#5ab8ff'][variant % 3];
+    sparkle(c, 0, 0, 12, col);
+    c.fillStyle = '#ffffff';
+    c.beginPath();
+    c.arc(0, 0, 2.6, 0, Math.PI * 2);
+    c.fill();
+  } else if (kind === 'petal') {
+    // a rose petal
+    c.fillStyle = ['#d9262c', '#b5161d', '#e8453a'][variant % 3];
+    c.beginPath();
+    c.moveTo(0, 10);
+    c.bezierCurveTo(-11, 2, -9, -10, 0, -10);
+    c.bezierCurveTo(9, -10, 11, 2, 0, 10);
+    c.fill();
+    c.strokeStyle = 'rgba(90,6,12,0.6)';
+    c.lineWidth = 1;
+    c.stroke();
+    c.fillStyle = 'rgba(255,170,150,0.55)';
+    c.beginPath();
+    c.ellipse(-2.5, -3, 2.5, 4.5, -0.3, 0, Math.PI * 2);
+    c.fill();
+  } else if (variant === 1) {
+    // a gold coin
+    c.fillStyle = '#f2c230';
+    c.strokeStyle = '#a8740a';
+    c.lineWidth = 1.6;
+    c.beginPath();
+    c.arc(0, 0, 9, 0, Math.PI * 2);
+    c.fill();
+    c.stroke();
+    c.strokeStyle = 'rgba(168,116,10,0.7)';
+    c.beginPath();
+    c.arc(0, 0, 6, 0, Math.PI * 2);
+    c.stroke();
+    c.fillStyle = 'rgba(255,248,200,0.8)';
+    c.beginPath();
+    c.ellipse(-3, -3, 2.5, 1.5, -0.6, 0, Math.PI * 2);
+    c.fill();
+  } else {
+    // a four-leaf clover
+    c.fillStyle = '#2f9e44';
+    c.strokeStyle = '#1b6a2a';
+    c.lineWidth = 1;
+    for (let k = 0; k < 4; k++) {
+      c.save();
+      c.rotate((k * Math.PI) / 2 + Math.PI / 4);
+      c.beginPath();
+      c.moveTo(0, 0);
+      c.bezierCurveTo(-7, -3, -6, -11, -1.5, -10);
+      c.bezierCurveTo(0, -12, 1, -12, 1.5, -10);
+      c.bezierCurveTo(6, -11, 7, -3, 0, 0);
+      c.fill();
+      c.stroke();
+      c.restore();
+    }
+    c.strokeStyle = '#1b6a2a';
+    c.lineWidth = 1.6;
+    c.beginPath();
+    c.moveTo(0, 0);
+    c.quadraticCurveTo(3, 6, 2, 11);
+    c.stroke();
   }
   c.restore();
 }

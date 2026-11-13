@@ -54,6 +54,8 @@ import { CLUB } from '../config/shop';
 import { SkillScreen } from './skills';
 import type { TreeId } from '../config/skills';
 import { sound } from './sound';
+import { heliPicture } from './heliArt';
+import type { ClubSkinDef } from '../config/skins';
 
 export interface UICallbacks {
   /** The player selected a zone (or null when the sheet closed). */
@@ -1179,6 +1181,14 @@ export class GameUI {
     this.calendar?.update();
     this.skins?.update();
     if (this.game.offlineReport) this.showOffline(this.game.offlineReport);
+    // a Surf Club member just got this month's skin: its showcase, as soon as nothing else is open
+    if (this.game.newClubSkin && this.refs.modal.hidden && !this.coachOpen) {
+      const skin = this.game.newClubSkin as ClubSkinDef;
+      this.game.newClubSkin = null;
+      this.openSkins();
+      this.skins?.showcase(skin);
+      this.confetti();
+    }
   }
 
   // ------------------------------------------------------------ banner plane
@@ -1228,8 +1238,12 @@ export class GameUI {
     const m = this.modal(`
       <button class="x mist-x" data-close aria-label="Close">${icon('close')}</button>
       <div class="plane-pop">
-        <div class="plane-prize">${this.prizeHtml(prize)}</div>
-        <button class="go big" data-plane>${free ? 'Claim' : `${icon('video')} Watch ad`}</button>
+        <div class="plane-head">${heliPicture()}<h2>${PLANE.popup.title}</h2></div>
+        <div class="plane-body">
+          <p>${free ? PLANE.popup.textFree : PLANE.popup.text}</p>
+          <div class="plane-prize">${this.prizeHtml(prize)}</div>
+          <button class="go big" data-plane>${free ? 'Claim' : `${icon('video')} Watch ad`}</button>
+        </div>
       </div>`);
     // closed with X: it flies away at once (and the next one is planned)
     this.modalClosed = () => {
@@ -1453,6 +1467,10 @@ export class GameUI {
     this.skins = new SkinScreen(m.querySelector('.modal') as HTMLElement, {
       game: this.game,
       close: () => this.closeModal(),
+      openClub: () => {
+        this.closeModal();
+        this.openShop('club');
+      },
       toast: (t) => this.toast(t),
       confetti: () => this.confetti(),
       refreshTop: () => this.refreshTop(),
@@ -1461,7 +1479,8 @@ export class GameUI {
     this.skins.show();
   }
 
-  openShop() {
+  /** Open the shop; `at` scrolls to the Surf Club. */
+  openShop(at?: 'club') {
     const m = this.modal('');
     this.shop = new Shop(m.querySelector('.modal') as HTMLElement, {
       game: this.game,
@@ -1475,6 +1494,7 @@ export class GameUI {
     });
     this.modalClosed = () => (this.shop = null);
     this.shop.show();
+    if (at === 'club') m.querySelector('[data-club]')?.scrollIntoView({ block: 'start' });
   }
 
   private openMenu(page: 'main' | 'terms' | 'privacy' = 'main') {

@@ -51,7 +51,7 @@ function particles(n: number, cls: string, colors: string[], reach: number): str
   return out;
 }
 
-const BURST: Record<Rarity, number> = { common: 14, rare: 20, epic: 28, legendary: 40 };
+const BURST: Record<Rarity, number> = { common: 14, rare: 20, epic: 28, legendary: 40, club: 40 };
 
 export function playOpening(o: OpeningOptions) {
   const el = document.createElement('div');
@@ -125,7 +125,7 @@ export function playOpening(o: OpeningOptions) {
   // the timeline: a rarer item knocks longer before it opens and gets a longer hero moment
   const open = knock ? 2000 : 1650;
   const heroAt = open + 260;
-  const heroLen = { common: 0, rare: 1150, epic: 1450, legendary: 2050 }[o.rarity];
+  const heroLen = { common: 0, rare: 1150, epic: 1450, legendary: 2050, club: 2050 }[o.rarity];
   const cardAt = special ? heroAt + heroLen : open + 500;
   const steps: [number, () => void][] = [
     [

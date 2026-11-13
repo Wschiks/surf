@@ -97,6 +97,26 @@ describe('skins: the boost', () => {
     expect(zoneStats(s, ZONES[1]).income).toBeCloseTo(zoneStats(newGame(0), ZONES[1]).income);
   });
 
+  it("a worn skin's rarity makes the section's sessions faster: Common x1, Rare x1.1, Epic x1.25, Legendary x1.5", () => {
+    for (const [rarity, k] of [
+      ['common', 1],
+      ['rare', 1.1],
+      ['epic', 1.25],
+      ['legendary', 1.5],
+    ] as const) {
+      const skin = SKINS.find((x) => x.rarity === rarity)!;
+      const ref = ZONES.find((z) => z.id === skin.zone)!;
+      const s = newGame(0);
+      const base = zoneStats(s, ref).duration;
+      s.skins.pieces[skin.id] = 4;
+      expect(wearSkin(s, skin.id)).toBe(true);
+      expect(zoneStats(s, ref).duration).toBeCloseTo(base / k);
+      // only while it is worn
+      wearSkin(s, skin.id);
+      expect(zoneStats(s, ref).duration).toBeCloseTo(base);
+    }
+  });
+
   it('a skin that is not unlocked cannot be worn', () => {
     const s = newGame(0);
     s.skins.pieces[SKINS[5].id] = 3;

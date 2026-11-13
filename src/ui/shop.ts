@@ -7,7 +7,8 @@ import { adStreak, buyCoinPack, claimAdStep, claimClubGems, clubStatus, coinPack
 import { fmt } from './format';
 import { buy, buyClub, buyPack, canBuy, manageClub, restore, storePrices, type PriceKey } from '../purchases';
 import { icon, tile } from './icons';
-import { BoxShop } from './skins';
+import { BoxShop, boxArt, clubPoster } from './skins';
+import { clubSkinOfMonth } from '../core/skins';
 import { sound } from './sound';
 
 export interface ShopContext {
@@ -71,6 +72,9 @@ export class Shop {
     private root: HTMLElement,
     private ctx: ShopContext,
   ) {}
+
+  /** The Surf Club header's poster of this month's skin (kept, so it does not restart). */
+  private poster?: HTMLElement;
 
   show() {
     this.root.className = 'modal menu shop';
@@ -158,17 +162,51 @@ export class Shop {
 
     const club = clubStatus(g, now);
     const until = g.perks.clubUntil ? new Date(g.perks.clubUntil).toLocaleDateString(undefined, { day: 'numeric', month: 'short' }) : '';
-    const perks = [`Coins x${CLUB.coinMult}, all the time`, 'No ads', `${CLUB.gemsPerDay} gems every day`, `+${CLUB.awayHours} hours away time`];
+    const price = this.prices.club ?? CLUB.price;
+    // the header: this month's skin on its themed poster, and how long it is still there (a missed month is gone)
+    const month = clubSkinOfMonth(now);
+    const end = new Date(now);
+    const daysLeft = Math.max(1, Math.ceil((new Date(end.getFullYear(), end.getMonth() + 1, 1).getTime() - now) / 86_400_000));
+    const owned = !!month && (g.skins.pieces[month.id] ?? 0) > 0;
+    const headTxt = month
+      ? `<span class="club-tag">${icon('star')} ${CLUB.name}</span>
+         <b>${month.name}</b>
+         <small>${club.active && owned ? `${icon('check')} Yours this month` : daysLeft === 1 ? `${icon('clock')} Last day!` : `${icon('clock')} ${daysLeft} days left`}</small>`
+      : `<span class="club-tag">${icon('star')} ${CLUB.name}</span><b>${CLUB.name}</b>`;
+    // what a month brings, from the real numbers: gems and a box every day
+    const days = 30;
+    const perks: [string, string][] = [
+      [icon('skin'), 'An exclusive skin every month'],
+      [icon('coin'), `Coins x${CLUB.coinMult}, all the time`],
+      [icon('video'), 'No ads'],
+      [icon('gem'), `${CLUB.gemsPerDay} gems + a box every day`],
+      [icon('clock'), `+${CLUB.awayHours} hours away time`],
+    ];
     this.root.querySelector('[data-club]')!.innerHTML = `
-      <div class="shop-title"><b>${icon('star')} ${CLUB.name}</b><small>${club.active ? `Active${until ? ' until ' + until : ''}` : `${this.prices.club ?? CLUB.price} / month`}</small></div>
-      <ul class="club-perks">${perks.map((t) => `<li>${icon('check')}${t}</li>`).join('')}</ul>
-      ${
-        club.active
-          ? `<button class="go big ready" data-club-claim ${club.nextIn > 0 || busy ? 'disabled' : ''}>${icon('gem')} ${club.nextIn > 0 ? `Next gems in ${clock(club.nextIn)}` : `Claim ${CLUB.gemsPerDay} gems`}</button>
-             <button class="go alt big" data-club-manage>Manage subscription</button>`
-          : `<button class="go big club-join" data-club-join ${busy ? 'disabled' : ''}>Join for ${this.prices.club ?? CLUB.price} / month</button>`
+      <div class="club-head" data-club-head><div class="club-head-txt">${headTxt}</div></div>
+      <div class="club-body">
+        ${
+          club.active
+            ? `<div class="shop-title"><b>${icon('check')} Member</b><small>${until ? `Active until ${until}` : 'Active'}</small></div>`
+            : `<div class="club-value">Up to ${icon('gem')}<b>${CLUB.gemsPerDay * days}</b> + ${boxArt('normal', 'mini')}<b>${CLUB.boxesPerDay * days}</b> a month</div>`
+        }
+        <ul class="club-perks">${perks.map(([ic, t]) => `<li><i>${ic}</i>${t}</li>`).join('')}</ul>
+        ${
+          club.active
+            ? `<button class="go big ready" data-club-claim ${club.nextIn > 0 || busy ? 'disabled' : ''}>${icon('gem')} ${club.nextIn > 0 ? `Next gems in ${clock(club.nextIn)}` : `Claim ${CLUB.gemsPerDay} gems + box`}</button>
+               <button class="go alt big" data-club-manage>Manage subscription</button>`
+            : `<button class="go big club-join" data-club-join ${busy ? 'disabled' : ''}><span>Join for ${price} / month</span></button>`
+        }
+        <p class="shop-note">${price} per month. Renews by itself every month until you cancel it in your App Store or Google Play account settings. Cancel any time. <button class="link" data-legal="terms">Terms</button> · <button class="link" data-legal="privacy">Privacy</button></p>
+      </div>`;
+    // the poster is made once per month's skin and moved into the fresh card (so its falling leaves never restart)
+    if (month) {
+      if (this.poster?.dataset.skin !== month.id) {
+        this.poster = clubPoster(month, 150);
+        this.poster.dataset.skin = month.id;
       }
-      <p class="shop-note">${this.prices.club ?? CLUB.price} per month. Renews by itself every month until you cancel it in your App Store or Google Play account settings. Cancel any time. <button class="link" data-legal="terms">Terms</button> · <button class="link" data-legal="privacy">Privacy</button></p>`;
+      this.root.querySelector('[data-club-head]')!.prepend(this.poster);
+    }
     this.root.querySelector('[data-club-join]')?.addEventListener('click', () => void this.joinClub());
     this.root.querySelector('[data-club-claim]')?.addEventListener('click', () => this.claimClub());
     this.root.querySelector('[data-club-manage]')?.addEventListener('click', () => void manageClub());
@@ -272,7 +310,7 @@ export class Shop {
     const got = claimClubGems(this.ctx.game.state, Date.now());
     if (got > 0) {
       sound.coin();
-      this.ctx.toast(`+${got} gems!`);
+      this.ctx.toast(`+${got} gems and a box!`);
       this.ctx.game.save();
     }
     this.ctx.refreshTop();

@@ -484,3 +484,49 @@ The author asked for the whole dim-the-screen tutorial to go ("not 100% working"
 - **The helicopter is easy to tap** (12 Nov 2026, the author's report that taps missed it): the old tap test used the helicopter's bounds, which came back as a single point, so only a tap within 40 px of that point counted. Now a tap counts anywhere in a big circle on screen round the helicopter or round the ring on the water under it: its size at the current zoom plus 60 px, at least 110 px (checked on a phone-size screen: on it, 86 px and 98 px off all catch it; 220 px away does not).
 - **Matchday is a 1:1 copy of the friend's wing; X sends the helicopter away** (12 Nov 2026, the author's asks): the Matchday wing is flat red with a dark red strut and the club logo on its right panel, as in the friend's picture: a white outlined crest (ears at the top corners, a bump on each side, a rounded point), a white ring in it and a white football with red patches. On the water the wing's see-through window is hidden for Matchday so the logo shows whole. Tapping the helicopter and closing its popup with X now makes it fly away at once, three times its normal pace, over the map's edge (the next one is planned as for a missed one); before, it flew on along its route.
 - **Matchday's logo is the author's club badge** (12 Nov 2026): the crest on the Matchday wing follows the author's football club badge, without its text and without the white name band: a shield with a pointed top, curled top corners with a notch under them, a waist, and a pointed bottom; a thin red rim, a thick white band, red inside, and a big white football with red seams.
+- **Moonlight, the freestyle windsurf Legendary** (12 Nov 2026, the author's design): it is the third Freestyle skin. The sail is a crescent moon after the author's telescope photo: grey with a bright lit edge, darker smooth seas, and craters with sharp shadows near the terminator. It is a figure, so its shadow takes the moon's shape and the sail's window and seams hide. Its horns sit at the sail's corners, and it is flattened a little so it stays about the size of a normal sail. The freestyle board becomes the Milky Way: a black sky full of white stars with the soft galaxy band slanting across, a dark deck pad and the mast foot. As with every skin's own board, the board only shows on the water.
+- **Windsurf designs by the author's friend** (13 Nov 2026), and every one brings its own board (the author's choice), which lies over the board of its section and never shows in the collection:
+  - Beginner class: Sunshine (a yellow sail on a blue board), Camo (a green sail on a camouflage board) and Jungle Snake (Legendary: a jungle-green sail; the board is a jungle with trunks, vines and leaves, and a python wrapped round its tail with its head on the deck).
+  - Slalom: Tiger Stripes (black with slanted red and orange stripes), Chequered (black and white) and Driftwood (Legendary: a sail of leaves with a brown branch on a plank of wood).
+  - Freestyle: Polka Dots (white with yellow and blue dots; the board has a purple nose with a light-blue stripe), Eight of Hearts (a playing card: red hearts, a red nose and the 8 in two corners) and Moonlight (kept).
+  - Wave zone: 1990 Classic (kept; the friend drew it too), Fruit Salad (green with oranges, cherries, bananas, grapes and strawberries) and Blue Fish (Legendary: a scaly blue sail with its tail at the top and its eye at the clew; the board is the fish, with its eyes at the nose, fins out of the rails and its forked tail past the tail).
+  - The friend picked set A (blue, camo, snake) and set B (dots, cards, elephant), both titled "Windsurfing". The author put A in Beginner class and B in Freestyle; the elephant is left out because Moonlight stays Freestyle's Legendary. Rarities stay by area. These replace the old windsurf sets (stripes, arrows, rainbow, waves, lightning, night sky, flames, hibiscus, blue fire, thunder).
+- **A bigger helicopter popup with a little text** (13 Nov 2026, after the author's mockup): a picture header (the map's yellow rescue helicopter over the sea, its rotor turning, a lifebuoy on the winch line for a waving swimmer) with the title "Rescue helicopter", one short line of text (the words live in src/config/plane.ts; without ads it says "Grab it" instead of "Watch a short ad"), the prize in a pill, and the full-width button. X still sends it away.
+- **A skin's rarity makes its section faster** (13 Nov 2026, the author's subtle Legendary touch): while a section wears an unlocked skin, its sessions go faster by the skin's rarity: Common x1, Rare x1.1, Epic x1.25, Legendary x1.5 (on top of the tier's income boost, which stays the same for every rarity). The numbers are `RARITY_SPEED` in src/config/skins.ts. The author said "uncommon"; the game has no Uncommon, so it is Common.
+- **The skin screen shows the numbers** (13 Nov 2026, the author's ask): under the title, a strip with the four rarities in their colours: how many of each are unlocked (for example 8/24) and the speed each gives (a clock and x1.25). Every card shows what it gives: its rarity's speed (Rare and up; Common gives none) and, from Bronze, its income boost with a coin (+100%, +500%).
+- **The Surf Club rework: a skin every month** (13 Nov 2026, the author's design). The Club (still €3.99 a month) now gives:
+  - a new skin on the 1st of every month (joining mid-month gives it at once);
+  - 5 gems and a free box with every daily claim (was 3 gems);
+  - still x2 coins, no ads and +2 hours away.
+  The monthly skins are the friend's designs, as the new rarity "Club" (pink frame):
+  - Nov 2026: Thanksgiving, a phoenix kite for Big air and waves.
+  - Dec 2026: Christmas Tree, the board a tree with baubles and the star at the nose, for Nazaré.
+  - Jan 2027: 2027, a fireworks kite for Kite school.
+  - Feb 2027: Rose, a round board for Shallows.
+  - Mar 2027: St. Patrick's, a rainbow sail on a pot-of-gold board for Slalom.
+  How Club skins work:
+  - They never come from boxes. A member gets the month's skin complete (Silver, +500%) and it is put on. It is as fast as a Legendary (x1.5).
+  - A missed month is gone. Skins already given stay after the subscription ends.
+  - The skin screen shows the month's skin at the top for everyone (with Join for non-members, Wear for members) and a Surf Club row at the end: the months so far, a missed one dark with a lock. The coming months stay hidden.
+  - While testing (`DEV_CLUB_PREVIEW` in src/config/dev.ts, dev and the Vercel test build only), every month shows and is unlocked. Set it to false to see what players will see.
+  - A month without a design gives nothing, so the friend needs a design for April 2027 onward. This is the game's second use of the real date (CLAUDE.md updated).
+- **Club skins are special: a showcase and a touch on the water** (13 Nov 2026, the author's ask):
+  - **Showcase:** tapping the skin of the month (or a Club card) opens a big card in the month's theme, after the friend's cards: an autumn glow with falling leaves, red velvet with snow, a fireworks night, pink with petals, green with clovers and coins. Slow light rays, the skin floating, what it gives, and Wear or Join. A member who gets the month's skin sees its showcase right away.
+  - **On the water:** each Club skin drops something at a fixed rhythm (nothing random). The phoenix kite lets autumn leaves sway down to the water, the 2027 kite pops sparks, snow drifts round the Christmas tree, the rose board leaves petals behind and St. Patrick's leaves clovers and gold coins.
+- **The shop's Surf Club card sells the skin of the month** (13 Nov 2026, the author's ask, like the helicopter popup):
+  - A picture header: the month's skin big on its themed poster (falling leaves, light rays), its name, and how many days it is still there (a missed month is gone).
+  - A value line from the real numbers: up to 150 gems and 30 boxes a month.
+  - The perks with icons, and a big Join button with a soft shine.
+  - The renewal and cancel text the stores require is kept.
+- **The phoenix redrawn to look like the friend's card** (13 Nov 2026), following phoenix drawing guides:
+  - Raised wings of overlapping feather layers: primaries at the hand, secondaries from the arm, rows of golden coverts.
+  - Each feather slim at the root and widest near its tip, cel shaded, with a bright rim on its lit edge and a dark outline.
+  - Glowing flame trails off the wing tips and tail, and tail plumes with flame tips and eye spots.
+  - A head turned to the side with a hooked beak, a fierce eye and a swept-back flame crest. A warm glow round it.
+- **The phoenix drawn again, closer to the friend's card** (13 Nov 2026, the author found the detailed versions worse; the first was closest):
+  - Big smooth shapes, lit from behind: a golden glow, and wings raised high in a V.
+  - Each wing is one smooth silhouette ending in six long finger feathers, with a middle row of feathers and a light gold layer over it, light gold inside and deep bronze at the tips.
+  - An upright golden body and the head in profile facing left, with a hooked beak, an eye and curling crest plumes.
+  - Talons spread to the lines, and long tail plumes flowing to one side with peacock eyes.
+  - Warm copper colours (#d98a36, #ffd27a, #7a3a12).
+  - Also fixed: a figure skin's picture in the collection is measured on its own; the phoenix was using the Sky Dragon's frame and had its wing tips cut.

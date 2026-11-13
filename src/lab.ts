@@ -6,7 +6,7 @@ import { WAVE_STYLES, bakeWaveTile, LOOK_TINT } from './scene/art';
 import { bakeRigAtlas } from './scene/rig/atlas';
 import { Crew } from './scene/rig/crew';
 import { FxPool } from './scene/rig/fx';
-import { skinsOfZone } from './config/skins';
+import { CLUB_SKINS, skinsOfZone } from './config/skins';
 
 class Lab extends Phaser.Scene {
   crews: { id: string; crew: Crew; rect: { x: number; y: number; w: number; h: number } }[] = [];
@@ -37,7 +37,7 @@ class Lab extends Phaser.Scene {
   }
   step(dt: number) {
     this.t += dt;
-    for (const c of this.crews) c.crew.update(dt, this.t, this.active, this.guests, true, 2, this.skin >= 0 ? skinsOfZone(c.id)[this.skin] : null);
+    for (const c of this.crews) c.crew.update(dt, this.t, this.active, this.guests, true, 2, this.skin >= 0 ? (skinsOfZone(c.id)[this.skin] ?? CLUB_SKINS.find((k) => k.zone === c.id) ?? null) : null);
     this.fx.update(dt);
   }
   advance(seconds: number) {

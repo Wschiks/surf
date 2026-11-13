@@ -14,6 +14,13 @@ export const PLANE = {
   flightSeconds: 24,
   /** It slows down and lingers this long in the middle of the screen, so you can't miss it. */
   lingerSeconds: 3.5,
+  /** The words in its popup (the author asked for a little text). */
+  popup: {
+    title: 'Rescue helicopter',
+    text: 'The lifeguards spotted your beach and brought a gift on board. Watch a short ad to grab it before they fly on!',
+    /** With Remove ads or the Surf Club: no ad to watch. */
+    textFree: 'The lifeguards spotted your beach and brought a gift on board. Grab it before they fly on!',
+  },
   /** The prizes and their chances (they add up to 1). */
   prizes: {
     /** Coins: what the coins-per-second counter says, times this many seconds (5 minutes). */

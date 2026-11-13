@@ -438,11 +438,35 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 .shop-note.have .ic { width: 16px; height: 16px; }
 .shop-note.have b { color: #e0d0ff; }
 
-.shop-card.club { background: linear-gradient(160deg, #3a2a86, #1f2f6d); box-shadow: inset 0 0 0 2px #8a4dff; margin-top: 10px; }
+.shop-card.club { background: linear-gradient(160deg, #3a2a86, #1f2f6d); box-shadow: inset 0 0 0 2px #8a4dff, 0 0 22px rgba(138, 77, 255, 0.35); margin-top: 10px; padding: 0; overflow: hidden; }
+/* the Surf Club's header: this month's skin on its poster, its name, how long it is still there */
+.club-head { position: relative; height: calc(170px * var(--u)); overflow: hidden; }
+.club-poster { position: absolute; inset: 0; }
+.club-poster .sk-show-rays { top: 50%; left: 70%; }
+.club-poster-pic { position: absolute; right: -6px; top: 50%; width: 150px; height: 150px; margin-top: -75px; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35)); animation: skFloat 3s ease-in-out infinite; }
+.club-poster-pic canvas { width: 150px; height: 150px; display: block; }
+.club-head-txt { position: absolute; left: 14px; top: 0; bottom: 0; width: 56%; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; gap: 4px; text-align: left; z-index: 1; }
+.club-head-txt b { font-size: 27px; font-weight: 900; line-height: 1; color: #fff; text-shadow: 0 2px 0 rgba(40, 10, 0, 0.55), 0 0 12px rgba(0, 0, 0, 0.3); }
+.club-head-txt small { white-space: nowrap; display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px; border-radius: 999px; background: rgba(20, 8, 4, 0.55); color: #fff; font-size: 11.5px; font-weight: 900; }
+.club-head-txt small .ic { width: 12px; height: 12px; color: #ffe27a; }
+.club-tag { display: inline-flex; align-items: center; gap: 5px; padding: 4px 11px; border-radius: 999px; background: linear-gradient(180deg, #ff86b5, #ff3d84); box-shadow: 0 2px 0 #b5205a; color: #fff; font-size: 11px; font-weight: 900; letter-spacing: 0.08em; text-transform: uppercase; }
+.club-tag .ic { width: 12px; height: 12px; color: #ffe27a; }
+.club-body { padding: 12px 14px 14px; }
+.club-value { white-space: nowrap; display: flex; align-items: center; justify-content: center; gap: 4px; padding: 8px 8px; border-radius: 14px; background: rgba(255, 210, 63, 0.14); box-shadow: inset 0 0 0 2px rgba(255, 210, 63, 0.5); color: #ffe27a; font-size: 13px; font-weight: 800; }
+.club-value b { font-size: 17px; font-weight: 900; color: #fff; }
+.club-value .ic { width: 18px; height: 18px; }
+.club-value .box.mini { margin-right: 0; }
+.club-join { position: relative; overflow: hidden; font-size: 18px; min-height: calc(58px * var(--u)); }
+.club-join span { position: relative; z-index: 1; }
+.club-join::after { content: ''; position: absolute; top: 0; bottom: 0; left: -60%; width: 40%; background: linear-gradient(100deg, rgba(255, 255, 255, 0), rgba(255, 255, 255, 0.45), rgba(255, 255, 255, 0)); transform: skewX(-20deg); animation: clubShine 2.8s ease-in-out infinite; }
+@keyframes clubShine { 0%, 55% { left: -60%; } 100% { left: 130%; } }
+@media (prefers-reduced-motion: reduce) { .club-join::after, .club-poster-pic { animation: none; } }
 .shop-card.club .shop-title b { display: flex; align-items: center; gap: 6px; }
 .shop-card.club .shop-title .ic { width: 20px; height: 20px; }
 .club-perks { list-style: none; margin: 10px 0 4px; padding: 0; display: flex; flex-direction: column; gap: 5px; }
 .club-perks li { display: flex; align-items: center; gap: 8px; font-size: 13.5px; font-weight: 700; }
+.club-perks li > i { flex: none; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: rgba(255, 255, 255, 0.12); color: #ffe27a; }
+.club-perks li > i .ic { width: 16px; height: 16px; }
 .club-perks .ic { width: 16px; height: 16px; color: #7dffc8; }
 .club-join { background: var(--gloss), #8a4dff; box-shadow: 0 4px 0 #5a2fc4; }
 .link { background: none; color: #b9a3ff; font-weight: 800; font-size: 12px; text-decoration: underline; padding: 0; }
@@ -581,9 +605,26 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 .mist-pop .tile { margin: 0 auto 10px; }
 .mist-pop p { font-size: 16px; font-weight: 700; margin-bottom: 14px; }
 
-/* Banner plane popup (the plane itself flies on the map, src/scene/plane.ts) */
-.plane-pop { text-align: center; padding-top: 18px; }
-.plane-prize { display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 30px; font-weight: 900; margin-bottom: 16px; }
+/* Rescue helicopter popup (the helicopter itself flies on the map, src/scene/heli.ts): a picture header, a little text, the prize */
+.modal:has(.plane-pop) { padding: 0; max-width: 370px; overflow: hidden; }
+.plane-pop { text-align: center; }
+.plane-head { position: relative; height: calc(160px * var(--u)); background: #2f86c8; }
+.hp-pic { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+.plane-head h2 { position: absolute; left: 18px; bottom: calc(52px * var(--u)); margin: 0; width: 46%; text-align: left; font-size: 26px; line-height: 1.05; font-weight: 900; color: #fff; text-shadow: 0 2px 0 rgba(10, 50, 80, 0.55), 0 0 12px rgba(10, 50, 80, 0.35); }
+.modal:has(.plane-pop) .mist-x { z-index: 2; }
+.plane-body { padding: 16px 22px 22px; }
+.plane-body p { margin: 0 0 14px; font-size: 15px; line-height: 1.4; color: var(--soft); font-weight: 600; }
+.plane-prize { display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-size: 30px; font-weight: 900; margin-bottom: 18px; padding: 6px 20px; border-radius: 999px; background: rgba(255, 255, 255, 0.07); }
+.plane-body .go { width: 100%; }
+.hp-rotor { transform-box: fill-box; transform-origin: center; animation: hp-rotor 0.16s linear infinite; }
+.hp-tail { animation: hp-spin 0.2s linear infinite; }
+.hp-bob { animation: hp-bob 2.4s ease-in-out infinite; }
+.hp-wave { transform-box: fill-box; transform-origin: 0 100%; animation: hp-wave 0.9s ease-in-out infinite alternate; }
+@keyframes hp-rotor { 0% { transform: scaleX(1); } 50% { transform: scaleX(0.12); } 100% { transform: scaleX(1); } }
+@keyframes hp-spin { to { transform: rotate(360deg); } }
+@keyframes hp-bob { 0%, 100% { transform: translateY(-3px); } 50% { transform: translateY(3px); } }
+@keyframes hp-wave { from { transform: rotate(-18deg); } to { transform: rotate(14deg); } }
+@media (prefers-reduced-motion: reduce) { .hp-rotor, .hp-tail, .hp-bob, .hp-wave { animation: none; } }
 .plane-prize .coin, .plane-prize .ic { width: 34px; height: 34px; flex: none; }
 .plane-prize b + b { font-size: 20px; color: var(--soft); }
 
@@ -724,7 +765,69 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 .sk-pic { display: flex; align-items: center; justify-content: center; }
 .sk-bar { display: block; width: 90%; height: 5px; border-radius: 3px; background: rgba(0, 0, 0, 0.12); overflow: hidden; }
 .sk-bar u { display: block; height: 100%; background: var(--rar, #3cbf6a); transition: width 0.35s ease-out; }
-.sk-boost { position: absolute; top: 3px; left: 4px; font-style: normal; font-size: 10px; font-weight: 900; background: var(--sun); color: var(--ink); border-radius: 8px; padding: 0 4px; }
+/* what a skin gives: the speed of its rarity (in the rarity's colour) and, from Bronze, its income boost */
+.sk-gives { display: flex; justify-content: center; gap: 3px; min-height: 15px; flex-wrap: wrap; }
+.sk-gives em { display: inline-flex; align-items: center; gap: 1px; font-style: normal; font-size: 10px; font-weight: 900; border-radius: 8px; padding: 0 4px; line-height: 15px; }
+.sk-gives .ic { width: 10px; height: 10px; }
+.sk-spd { background: rgba(0, 0, 0, 0.28); color: var(--rar); }
+.sk-boost { background: var(--sun); color: var(--ink); }
+/* the Surf Club's skin of the month at the top of the skin screen, and the Club row at the end */
+.sk-month { display: flex; align-items: center; gap: 10px; margin: 4px 0 8px; padding: 8px 10px 8px 6px; border-radius: 16px; border: 3px solid var(--rar); background: radial-gradient(circle at 18% 50%, rgba(255, 92, 154, 0.4), rgba(255, 92, 154, 0) 60%), linear-gradient(135deg, #3a1a4f, #1c2f5c); box-shadow: 0 0 14px rgba(255, 92, 154, 0.35); }
+.sk-month-pic { flex: none; width: 96px; height: 96px; }
+.sk-month-pic canvas { width: 96px; height: 96px; display: block; }
+.sk-month-info { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; text-align: left; }
+.sk-month-info b { font-size: 17px; font-weight: 900; color: #fff; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sk-month-info small { display: flex; align-items: center; gap: 4px; font-size: 11px; font-weight: 800; color: var(--soft); }
+.sk-month-info small .ic { width: 12px; height: 12px; }
+.sk-month-info .sk-month-tag { color: var(--rar); text-transform: uppercase; letter-spacing: 0.03em; font-size: 10px; white-space: nowrap; }
+.sk-month-info .sk-gives { justify-content: flex-start; margin-top: 2px; }
+.sk-month-go { flex: none; min-height: calc(40px * var(--u)); padding: 0 12px; font-size: 14px; }
+.sk-club-h { color: var(--rar, #ff5c9a); }
+.skins .sk-club-h { color: #ff5c9a; }
+.sk-skin.club { background: linear-gradient(180deg, rgba(255, 92, 154, 0.3), var(--card) 70%); }
+.sk-skin.club.locked { filter: saturate(0.4); }
+.sk-skin small .ic { width: 11px; height: 11px; vertical-align: -1px; }
+
+/* the showcase of a Club skin: a big card on the month's background with falling bits */
+.sk-month-pic, .sk-month-info { cursor: pointer; }
+.sk-show { position: fixed; inset: 0; z-index: 60; display: grid; place-items: center; padding: 20px; background: rgba(4, 14, 30, 0.72); animation: skFade 0.2s ease-out; }
+@keyframes skFade { from { opacity: 0; } }
+.sk-show-card { position: relative; overflow: hidden; width: 100%; max-width: 340px; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 18px 18px 20px; border-radius: 24px; border: 4px solid #ff5c9a; box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.15), 0 0 40px rgba(255, 92, 154, 0.55); color: #fff; text-align: center; animation: skPop 0.35s cubic-bezier(0.2, 1.6, 0.4, 1); }
+.theme-leaf .sk-show-card, .club-poster.theme-leaf { background: radial-gradient(circle at 50% 36%, #ffd27a 0%, #e07a24 20%, #8a3412 50%, #3a1206 100%); }
+.theme-snow .sk-show-card, .club-poster.theme-snow { background: radial-gradient(circle at 50% 36%, #d8484a 0%, #9c1622 40%, #3a0610 100%); }
+.theme-spark .sk-show-card, .club-poster.theme-spark { background: radial-gradient(circle at 50% 36%, #4a63c8 0%, #22307a 45%, #080d2a 100%); }
+.theme-petal .sk-show-card, .club-poster.theme-petal { background: radial-gradient(circle at 50% 36%, #ffc2d1 0%, #e0507a 40%, #5a0c26 100%); }
+.theme-clover .sk-show-card, .club-poster.theme-clover { background: radial-gradient(circle at 50% 36%, #e6f9a8 0%, #6cc04a 40%, #1a5a26 100%); }
+.sk-show-rays { position: absolute; left: 50%; top: 36%; width: 640px; height: 640px; margin: -320px 0 0 -320px; background: repeating-conic-gradient(rgba(255, 255, 255, 0.16) 0deg 9deg, rgba(255, 255, 255, 0) 9deg 24deg); border-radius: 50%; -webkit-mask-image: radial-gradient(circle, #000 20%, transparent 62%); mask-image: radial-gradient(circle, #000 20%, transparent 62%); animation: skSpin 26s linear infinite; pointer-events: none; }
+@keyframes skSpin { to { transform: rotate(360deg); } }
+.sk-show-fall { position: absolute; inset: 0; pointer-events: none; }
+.sk-show-fall img { position: absolute; animation-name: skFall; animation-timing-function: linear; animation-iteration-count: infinite; filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.25)); }
+.theme-spark .sk-show-fall img { animation-name: skTwinkle; animation-timing-function: ease-in-out; }
+@keyframes skFall { 0% { transform: translate(0, 0) rotate(0deg); } 25% { transform: translate(14px, 120px) rotate(90deg); } 50% { transform: translate(-6px, 240px) rotate(200deg); } 75% { transform: translate(12px, 360px) rotate(280deg); } 100% { transform: translate(0, 520px) rotate(380deg); } }
+@keyframes skTwinkle { 0%, 100% { transform: scale(0.3); opacity: 0; } 40% { transform: scale(1.15); opacity: 1; } 70% { transform: scale(0.8); opacity: 0.7; } }
+.sk-show-x { position: absolute; top: 10px; right: 10px; z-index: 2; }
+.sk-show-ribbon { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 6px; padding: 5px 16px; border-radius: 999px; background: linear-gradient(180deg, #ff86b5, #ff3d84); box-shadow: 0 3px 0 #b5205a; font-weight: 900; font-size: 14px; letter-spacing: 0.08em; text-transform: uppercase; }
+.sk-show-ribbon .ic { width: 15px; height: 15px; color: #ffe27a; }
+.sk-show-pic { position: relative; z-index: 1; width: 230px; height: 230px; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, 0.35)); animation: skFloat 3s ease-in-out infinite; }
+.sk-show-pic canvas { width: 230px; height: 230px; display: block; }
+@keyframes skFloat { 50% { transform: translateY(-6px); } }
+.sk-show-name { position: relative; z-index: 1; font-size: 30px; font-weight: 900; line-height: 1; text-shadow: 0 3px 0 rgba(60, 10, 0, 0.5), 0 0 16px rgba(0, 0, 0, 0.3); }
+.sk-show-sub { position: relative; z-index: 1; display: inline-flex; align-items: center; gap: 5px; font-size: 13px; font-weight: 800; color: rgba(255, 255, 255, 0.85); text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4); }
+.sk-show-sub .ic { width: 13px; height: 13px; }
+.sk-show-card .sk-gives { position: relative; z-index: 1; margin: 2px 0 8px; }
+.sk-show-card .sk-gives em { font-size: 13px; line-height: 20px; padding: 0 8px; }
+.sk-show-card .sk-gives .ic { width: 13px; height: 13px; }
+.sk-show-card .sk-spd { background: rgba(0, 0, 0, 0.45); color: #ff8cba; }
+.sk-show-card .go { position: relative; z-index: 1; width: 100%; }
+@media (prefers-reduced-motion: reduce) { .sk-show-rays, .sk-show-fall img, .sk-show-pic { animation: none; } }
+
+/* the rarities: how many of each are unlocked, and the speed each gives */
+.sk-rar { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin: 4px 0 2px; }
+.sk-rar > div { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 2px; border-radius: 12px; background: var(--card); border: 3px solid var(--rar); color: var(--rar); }
+.sk-rar b { font-size: 17px; font-weight: 900; }
+.sk-rar em { font-style: normal; font-size: 11px; opacity: 0.8; }
+.sk-rar small { display: inline-flex; align-items: center; gap: 2px; font-size: 12px; font-weight: 900; }
+.sk-rar small .ic { width: 12px; height: 12px; }
 .sk-worn { position: absolute; top: 3px; right: 4px; font-style: normal; color: #2fbf8a; }
 .sk-worn .ic { width: 16px; height: 16px; }
 .sk-reveal { cursor: pointer; position: absolute; left: 0; right: 0; height: 100%; min-height: 100%; background: var(--foam); border-radius: inherit; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; z-index: 5; }
@@ -1012,3 +1115,5 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 @keyframes calFlip { 0% { transform: rotateY(0) scale(1.1); } 50% { transform: rotateY(90deg) scale(1.15); } 100% { transform: rotateY(0) scale(1); } }
 .cal-actions { display: flex; gap: 10px; }
 .cal-actions .go { flex: 1; margin-top: 0; min-height: calc(62px * var(--u)); font-size: 20px; }
+/* the phoenix shines on its autumn poster */
+.theme-leaf .sk-show-pic, .club-poster.theme-leaf .club-poster-pic { filter: drop-shadow(0 0 10px rgba(255, 210, 110, 0.75)) drop-shadow(0 6px 10px rgba(0, 0, 0, 0.35)); }

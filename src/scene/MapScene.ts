@@ -1,4 +1,4 @@
-import { DEV_ALL_SKINS, DEV_UNLIMITED_COINS, DEV_UNLIMITED_GEMS } from '../config/dev';
+import { DEV_ALL_SKINS, DEV_CLUB_PREVIEW, DEV_UNLIMITED_COINS, DEV_UNLIMITED_GEMS } from '../config/dev';
 import Phaser from 'phaser';
 import { AREAS, areaRect } from '../config/areas';
 import { MAP_W, UNIT, rectCenter, rectContains, toWorld } from '../config/layout';
@@ -26,7 +26,7 @@ import { Scenery } from './scenery';
 import { HeliView } from './heli';
 import { syncPurchases, watchPacks } from '../purchases';
 import { grantGemPack } from '../core/shop';
-import { unlockAllSkins } from '../core/skins';
+import { unlockAllSkins, unlockClubSkins } from '../core/skins';
 import { fmt } from '../ui/format';
 import { sound } from '../ui/sound';
 
@@ -304,6 +304,7 @@ export class MapScene extends Phaser.Scene {
       if (DEV_UNLIMITED_COINS) st.coins = Math.max(st.coins, 999e27);
       if (DEV_UNLIMITED_GEMS) st.skillPoints = Math.max(st.skillPoints, 99_999);
       if (DEV_ALL_SKINS) unlockAllSkins(st);
+      if (DEV_CLUB_PREVIEW) unlockClubSkins(st);
     }
     this.view.update(Math.min(delta, 100) / 1000);
     const cam = this.cameras.main;

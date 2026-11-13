@@ -6,8 +6,11 @@
 import type { AreaId } from './areas';
 import { SPORTS, zoneId, type SportId } from './sports';
 
-export type Rarity = 'common' | 'rare' | 'epic' | 'legendary';
-export const RARITIES: Rarity[] = ['common', 'rare', 'epic', 'legendary'];
+/** The rarities. 'club' is the Surf Club's monthly skins: never in a box, only for members (one each month). */
+export type Rarity = 'common' | 'rare' | 'epic' | 'legendary' | 'club';
+/** The rarities that come out of boxes. */
+export type BoxRarity = Exclude<Rarity, 'club'>;
+export const RARITIES: BoxRarity[] = ['common', 'rare', 'epic', 'legendary'];
 
 /** Frame colour and name of each rarity (the "?" lists the odds with these; the colours of the author's skin art). */
 export const RARITY_LOOK: Record<Rarity, { name: string; color: string }> = {
@@ -15,7 +18,11 @@ export const RARITY_LOOK: Record<Rarity, { name: string; color: string }> = {
   rare: { name: 'Rare', color: '#3d9bff' },
   epic: { name: 'Epic', color: '#c45cff' },
   legendary: { name: 'Legendary', color: '#ffb52e' },
+  club: { name: 'Club', color: '#ff5c9a' },
 };
+
+/** How much faster a section's sessions go while it wears an unlocked skin of this rarity (the author's subtle Legendary touch). */
+export const RARITY_SPEED: Record<Rarity, number> = { common: 1, rare: 1.1, epic: 1.25, legendary: 1.5, club: 1.5 };
 
 /** Pieces needed to reach each tier, counted from 0, and the income boost of that tier. */
 export const TIERS = [
@@ -28,7 +35,7 @@ export const MAX_PIECES = TIERS[TIERS.length - 1].pieces;
 export type BoxKind = 'normal' | 'golden';
 
 /** Odds (percent) per rarity of each box. Normal 50/36/10/4 so a rarer skin is always harder to complete (8 Epics against 24 Rares); golden is the author's 14/33/53. */
-export const BOX_ODDS: Record<BoxKind, Record<Rarity, number>> = {
+export const BOX_ODDS: Record<BoxKind, Record<BoxRarity, number>> = {
   normal: { common: 50, rare: 36, epic: 10, legendary: 4 },
   golden: { common: 0, rare: 14, epic: 33, legendary: 53 },
 };
@@ -129,7 +136,26 @@ export type Pattern =
   | 'leopard'
   | 'sharkRide'
   // the author's dad's windsurf sail of 1990 (and its board)
-  | 'dad90';
+  | 'dad90'
+  // the freestyle windsurf Legendary: a crescent-moon sail on a galaxy board
+  | 'moon'
+  // the windsurf designs by the author's friend (each brings its own board)
+  | 'windSun'
+  | 'windCamo'
+  | 'jungle'
+  | 'tigerRace'
+  | 'checkerWind'
+  | 'driftwood'
+  | 'polka'
+  | 'hearts'
+  | 'fruit'
+  | 'bigFish'
+  // the Surf Club's monthly skins by the author's friend
+  | 'phoenix'
+  | 'xmasTree'
+  | 'kite2027'
+  | 'rose'
+  | 'stPatrick';
 
 export interface SkinDef {
   id: string;
@@ -248,6 +274,19 @@ const DESIGNS = {
   wingDragon: { pattern: 'wingDragon', colors: ['#c62828', '#2e7d32', '#ffcc66'], name: 'Sky Dragon' },
   // the author's dad's wave gear of 1990: a multicolour sail with a window, and a sun-faded cream wave board with striped deck pads
   dad90: { pattern: 'dad90', colors: ['#ffa726', '#e8338f', '#29a8e0'], name: '1990 Classic', board: true },
+  // the author's freestyle windsurf Legendary: the sail a crescent moon with its craters, the board the Milky Way
+  moon: { pattern: 'moon', colors: ['#b9bcc1', '#eef0f2', '#6c7076'], name: 'Moonlight', board: true },
+  // the windsurf designs by the author's friend (Beginner class, Slalom, Freestyle, Wave zone): each brings its own board
+  windSun: { pattern: 'windSun', colors: ['#ffd23f', '#2f86e0', '#1d5fae'], name: 'Sunshine', board: true },
+  windCamo: { pattern: 'windCamo', colors: ['#5aae4a', '#6b7d3a', '#3d4a22'], name: 'Camo', board: true },
+  jungle: { pattern: 'jungle', colors: ['#2f5a24', '#4f8a34', '#1b3315'], name: 'Jungle Snake', board: true },
+  tigerRace: { pattern: 'tigerRace', colors: ['#16171a', '#ff8a1a', '#e0262c'], name: 'Tiger Stripes', board: true },
+  checkerWind: { pattern: 'checkerWind', colors: ['#ffffff', '#141416', '#c9ccd2'], name: 'Chequered', board: true },
+  driftwood: { pattern: 'driftwood', colors: ['#8a5a32', '#4f9a34', '#5a3a1e'], name: 'Driftwood', board: true },
+  polka: { pattern: 'polka', colors: ['#ffffff', '#ffcf2e', '#2f7fd6'], name: 'Polka Dots', board: true },
+  hearts: { pattern: 'hearts', colors: ['#ffffff', '#e0262c', '#1b1b1e'], name: 'Eight of Hearts', board: true },
+  fruit: { pattern: 'fruit', colors: ['#3f9a3a', '#ff8a1f', '#2a7a2a'], name: 'Fruit Salad', board: true },
+  bigFish: { pattern: 'bigFish', colors: ['#3f7fd0', '#8fc0f0', '#24508f'], name: 'Blue Fish', board: true },
   thunder: { pattern: 'lightning', colors: ['#1b1f24', '#ffd54f', '#ff5a1f'], name: 'Thunder' },
   platinum: { pattern: 'gold', colors: ['#e0e0e0', '#9e9e9e', '#ffffff'], name: 'Platinum' },
   pirate: { pattern: 'pirate', colors: ['#15171c', '#ffffff', '#ffc83d'], name: 'Pirate Gold' },
@@ -272,10 +311,10 @@ const SETS: Record<SportId, [DesignId, DesignId, DesignId][]> = {
     ['sunny', 'tigerSkin', 'mouse'],
   ],
   windsurfing: [
-    ['stripes', 'arrows', 'rainbow'],
-    ['waves', 'lightning', 'nightSky'],
-    ['flames', 'hibiscus', 'fireDragon'],
-    ['dad90', 'blueFire', 'thunder'],
+    ['windSun', 'windCamo', 'jungle'],
+    ['tigerRace', 'checkerWind', 'driftwood'],
+    ['polka', 'hearts', 'moon'],
+    ['dad90', 'fruit', 'bigFish'],
   ],
   kitesurfing: [
     ['kiteSunny', 'kiteStars', 'balloons'],
@@ -321,8 +360,38 @@ export const SKINS: SkinDef[] = SPORTS.flatMap((sport) =>
 /** The skin the first four boxes of a game always make: the first Common of the surf school. */
 export const STARTER_SKIN: SkinDef = SKINS.find((s) => s.rarity === 'common')!;
 
+/** A Surf Club monthly skin: the month it is given in (YYYY-MM, the real date). */
+export interface ClubSkinDef extends SkinDef {
+  month: string;
+}
+
+/**
+ * The Surf Club's monthly skins (the author's friend's designs): on the 1st of its month every member gets that month's
+ * skin, complete (Silver). Never in a box; a missed month is gone. Each one belongs to a section and is worn there.
+ */
+const CLUB_MONTHS: { month: string; sport: SportId; level: number; pattern: Pattern; colors: [string, string, string]; name: string; board?: boolean }[] = [
+  { month: '2026-11', sport: 'kitesurfing', level: 4, pattern: 'phoenix', colors: ['#d98a36', '#ffd27a', '#7a3a12'], name: 'Thanksgiving' },
+  { month: '2026-12', sport: 'wave', level: 4, pattern: 'xmasTree', colors: ['#2f8a3a', '#56b04a', '#1d5a26'], name: 'Christmas Tree' },
+  { month: '2027-01', sport: 'kitesurfing', level: 1, pattern: 'kite2027', colors: ['#1c2a6e', '#ffc83d', '#2d3f94'], name: '2027' },
+  { month: '2027-02', sport: 'skimboarding', level: 1, pattern: 'rose', colors: ['#1b1c20', '#d9262c', '#d4a63a'], name: 'Rose' },
+  { month: '2027-03', sport: 'windsurfing', level: 2, pattern: 'stPatrick', colors: ['#2f3236', '#f2c230', '#2f9e44'], name: "St. Patrick's", board: true },
+];
+
+export const CLUB_SKINS: ClubSkinDef[] = CLUB_MONTHS.map((m) => ({
+  id: `club-${m.month}`,
+  name: m.name,
+  zone: zoneId(m.sport, m.level),
+  sport: m.sport,
+  level: m.level,
+  rarity: 'club',
+  pattern: m.pattern,
+  colors: m.colors,
+  month: m.month,
+  ...(m.board ? { board: true } : {}),
+}));
+
 export function skinById(id: string): SkinDef | undefined {
-  return SKINS.find((s) => s.id === id);
+  return SKINS.find((s) => s.id === id) ?? CLUB_SKINS.find((s) => s.id === id);
 }
 
 export function skinsOfZone(zone: string): SkinDef[] {

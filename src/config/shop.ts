@@ -69,7 +69,9 @@ export const CLUB = {
   /** All coin income x this, for as long as you are a member. */
   coinMult: 2,
   /** Gems you can claim once every 24 hours. */
-  gemsPerDay: 3,
+  gemsPerDay: 5,
+  /** Free boxes (normal) that come with the daily gems. */
+  boxesPerDay: 1,
   /** Extra hours of away time. */
   awayHours: 2,
   /** Real seconds between two gem claims. */
