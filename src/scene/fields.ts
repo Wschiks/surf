@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { bakeTexture, css, roundRect } from './bake';
 import {BEACH_SPORTS, fieldRect, fieldsArea, type BeachSportDef} from '../config/beach';
 import {LAND, rectContains, toWorld, UNIT, type Rect} from '../config/layout';
 import {beachSportOpen} from '../core/economy';
@@ -72,7 +73,8 @@ interface Field {
 
 interface Site {
   def: BeachSportDef;
-  ground: Phaser.GameObjects.Graphics;
+  /** The courts on the sand: a picture each, drawn once when the fields change. */
+  courts: Phaser.GameObjects.Image[];
   fields: Field[];
   key: string;
   running: boolean;
@@ -89,7 +91,7 @@ export class FieldView {
   private last = 0;
 
   constructor(private scene: Phaser.Scene) {
-    for (const def of BEACH_SPORTS) this.sites.push({ def, ground: scene.add.graphics().setDepth(DEPTH.things - 1.4), fields: [], key: '', running: false });
+    for (const def of BEACH_SPORTS) this.sites.push({ def, courts: [], fields: [], key: '', running: false });
   }
 
   /** The beach sport whose fields (or plot) are under a world point. */
@@ -129,14 +131,14 @@ export class FieldView {
       f.shadow.destroy();
     }
     s.fields = [];
-    const g = s.ground;
-    g.clear();
+    s.courts.forEach((c) => c.destroy());
+    s.courts = [];
     if (!owned) return;
     const soccer = s.def.id === 'soccer';
     const sportNo = BEACH_SPORTS.indexOf(s.def);
     for (let i = 0; i < count; i++) {
       const r = toWorld(fieldRect(s.def, i));
-      drawCourt(g, r, soccer);
+      s.courts.push(courtImage(this.scene, `court-${s.def.id}-${i}`, r, soccer));
       const players: Player[] = [];
       const spots = FORMATION[Math.min(perTeam, FORMATION.length) - 1];
       for (let team = 0; team < 2; team++) {
@@ -615,38 +617,72 @@ function spot(r: Rect, soccer: boolean, team: number, across: number, fromMiddle
   return { x: r.x + pad + across * (r.w - pad * 2), y };
 }
 
-function drawCourt(g: Phaser.GameObjects.Graphics, r: Rect, soccer: boolean) {
+/** A court on the sand, drawn once as a picture (a Graphics would be turned into triangles again every frame). */
+function courtImage(scene: Phaser.Scene, key: string, r: Rect, soccer: boolean): Phaser.GameObjects.Image {
+  const pad = 12;
+  bakeTexture(scene, key, r.w + pad * 2, r.h + pad * 2, (c) => {
+    c.translate(pad - r.x, pad - r.y);
+    drawCourt(c, r, soccer);
+  }, 3);
+  return scene.add.image(r.x - pad, r.y - pad, key).setOrigin(0, 0).setDisplaySize(r.w + pad * 2, r.h + pad * 2).setDepth(DEPTH.things - 1.4);
+}
+
+function drawCourt(c: CanvasRenderingContext2D, r: Rect, soccer: boolean) {
+  const line = (x1: number, y1: number, x2: number, y2: number) => {
+    c.beginPath();
+    c.moveTo(x1, y1);
+    c.lineTo(x2, y2);
+    c.stroke();
+  };
   // a raked, slightly darker patch of sand with white lines
-  g.fillStyle(0xe8cf98, 1).fillRoundedRect(r.x, r.y, r.w, r.h, 6);
+  c.fillStyle = css(0xe8cf98, 1);
+  roundRect(c, r.x, r.y, r.w, r.h, 6);
+  c.fill();
   const i = 5;
-  g.lineStyle(2.4, 0xffffff, 0.95).strokeRect(r.x + i, r.y + i, r.w - i * 2, r.h - i * 2);
+  c.lineWidth = 2.4;
+  c.strokeStyle = css(0xffffff, 0.95);
+  c.strokeRect(r.x + i, r.y + i, r.w - i * 2, r.h - i * 2);
   if (soccer) {
     const mx = r.x + r.w / 2;
-    g.lineBetween(mx, r.y + i, mx, r.y + r.h - i);
-    g.strokeCircle(mx, r.y + r.h / 2, r.h * 0.16);
+    line(mx, r.y + i, mx, r.y + r.h - i);
+    c.beginPath();
+    c.arc(mx, r.y + r.h / 2, r.h * 0.16, 0, Math.PI * 2);
+    c.stroke();
     // goals at both ends, with a net
     const gh = r.h * 0.3;
-    g.fillStyle(0xffffff, 0.35);
-    g.fillRect(r.x + i - 5, r.y + r.h / 2 - gh / 2, 5, gh);
-    g.fillRect(r.x + r.w - i, r.y + r.h / 2 - gh / 2, 5, gh);
-    g.lineStyle(3, 0xffffff, 1);
-    g.strokeRect(r.x + i - 5, r.y + r.h / 2 - gh / 2, 5, gh);
-    g.strokeRect(r.x + r.w - i, r.y + r.h / 2 - gh / 2, 5, gh);
+    c.fillStyle = css(0xffffff, 0.35);
+    c.fillRect(r.x + i - 5, r.y + r.h / 2 - gh / 2, 5, gh);
+    c.fillRect(r.x + r.w - i, r.y + r.h / 2 - gh / 2, 5, gh);
+    c.lineWidth = 3;
+    c.strokeStyle = css(0xffffff, 1);
+    c.strokeRect(r.x + i - 5, r.y + r.h / 2 - gh / 2, 5, gh);
+    c.strokeRect(r.x + r.w - i, r.y + r.h / 2 - gh / 2, 5, gh);
   } else {
     // the net across the middle, with its posts
     // the net (README 3.7): navy with a white band on top, posts, and its shadow on the sand (down-right, like all shadows)
     const my = r.y + r.h / 2;
     const sh = shadowOffset(0, 8, 0.3);
-    g.lineStyle(2.2, PAL.shadow, 0.18).lineBetween(r.x + 2 + sh.x, my + sh.y, r.x + r.w - 2 + sh.x, my + sh.y);
-    g.lineStyle(1.8, PAL.navy, 1).lineBetween(r.x + 1, my + 0.4, r.x + r.w - 1, my + 0.4);
-    g.lineStyle(0.9, 0xffffff, 1).lineBetween(r.x + 1, my - 0.5, r.x + r.w - 1, my - 0.5);
-    g.fillStyle(PAL.navy, 1).fillCircle(r.x + 1, my, 2.2).fillCircle(r.x + r.w - 1, my, 2.2);
+    c.lineWidth = 2.2;
+    c.strokeStyle = css(PAL.shadow, 0.18);
+    line(r.x + 2 + sh.x, my + sh.y, r.x + r.w - 2 + sh.x, my + sh.y);
+    c.lineWidth = 1.8;
+    c.strokeStyle = css(PAL.navy, 1);
+    line(r.x + 1, my + 0.4, r.x + r.w - 1, my + 0.4);
+    c.lineWidth = 0.9;
+    c.strokeStyle = css(0xffffff, 1);
+    line(r.x + 1, my - 0.5, r.x + r.w - 1, my - 0.5);
+    c.fillStyle = css(PAL.navy, 1);
+    for (const x of [r.x + 1, r.x + r.w - 1]) {
+      c.beginPath();
+      c.arc(x, my, 2.2, 0, Math.PI * 2);
+      c.fill();
+    }
   }
 }
 
 /** Cars driving along the road behind the beach front, both ways. Fixed speeds and colours. */
 export class RoadView {
-  private cars: { g: Phaser.GameObjects.Graphics; lane: number; speed: number; start: number }[] = [];
+  private cars: { g: Phaser.GameObjects.Image; lane: number; speed: number; start: number }[] = [];
   private static readonly FROM = -4 * UNIT;
   private static readonly TO = 19 * UNIT;
 
@@ -655,9 +691,9 @@ export class RoadView {
     const road = LAND.road;
     const lanes = [road.from + (road.to - road.from) * 0.27, road.from + (road.to - road.from) * 0.73];
     colors.forEach((c, i) => {
-      const g = scene.add.graphics().setDepth(DEPTH.things - 1.45);
       const dir = i % 2 ? -1 : 1;
-      drawCar(g, c, dir);
+      // each car is a picture drawn once (a Graphics would be redrawn every frame)
+      const g = scene.add.image(0, 0, bakeCar(scene, c, dir)).setOrigin(CAR_OX, CAR_OY).setDisplaySize(CAR_W, CAR_H).setDepth(DEPTH.things - 1.45);
       // every car in a lane drives at the same speed, evenly spaced, so they never drive through each other
       const perLane = Math.ceil(colors.length / 2);
       const span = RoadView.TO - RoadView.FROM;
@@ -675,15 +711,44 @@ export class RoadView {
   }
 }
 
-/** A small car seen from above, pointing along the road (dir 1 = toward higher x). */
-function drawCar(g: Phaser.GameObjects.Graphics, color: number, dir: number) {
-  const L = 34;
-  const W = 16;
-  g.fillStyle(0x000000, 0.18).fillRoundedRect(-L / 2 + 2, -W / 2 + 3, L, W, 5);
-  g.fillStyle(color, 1).fillRoundedRect(-L / 2, -W / 2, L, W, 5);
-  g.fillStyle(0x2c3e50, 0.85);
-  // windscreen (front) and rear window
-  g.fillRoundedRect(dir > 0 ? 3 : -L / 2 + 5, -W / 2 + 2.5, 8, W - 5, 2);
-  g.fillRoundedRect(dir > 0 ? -L / 2 + 4 : L / 2 - 10, -W / 2 + 3, 6, W - 6, 2);
-  g.fillStyle(0xfff2b0, 1).fillCircle(dir > 0 ? L / 2 - 1 : -L / 2 + 1, -W / 2 + 3, 1.6).fillCircle(dir > 0 ? L / 2 - 1 : -L / 2 + 1, W / 2 - 3, 1.6);
+/** A car's picture: 34 by 16 with its shadow, the car's middle at (CAR_OX, CAR_OY) of the picture. */
+const CAR_L = 34;
+const CAR_WD = 16;
+const CAR_W = CAR_L + 6;
+const CAR_H = CAR_WD + 8;
+const CAR_OX = (CAR_L / 2 + 2) / CAR_W;
+const CAR_OY = (CAR_WD / 2 + 2) / CAR_H;
+
+/** A small car seen from above, pointing along the road (dir 1 = toward higher x), drawn once as a picture. */
+function bakeCar(scene: Phaser.Scene, color: number, dir: number): string {
+  return bakeTexture(
+    scene,
+    `car-${color.toString(16)}-${dir}`,
+    CAR_W,
+    CAR_H,
+    (c) => {
+      const L = CAR_L;
+      const W = CAR_WD;
+      c.translate(L / 2 + 2, W / 2 + 2);
+      c.fillStyle = css(0x000000, 0.18);
+      roundRect(c, -L / 2 + 2, -W / 2 + 3, L, W, 5);
+      c.fill();
+      c.fillStyle = css(color, 1);
+      roundRect(c, -L / 2, -W / 2, L, W, 5);
+      c.fill();
+      c.fillStyle = css(0x2c3e50, 0.85);
+      // windscreen (front) and rear window
+      roundRect(c, dir > 0 ? 3 : -L / 2 + 5, -W / 2 + 2.5, 8, W - 5, 2);
+      c.fill();
+      roundRect(c, dir > 0 ? -L / 2 + 4 : L / 2 - 10, -W / 2 + 3, 6, W - 6, 2);
+      c.fill();
+      c.fillStyle = css(0xfff2b0, 1);
+      for (const y of [-W / 2 + 3, W / 2 - 3]) {
+        c.beginPath();
+        c.arc(dir > 0 ? L / 2 - 1 : -L / 2 + 1, y, 1.6, 0, Math.PI * 2);
+        c.fill();
+      }
+    },
+    4,
+  );
 }

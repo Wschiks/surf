@@ -34,6 +34,8 @@ export class MapScene extends Phaser.Scene {
   view = new MapView();
   game_!: Game;
   private bg!: ReturnType<typeof buildBackground>;
+  /** When the zone chips were last refreshed (ms). */
+  private chipsAt = 0;
   private mist!: Mist;
   private labels!: LabelLayer;
   private ui!: GameUI;
@@ -329,7 +331,11 @@ export class MapScene extends Phaser.Scene {
     this.fields.update(this.game_.state, time);
     this.road.update(time);
     this.plane.update(Math.min(delta, 100) / 1000);
-    this.chips.update(this.game_.state, this.view.ppu, this.ui.selectedZone);
+    // the chips' contents (state, progress ring) change slowly: ten times a second is enough; their place follows every frame
+    if (now - this.chipsAt >= 100) {
+      this.chipsAt = now;
+      this.chips.update(this.game_.state, this.view.ppu, this.ui.selectedZone);
+    }
     this.labels.update(this.view);
     this.ui.update(now);
   }

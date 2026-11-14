@@ -1094,7 +1094,8 @@ export class GameUI {
       tip.classList.toggle('flip', onLeft);
       if (onLeft) Object.assign(tip.style, { left: `${r.right - o.left + 14}px`, right: '', top: `${r.top - o.top + r.height / 2}px` });
       else Object.assign(tip.style, { right: `${o.right - r.left + 14}px`, left: '', top: `${r.top - o.top + r.height / 2}px` });
-      requestAnimationFrame(place);
+      // the buttons hardly move: measuring the page four times a second is enough (every frame forced a layout)
+      window.setTimeout(place, 250);
     };
     place();
     sound.unlock();

@@ -15,6 +15,8 @@
     "phone:open:ios": "cap open ios",
     "phone:open:android": "cap open android",
     "smoke": "node scripts/smoke.mjs",
+    "bench": "npm run build && node scripts/bench/bench.mjs",
+    "bench:saves": "tsx scripts/bench/make-saves.ts",
     "prebuild": "tsx scripts/build-legal-pages.ts",
     "icons": "node scripts/make-icons.mjs",
     "store:screenshots": "node scripts/store-screenshots.mjs",

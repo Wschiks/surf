@@ -3,7 +3,7 @@
 
 import type { SkinDef } from '../../config/skins';
 import { GEAR_PATHS, PATHS } from './models';
-import phoenixUrl from '../../assets/club/phoenix.png';
+import phoenixUrl from '../../assets/club/phoenix.webp';
 
 /** The gear a skin goes on: its outline and its bounds (spec px, the pivot of the gear picture is 0,0). */
 export interface SkinShape {
@@ -6780,7 +6780,7 @@ export function loadSkinArt(): Promise<void> {
 }
 
 /**
- * November: the phoenix kite of the author's chosen design (src/assets/club/phoenix.png): seen from above, wings spread
+ * November: the phoenix kite of the author's chosen design (src/assets/club/phoenix.webp): seen from above, wings spread
  * wide, a crest of flame feathers on its head, a long flame tail, in fiery orange, red and gold. The picture is turned
  * head-up; the lines meet on its back where the design's lines did (380.75, 292.5 in the picture). Kite coordinates:
  * flying toward -y, the lines at (0, 12).

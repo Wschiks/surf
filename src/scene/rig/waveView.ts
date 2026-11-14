@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import { DEPTH } from '../background';
 import { hash01 } from './geom';
+import { ATLAS, PIVOT } from './atlas';
 import type { Zone } from './sim';
 
 // The breaking waves of the Reef and Nazaré, seen from above: the face (a darker band on the beach side of the crest),
@@ -10,6 +11,8 @@ import type { Zone } from './sim';
 export class WaveView {
   private below: Phaser.GameObjects.Graphics;
   private above: Phaser.GameObjects.Graphics;
+  /** The foam bubbles: round pictures (a circle in a Graphics is a many-sided polygon, turned into triangles every frame). */
+  private bubbles: Phaser.GameObjects.Image[] = [];
 
   constructor(
     scene: Phaser.Scene,
@@ -19,6 +22,17 @@ export class WaveView {
     this.above = scene.add.graphics().setDepth(DEPTH.things + 0.25);
   }
 
+  /** The i-th foam bubble (made when first needed). */
+  private bubble(i: number): Phaser.GameObjects.Image {
+    let im = this.bubbles[i];
+    if (!im) {
+      const p = PIVOT.get('disc')!;
+      im = this.below.scene.add.image(0, 0, ATLAS, 'disc').setOrigin(p.ox, p.oy).setDepth(DEPTH.things - 0.279);
+      this.bubbles[i] = im;
+    }
+    return im;
+  }
+
   draw(near: boolean, t: number) {
     const b = this.below;
     const a = this.above;
@@ -26,7 +40,11 @@ export class WaveView {
     a.clear();
     b.setVisible(near);
     a.setVisible(near);
-    if (!near) return;
+    let used = 0;
+    const done = () => {
+      for (let i = used; i < this.bubbles.length; i++) this.bubbles[i].setVisible(false);
+    };
+    if (!near) return done();
     const z = this.z;
     const x0 = z.x + 3;
     const x1 = z.x + z.w - 3;
@@ -77,8 +95,12 @@ export class WaveView {
         const f = 1 - u / len;
         const bx = cx + back * u;
         const wob = Math.sin(t * 2.2 + k * 1.7) * F * 0.08;
-        b.fillStyle(0xffffff, (0.35 + 0.5 * r2) * f * fade);
-        b.fillCircle(bx, w.y - F * (0.5 + 0.75 * f) + wob, F * (0.14 + 0.16 * r2) * (0.5 + 0.5 * f));
+        const rad = F * (0.14 + 0.16 * r2) * (0.5 + 0.5 * f);
+        this.bubble(used++)
+          .setPosition(bx, w.y - F * (0.5 + 0.75 * f) + wob)
+          .setDisplaySize(rad * 2, rad * 2)
+          .setAlpha((0.35 + 0.5 * r2) * f * fade)
+          .setVisible(true);
       }
       // inside the barrel: a dark tube under the lip (drawn below the surfer)
       const tube: Phaser.Math.Vector2[] = [];
@@ -113,10 +135,12 @@ export class WaveView {
       }
       a.strokePath();
     }
+    done();
   }
 
   destroy() {
     this.below.destroy();
     this.above.destroy();
+    this.bubbles.forEach((im) => im.destroy());
   }
 }

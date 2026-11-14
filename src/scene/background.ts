@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import { bakeTexture, css } from './bake';
 import { AREAS, areaById, rgbToHex, SHORE, seaColorAt } from '../config/areas';
 import { LAND, MAP_H, MAP_W, UNIT, WORLD_MARGIN } from '../config/layout';
 import { BEACH_DECOR, LAND_DECOR, LANDMARKS, type DecorDef } from '../config/landmarks';
@@ -27,60 +28,64 @@ export function buildBackground(scene: Phaser.Scene) {
   bakeDecor(scene);
   bakeLighthouse(scene);
 
-  const g = scene.add.graphics().setDepth(DEPTH.base);
   const left = -M;
   const width = MAP_PX_W + M * 2;
+  // Everything here is a horizontal band (the same all the way across), so it is drawn once as thin pictures that are
+  // stretched across the world (a Graphics would be turned into triangles again every frame).
+  const band = (key: string, top: number, bottom: number, res: number, depth: number, draw: (c: CanvasRenderingContext2D) => void) =>
+    scene.add
+      .image(left, top, bakeTexture(scene, key, 4, bottom - top, (c) => draw(c), res))
+      .setOrigin(0, 0)
+      .setDisplaySize(width, bottom - top)
+      .setDepth(depth);
+  const rect = (c: CanvasRenderingContext2D, top: number, y: number, h: number, color: number, alpha = 1) => {
+    c.fillStyle = css(color, alpha);
+    c.fillRect(0, y - top, 4, h);
+  };
 
   // land behind the beach: grass with trees, a road, the sidewalk, the paved promenade (the beach front, where the
   // buildings stand) and a low wall down to the sand
   const road = LAND.road;
-  g.fillStyle(0x8fcf6a, 1);
-  g.fillRect(left, -M, width, M + (road.from - 0.15) * UNIT);
-  g.fillStyle(0xb7d97a, 1);
-  g.fillRect(left, (road.from - 0.15) * UNIT, width, 0.15 * UNIT);
-  g.fillStyle(0x5e6873, 1);
-  g.fillRect(left, road.from * UNIT, width, (road.to - road.from) * UNIT);
-  // lane lines: solid white edges, a dashed yellow middle
-  g.fillStyle(0xffffff, 0.75);
-  g.fillRect(left, road.from * UNIT + 4, width, 2.5);
-  g.fillRect(left, road.to * UNIT - 6.5, width, 2.5);
-  g.fillStyle(0xffd23f, 0.9);
+  const landTop = (road.from - 0.15) * UNIT;
+  const landBottom = LAND.wall * UNIT;
+  band('bg-grass', -M, landTop, 0.05, DEPTH.base, (c) => rect(c, -M, -M, landTop + M, 0x8fcf6a));
+  band('bg-land', landTop, landBottom, 4, DEPTH.base, (c) => {
+    const t = landTop;
+    rect(c, t, landTop, 0.15 * UNIT, 0xb7d97a);
+    rect(c, t, road.from * UNIT, (road.to - road.from) * UNIT, 0x5e6873);
+    // lane lines: solid white edges (the dashed yellow middle is a repeating picture below)
+    rect(c, t, road.from * UNIT + 4, 2.5, 0xffffff, 0.75);
+    rect(c, t, road.to * UNIT - 6.5, 2.5, 0xffffff, 0.75);
+    // curb and sidewalk
+    rect(c, t, road.to * UNIT, (LAND.sidewalk - road.to) * UNIT, 0xc9ccd0);
+    rect(c, t, road.to * UNIT, 3, 0x9aa1a8);
+    // the low sea wall between the promenade and the sand
+    rect(c, t, LAND.promenade.to * UNIT, (LAND.wall - LAND.promenade.to) * UNIT, 0xc4a873);
+    rect(c, t, LAND.wall * UNIT - 3, 3, 0xa98c5a);
+  });
   const mid = ((road.from + road.to) / 2) * UNIT - 1.5;
-  for (let x = left; x < left + width; x += 46) g.fillRect(x, mid, 24, 3);
-  // curb and sidewalk
-  g.fillStyle(0xc9ccd0, 1);
-  g.fillRect(left, road.to * UNIT, width, (LAND.sidewalk - road.to) * UNIT);
-  g.fillStyle(0x9aa1a8, 1);
-  g.fillRect(left, road.to * UNIT, width, 3);
+  const dash = bakeTexture(scene, 'bg-dash', 46, 3, (c) => {
+    c.fillStyle = css(0xffd23f, 0.9);
+    c.fillRect(0, 0, 24, 3);
+  }, 4);
+  scene.add.tileSprite(left, mid, width, 3, dash).setOrigin(0, 0).setTileScale(1 / 4, 1 / 4).setDepth(DEPTH.base);
   placeTile(scene, 'tile-paving', left, LAND.promenade.from * UNIT, width, (LAND.promenade.to - LAND.promenade.from) * UNIT, 0.8).setDepth(DEPTH.base + 0.05);
-  // the low sea wall between the promenade and the sand
-  g.fillStyle(0xc4a873, 1);
-  g.fillRect(left, LAND.promenade.to * UNIT, width, (LAND.wall - LAND.promenade.to) * UNIT);
-  g.fillStyle(0xa98c5a, 1);
-  g.fillRect(left, LAND.wall * UNIT - 3, width, 3);
 
-  // sea: light blue near the shore, darker further out (thin strips)
-  const step = 0.08;
-  for (let d = SHORE; d < 11; d += step) {
-    g.fillStyle(rgbToHex(seaColorAt(d + step / 2)), 1);
-    g.fillRect(left, d * UNIT, width, step * UNIT + 1);
-  }
-  g.fillStyle(rgbToHex(seaColorAt(20)), 1);
-  g.fillRect(left, 11 * UNIT, width, M);
+  // sea: light blue near the shore, darker further out, and a shallow turquoise glow at the shore
+  const seaBottom = 11 * UNIT;
+  band('bg-sea', SH, seaBottom, 1, DEPTH.base, (c) => {
+    const step = 0.08;
+    for (let d = SHORE; d < 11; d += step) rect(c, SH, d * UNIT, step * UNIT + 1, rgbToHex(seaColorAt(d + step / 2)));
+    for (let i = 0; i < 10; i++) rect(c, SH, SH, (0.06 + i * 0.05) * UNIT, 0xc8fff0, 0.09);
+  });
+  band('bg-deep', seaBottom, seaBottom + M, 0.05, DEPTH.base, (c) => rect(c, seaBottom, seaBottom, M, rgbToHex(seaColorAt(20))));
 
   // sand of the beach (rows 1 and 2), from the sea wall to the water
   placeTile(scene, 'tile-sand', left, LAND.wall * UNIT, width, SH - LAND.wall * UNIT).setDepth(DEPTH.base + 0.1);
   // wet sand near the water line
-  const wet = scene.add.graphics().setDepth(DEPTH.base + 0.2);
-  for (let i = 0; i < 12; i++) {
-    wet.fillStyle(0xb99a5e, 0.05);
-    wet.fillRect(left, SH - 0.4 * UNIT + i * 4, width, 0.4 * UNIT - i * 4);
-  }
-  // shallow turquoise glow at the shore
-  for (let i = 0; i < 10; i++) {
-    g.fillStyle(0xc8fff0, 0.09);
-    g.fillRect(left, SH, width, (0.06 + i * 0.05) * UNIT);
-  }
+  band('bg-wet', SH - 0.4 * UNIT, SH, 2, DEPTH.base + 0.2, (c) => {
+    for (let i = 0; i < 12; i++) rect(c, SH - 0.4 * UNIT, SH - 0.4 * UNIT + i * 4, 0.4 * UNIT - i * 4, 0xb99a5e, 0.05);
+  });
 
   // drifting sparkles on the water
   const sparkle = placeTile(scene, 'tile-sparkle', left, SH, width, 10 * UNIT + M).setDepth(DEPTH.sparkle);
@@ -89,10 +94,21 @@ export function buildBackground(scene: Phaser.Scene) {
   const foam = placeTile(scene, 'tile-shorefoam', left, SH - 10, width, 40).setDepth(DEPTH.sparkle + 0.1);
 
   // grid, map border and area borders
+  // the grid of faint lines is one grid cell repeated (a picture); the few bold lines stay a small Graphics
+  const cell = bakeTexture(scene, 'bg-grid-cell', UNIT, UNIT, (c) => {
+    c.fillStyle = css(0xffffff, 0.07);
+    c.fillRect(0, 0, UNIT, 0.75);
+    c.fillRect(0, UNIT - 0.75, UNIT, 0.75);
+    c.fillRect(0, 0.75, 0.75, UNIT - 1.5);
+    c.fillRect(UNIT - 0.75, 0.75, 0.75, UNIT - 1.5);
+  }, 2);
+  scene.add
+    .tileSprite(0, SH, MAP_PX_W, MAP_PX_H - SH, cell)
+    .setOrigin(0, 0)
+    .setTileScale(0.5, 0.5)
+    .setTilePosition(0, (SH % UNIT) * 2)
+    .setDepth(DEPTH.grid);
   const grid = scene.add.graphics().setDepth(DEPTH.grid);
-  grid.lineStyle(1.5, 0xffffff, 0.07);
-  for (let i = 1; i < MAP_W; i++) grid.lineBetween(i * UNIT, SHORE * UNIT, i * UNIT, MAP_PX_H);
-  for (let i = 1; i < MAP_H; i++) if (i > SHORE) grid.lineBetween(0, i * UNIT, MAP_PX_W, i * UNIT);
   grid.lineStyle(2.5, 0xffffff, 0.4);
   for (const a of AREAS) if (a.from >= SHORE) grid.lineBetween(0, a.from * UNIT, MAP_PX_W, a.from * UNIT);
   // the border runs around the water; the beach and the beach front are open land

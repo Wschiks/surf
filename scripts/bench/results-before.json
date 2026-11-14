@@ -1,0 +1,38 @@
+{
+  "early": {
+    "startupMs": 1227,
+    "fps": 26.4,
+    "frameP95Ms": 50,
+    "frameMaxMs": 50.1,
+    "slowFramesPct": 37,
+    "cpuBusyPct": 100.2,
+    "scriptPct": 92.4,
+    "heapMB": 21.5,
+    "objects": 1093,
+    "textures": 58
+  },
+  "mid": {
+    "startupMs": 730,
+    "fps": 23.7,
+    "frameP95Ms": 50.1,
+    "frameMaxMs": 50.1,
+    "slowFramesPct": 59.3,
+    "cpuBusyPct": 100.2,
+    "scriptPct": 93.5,
+    "heapMB": 22.4,
+    "objects": 2234,
+    "textures": 60
+  },
+  "late": {
+    "startupMs": 820,
+    "fps": 23.3,
+    "frameP95Ms": 50.1,
+    "frameMaxMs": 50.1,
+    "slowFramesPct": 61,
+    "cpuBusyPct": 100.3,
+    "scriptPct": 92.9,
+    "heapMB": 42.6,
+    "objects": 4990,
+    "textures": 64
+  }
+}

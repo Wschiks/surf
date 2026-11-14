@@ -556,3 +556,15 @@ The author asked for the whole dim-the-screen tutorial to go ("not 100% working"
   - With gems: the four Away time skills in the beach tree now give +0.5 h each (same gem costs 1, 2, 4, 7).
   - The Surf Club still adds +2 h.
 - **The 3-box deal opens straight through** (14 Nov 2026, the author's ask): after a box of the pack is tapped away, the next one opens at once on top, with no shop in between and no wave (its chest already lies on the beach, it shakes and opens). The first box keeps its wave; after the last one you are back in the shop.
+- **Optimized: the map no longer redraws static shapes every frame** (14 Nov 2026). Measured with `npm run bench`: the production build, three saves made by the game's own bot (early, mid, late), a phone screen and the processor slowed 4x; results in scripts/bench/results-*.json. A profile (`node scripts/bench/profile.mjs`) showed 71% of the time in Phaser's Graphics renderer: every Graphics object is turned into triangles again every frame, and 60-odd never changed.
+  - Static shapes are now drawn once into pictures (src/scene/bake.ts): the zone plates and lock shades, the background bands (grass, road, sea, wet sand) with the road dashes and the grid as repeating pictures, the cars and the beach courts.
+  - The waves' foam bubbles are pictures instead of circles.
+  - The zone chips refresh 10 times a second instead of every frame, map labels only touch the page when they move, and the coach tip measures the page 4 times a second.
+  - The phoenix picture is WebP (307 KB to 50 KB).
+  - Results, before -> after:
+    | Save | FPS | Slow frames | CPU busy | Memory |
+    |---|---|---|---|---|
+    | early | 26 -> 60 | 37% -> 0% | 100% -> 31% | 22 -> 16 MB |
+    | mid | 24 -> 60 | 59% -> 0% | 100% -> 49% | 22 -> 25 MB |
+    | late | 23 -> 60 | 61% -> 0% | 100% -> 68% | 43 -> 30 MB |
+  - The smoke test passes. The look is unchanged (compared with screenshots before and after).

@@ -10,12 +10,13 @@ import { skinById } from '../config/skins';
 import type { FxPool } from './rig/fx';
 import { DEPTH } from './background';
 import type { MapView } from './MapView';
+import { bakeTexture, css, roundRect } from './bake';
 
 /** Everything drawn on the map for one zone: plate, rolling water and the guests. */
 export class ZoneView {
   readonly rect;
-  private plate: Phaser.GameObjects.Graphics;
-  private shade: Phaser.GameObjects.Graphics;
+  private plate: Phaser.GameObjects.Image;
+  private shade: Phaser.GameObjects.Image;
   private waves: Phaser.GameObjects.TileSprite;
   private crew: Crew;
   private lockedShown = true;
@@ -35,28 +36,35 @@ export class ZoneView {
     this.waves = scene.add.tileSprite(r.x, r.y, r.w, r.h, key).setOrigin(0, 0).setDepth(DEPTH.zone);
     this.waves.setTileScale((1 / 1.5) * style.scale, (1 / 1.5) * style.scale);
     this.waves.setAlpha(style.alpha * 0.6);
-    this.plate = scene.add.graphics().setDepth(DEPTH.zone + 0.1);
-    this.shade = scene.add.graphics().setDepth(DEPTH.zone + 0.2);
-    this.drawPlate();
-    this.shade.fillStyle(0x062033, 0.38);
-    this.shade.fillRoundedRect(r.x + 3, r.y + 3, r.w - 6, r.h - 6, 10);
+    // plate and lock shade are pictures drawn once (a Graphics is redrawn every frame)
+    this.plate = scene.add.image(r.x, r.y, this.drawPlate(scene)).setOrigin(0, 0).setDisplaySize(r.w, r.h).setDepth(DEPTH.zone + 0.1);
+    const shadeKey = bakeTexture(scene, `zone-shade-${ref.id}`, r.w, r.h, (c) => {
+      c.fillStyle = css(0x062033, 0.38);
+      roundRect(c, 3, 3, r.w - 6, r.h - 6, 10);
+      c.fill();
+    });
+    this.shade = scene.add.image(r.x, r.y, shadeKey).setOrigin(0, 0).setDisplaySize(r.w, r.h).setDepth(DEPTH.zone + 0.2);
     this.crew = new Crew(scene, ref, fx, r);
   }
 
-  private drawPlate() {
+  /** The plate's picture (redrawn when the zone is selected or not): its look's tint, the sport's colour, a white edge. */
+  private drawPlate(scene: Phaser.Scene = this.plate.scene): string {
     const r = this.rect;
-    const g = this.plate;
-    g.clear();
     const col = Phaser.Display.Color.HexStringToColor(this.ref.sport.color).color;
-    const inner = { x: r.x + 4, y: r.y + 4, w: r.w - 8, h: r.h - 8 };
     const [tint, tintAlpha] = LOOK_TINT[this.ref.def.look];
-    g.fillStyle(tint, tintAlpha);
-    g.fillRoundedRect(inner.x, inner.y, inner.w, inner.h, 12);
-    g.fillStyle(this.selected ? 0xffffff : col, this.selected ? 0.16 : 0.07);
-    g.fillRoundedRect(inner.x, inner.y, inner.w, inner.h, 12);
-    g.lineStyle(this.selected ? 4 : 2, 0xffffff, this.selected ? 0.95 : 0.3);
-    g.strokeRoundedRect(inner.x, inner.y, inner.w, inner.h, 12);
+    const sel = this.selected;
+    return bakeTexture(scene, `zone-plate-${this.ref.id}`, r.w, r.h, (c) => {
+      roundRect(c, 4, 4, r.w - 8, r.h - 8, 12);
+      c.fillStyle = css(tint, tintAlpha);
+      c.fill();
+      c.fillStyle = sel ? css(0xffffff, 0.16) : css(col, 0.07);
+      c.fill();
+      c.lineWidth = sel ? 4 : 2;
+      c.strokeStyle = css(0xffffff, sel ? 0.95 : 0.3);
+      c.stroke();
+    });
   }
+
 
   setSelected(v: boolean) {
     if (v !== this.selected) {
