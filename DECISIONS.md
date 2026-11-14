@@ -568,3 +568,12 @@ The author asked for the whole dim-the-screen tutorial to go ("not 100% working"
     | mid | 24 -> 60 | 59% -> 0% | 100% -> 49% | 22 -> 25 MB |
     | late | 23 -> 60 | 61% -> 0% | 100% -> 68% | 43 -> 30 MB |
   - The smoke test passes. The look is unchanged (compared with screenshots before and after).
+- **App Store documentation brought up to date** (14 Nov 2026):
+  - Terms: the shop with coins for gems and treasure boxes; a section on treasure boxes and chance, with the odds taken from the game's own numbers; the Surf Club with the monthly skin, 5 gems and a box a day; the daily calendar.
+  - Privacy Policy: the ad breaks, so ads are no longer only optional.
+  - store/listing.md:
+    - Age rating: paid random items (treasure boxes) = yes, with the answers for both questionnaires.
+    - Countries: not in Belgium while boxes can be bought; the Netherlands is fine because nothing can be traded.
+    - The new Surf Club perks, the description and the reviewer notes.
+  - The store check now allows exactly the two random exceptions (Math.random only for the helicopter; boxes from a generator kept in the save). It also checks the 2 h away time, that the lab page is not in the build, and that the Terms and listing explain the boxes.
+  - New store screenshots (also a Skins screen and the new Surf Club card), made from the production build; the calendar no longer pops up in them.

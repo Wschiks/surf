@@ -17,6 +17,8 @@ for (const set of sets) {
   const page = await ctx.newPage();
   await page.goto(base);
   await page.waitForFunction(() => window.__surf, null, { timeout: 30000 });
+  // the daily rewards calendar opens by itself once per session: not in the store pictures
+  await page.evaluate(() => (window.__surf.ui.calendarAuto = true));
   await page.waitForTimeout(1500);
   const ev = (fn, a) => page.evaluate(fn, a);
   const shot = async (name) => {
@@ -38,7 +40,16 @@ for (const set of sets) {
     s.facilities.shop = 2;
     window.__surf.game.save();
   });
-  await jump(7.9, 2.4, 2.6);
+  // the camera first flies to the new rental shop: wait for it, then aim at the surf school and its neighbours
+  await page.waitForTimeout(4000);
+  await ev(() => {
+    const zs = window.__surf.scene.zones.filter((z) => ['wave-1', 'wave-2', 'skimboarding-1'].includes(z.ref.id));
+    const cx = zs.reduce((a, z) => a + z.rect.x + z.rect.w / 2, 0) / zs.length;
+    const cy = zs.reduce((a, z) => a + z.rect.y + z.rect.h / 2, 0) / zs.length;
+    const v = window.__surf.view;
+    v.jumpTo(cx, cy, v.width / 2.4);
+  });
+  await page.waitForTimeout(1500);
   await shot('02-riding');
   // 3. the upgrade sheet
   await ev(() => window.__surf.ui.openZone('wave-1'));
@@ -64,9 +75,21 @@ for (const set of sets) {
   await ev(() => { window.__surf.ui.closeSheet(); const s = window.__surf.game.state; s.skillPoints = 14; s.skillEarned = 40; window.__surf.ui.openSkills(); });
   await shot('07-skills');
   await ev(() => window.__surf.ui.skillScreen.close());
-  // 8. the shop
+  // 8. the skins: the collection with the skin of the month on top, many skins collected (some Bronze and Silver)
+  await ev(() => {
+    const s = window.__surf.game.state;
+    const ids = Object.keys(s.zones).filter((id) => !id.startsWith('soccer') && !id.startsWith('volley'));
+    ids.forEach((id, i) => {
+      for (let k = 1; k <= 3; k++) s.skins.pieces[`${id}-${k}`] = (i + k) % 5 === 0 ? 17 : (i + k) % 3 === 0 ? 8 : 4;
+    });
+    s.skins.worn['wave-1'] = 'wave-1-3';
+    window.__surf.ui.openSkins();
+  });
+  await shot('08-skins');
+  await ev(() => document.querySelector('.modal [data-close]')?.click());
+  // 9. the shop
   await ev(() => window.__surf.ui.openShop());
-  await shot('08-shop');
+  await shot('09-shop');
   await ctx.close();
 }
 await browser.close();

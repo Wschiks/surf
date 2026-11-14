@@ -2,7 +2,8 @@
 // It lists what is ready and what still needs a person (accounts, contact details, signing).
 import fs from 'node:fs';
 import { PUBLISHER } from '../src/config/legal';
-import { BALANCE } from '../src/config/balance';
+import { offlineCap } from '../src/core/economy';
+import { newGame } from '../src/core/state';
 
 const read = (p: string) => (fs.existsSync(p) ? fs.readFileSync(p, 'utf8') : '');
 const pkg = JSON.parse(read('package.json'));
@@ -29,8 +30,17 @@ console.log('--- the game');
 ok('no test or cheat options in the game', !/100e9|Add 100B|testAlwaysExpand/.test(src));
 ok('unlimited test coins are off (VITE_TEST_COINS is not set)', process.env.VITE_TEST_COINS !== '1', 'unset VITE_TEST_COINS before a store build');
 ok('debug hook only in development or with ?debug', /import\.meta\.env\.DEV \|\| location\.search\.includes\('debug'\)/.test(src));
-ok('no random numbers in the game', !/Math\.random/.test(fs.readdirSync('src', { recursive: true }).filter((f) => String(f).endsWith('.ts')).map((f) => read('src/' + f)).join('\n')));
-ok('base away time is 2 hours', BALANCE.offlineCapSeconds === 2 * 3600);
+// Nothing is random except the author's two exceptions: the rescue helicopter's prize and timing (Math.random in
+// src/core/plane.ts) and what a treasure box gives (a generator kept in the save, so a reload cannot reroll a box).
+const code = (f: string) => read(f).replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '');
+const randomFiles = fs
+  .readdirSync('src', { recursive: true })
+  .map(String)
+  .filter((f) => f.endsWith('.ts') && /Math\.random/.test(code('src/' + f)));
+ok('random numbers only for the helicopter (src/core/plane.ts)', randomFiles.length === 1 && randomFiles[0].replace(/\\/g, '/') === 'core/plane.ts', randomFiles.join(', '));
+ok('treasure boxes draw from a generator kept in the save', /seed/.test(read('src/core/skins.ts')) && /function random\(state: GameState\)/.test(read('src/core/skins.ts')));
+ok('away time of a new game is 2 hours', offlineCap(newGame(0)) === 2 * 3600);
+ok('the model lab page is not in the store build', !fs.existsSync('dist/lab.html'), 'it is a development tool (lab.html)');
 console.log('--- identity and versions');
 ok('app id is not a placeholder (com.example)', !!appId && !appId.startsWith('com.example'), 'set appId in capacitor.config.ts, then npm run phone:id');
 ok('Android applicationId matches', gradle.includes(`applicationId "${appId}"`), 'run npm run phone:id');
@@ -49,6 +59,11 @@ ok('store screenshots made', fs.existsSync('store/screenshots/iphone-6.9/01-star
 console.log('--- legal');
 ok('privacy and terms pages exist', fs.existsSync('public/privacy.html') && fs.existsSync('public/terms.html'), 'run npm run build');
 ok('publisher name and contact email are filled in (src/config/legal.ts)', !!PUBLISHER.name && /.+@.+\..+/.test(PUBLISHER.email), 'the stores and the law want a real contact');
+const terms = read('public/terms.html');
+const listing = read('store/listing.md');
+ok('Terms explain the treasure boxes and their odds', /treasure box/i.test(terms) && /odds/i.test(terms), 'scripts/build-legal-pages.ts');
+ok('Terms explain the Surf Club (monthly skin, daily gems and box)', /Surf Club/.test(terms) && /skin/i.test(terms), 'scripts/build-legal-pages.ts');
+ok('store listing answers the age rating with random paid items (treasure boxes)', /random/i.test(listing) && /treasure box/i.test(listing) && !/Loot boxes or random rewards: \*\*none\*\*/.test(listing), 'store/listing.md');
 console.log('--- only a person can do these');
 person('Apple Developer Program account (99 USD a year), an App Store Connect app record with this bundle id', 'developer.apple.com');
 person('Google Play Console account (25 USD once), an app with this package name', 'play.google.com/console');
