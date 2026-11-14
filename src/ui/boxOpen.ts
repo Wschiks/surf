@@ -34,6 +34,10 @@ export interface OpeningOptions {
   title: string;
   /** Tapped after the card is shown: the layer is gone, go on. */
   onTap: () => void;
+  /** Another box of the same pack opens after this one: a tap goes straight to it (no shop in between). */
+  more?: boolean;
+  /** This box follows another of the pack: no wave, the chest is already lying on the beach. */
+  chained?: boolean;
 }
 
 /** Fixed spread of n particles: golden angle around the chest, a little up. */
@@ -127,16 +131,24 @@ export function playOpening(o: OpeningOptions) {
   const heroAt = open + 260;
   const heroLen = { common: 0, rare: 1150, epic: 1450, legendary: 2050, club: 2050 }[o.rarity];
   const cardAt = special ? heroAt + heroLen : open + 500;
-  const steps: [number, () => void][] = [
-    [
-      0,
-      () => {
-        el.classList.add('s-in');
-        sound.wave(o.kind === 'golden');
-      },
-    ],
-    [480, () => el.classList.add('s-crash')],
-    [560, () => el.classList.add('s-out')],
+  // the next box of a pack: no wave, the chest is already there, the timeline starts just before the shake
+  const shift = o.chained ? 1100 : 0;
+  if (o.chained) el.classList.add('chained');
+  const intro: [number, () => void][] = o.chained
+    ? [[0, () => el.classList.add('s-out')]]
+    : [
+        [
+          0,
+          () => {
+            el.classList.add('s-in');
+            sound.wave(o.kind === 'golden');
+          },
+        ],
+        [480, () => el.classList.add('s-crash')],
+        [560, () => el.classList.add('s-out')],
+      ];
+  const timeline: [number, () => void][] = [
+    ...intro,
     [
       1250,
       () => {
@@ -200,6 +212,7 @@ export function playOpening(o: OpeningOptions) {
       },
     ],
   ];
+  const steps: [number, () => void][] = timeline.map(([at, fn], i) => [i < intro.length ? at : Math.max(0, at - shift), fn]);
   let next = 0;
   const timers = steps.map(([at, fn], i) =>
     window.setTimeout(() => {
@@ -217,6 +230,12 @@ export function playOpening(o: OpeningOptions) {
       if (next <= 4) sound.open(o.rarity);
       reveal(true);
       done = true;
+      return;
+    }
+    if (o.more) {
+      // the next box of the pack opens on top at once; this one goes away under it
+      o.onTap();
+      window.setTimeout(() => el.remove(), 300);
       return;
     }
     el.classList.add('s-leave');

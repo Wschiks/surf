@@ -7,6 +7,9 @@ import { bakeRigAtlas } from './scene/rig/atlas';
 import { Crew } from './scene/rig/crew';
 import { FxPool } from './scene/rig/fx';
 import { CLUB_SKINS, skinsOfZone } from './config/skins';
+import { loadSkinArt } from './scene/rig/skinArt';
+
+void loadSkinArt();
 
 class Lab extends Phaser.Scene {
   crews: { id: string; crew: Crew; rect: { x: number; y: number; w: number; h: number } }[] = [];

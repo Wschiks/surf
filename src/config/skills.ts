@@ -87,16 +87,16 @@ const SPORT_SHAPE: Shape[] = [
 
 const BEACH_SHAPE: Shape[] = [
   { key: 'root', kind: 'offline', value: 0.5, cost: 0, parent: null, x: 0, y: 0 },
-  { key: 'away1', kind: 'offline', value: 1, cost: 1, parent: 0, x: -1, y: -1 },
+  { key: 'away1', kind: 'offline', value: 0.5, cost: 1, parent: 0, x: -1, y: -1 },
   { key: 'build1', kind: 'facilityPower', value: 0.1, cost: 1, parent: 0, x: 1, y: -1 },
-  { key: 'away2', kind: 'offline', value: 1.5, cost: 2, parent: 1, x: -1.85, y: -2 },
+  { key: 'away2', kind: 'offline', value: 0.5, cost: 2, parent: 1, x: -1.85, y: -2 },
   { key: 'quests1', kind: 'quest', value: 0.25, cost: 2, parent: 1, x: -0.35, y: -2 },
   { key: 'material1', kind: 'facilityCost', value: 0.15, cost: 2, parent: 2, x: 0.7, y: -2 },
   { key: 'build2', kind: 'facilityPower', value: 0.15, cost: 2, parent: 2, x: 1.9, y: -2 },
-  { key: 'away3', kind: 'offline', value: 2, cost: 4, parent: 3, x: -1.85, y: -3 },
+  { key: 'away3', kind: 'offline', value: 0.5, cost: 4, parent: 3, x: -1.85, y: -3 },
   { key: 'busy', kind: 'allCoins', value: 0.05, cost: 4, parent: 4, x: -0.5, y: -3 },
   { key: 'material2', kind: 'facilityCost', value: 0.2, cost: 4, parent: 5, x: 0.7, y: -3 },
-  { key: 'away4', kind: 'offline', value: 3, cost: 7, parent: 7, x: -1.2, y: -4 },
+  { key: 'away4', kind: 'offline', value: 0.5, cost: 7, parent: 7, x: -1.2, y: -4 },
   { key: 'grand', kind: 'facilityPower', value: 0.3, cost: 12, parent: 9, x: 0.7, y: -4.1 },
 ];
 

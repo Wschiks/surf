@@ -75,8 +75,9 @@ export const BALANCE = {
   speedEnd: 1 / 3,
   /** Cost of a manager, in multiples of the tier scale. */
   managerCost: 60,
-  /** Offline earnings stop after this many seconds away (2 hours; the beach skills add more). */
-  offlineCapSeconds: 2 * 3600,
+  /** Offline earnings stop after this many seconds away (1.5 hours; with the free root skill 2 hours, the away skills
+   *  add 2 more for gems, the Surf Club 2 more: 2 h free, 4 h with gems, 6 h with the Club, the author's choice). */
+  offlineCapSeconds: 1.5 * 3600,
   /** Watching a rewarded ad makes all coin income x2 for this many seconds. */
   boostSeconds: 120,
   boostMult: 2,

@@ -1,6 +1,7 @@
 import Phaser from 'phaser';
 import './styles.css';
 import { MapScene } from './scene/MapScene';
+import { loadSkinArt } from './scene/rig/skinArt';
 
 // The canvas is drawn at the device pixel ratio (capped at 2) so the art stays sharp on phones.
 const holder = document.getElementById('game')!;
@@ -8,6 +9,10 @@ const ratio = () => Math.min(window.devicePixelRatio || 1, 2);
 const size = () => ({ w: Math.max(1, Math.round(holder.clientWidth * ratio())), h: Math.max(1, Math.round(holder.clientHeight * ratio())) });
 const first = size();
 
+// the skins painted by the author's friend load before the game starts (their textures are made from them)
+void loadSkinArt().then(start);
+
+function start() {
 const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game',
@@ -23,6 +28,7 @@ new ResizeObserver(() => {
   const s = size();
   if (s.w !== game.scale.width || s.h !== game.scale.height) game.scale.resize(s.w, s.h);
 }).observe(holder);
+}
 
 // One size unit for buttons, pills and rounded corners: 1 on a normal phone (390 wide, 780 high), smaller on small or
 // flat screens and a little bigger on large ones, so the shapes keep their proportions when the window changes.

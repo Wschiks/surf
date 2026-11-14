@@ -796,7 +796,7 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 .theme-leaf .sk-show-card, .club-poster.theme-leaf { background: radial-gradient(circle at 50% 36%, #ffd27a 0%, #e07a24 20%, #8a3412 50%, #3a1206 100%); }
 .theme-snow .sk-show-card, .club-poster.theme-snow { background: radial-gradient(circle at 50% 36%, #d8484a 0%, #9c1622 40%, #3a0610 100%); }
 .theme-spark .sk-show-card, .club-poster.theme-spark { background: radial-gradient(circle at 50% 36%, #4a63c8 0%, #22307a 45%, #080d2a 100%); }
-.theme-petal .sk-show-card, .club-poster.theme-petal { background: radial-gradient(circle at 50% 36%, #ffc2d1 0%, #e0507a 40%, #5a0c26 100%); }
+.theme-rose .sk-show-card, .club-poster.theme-rose { background: radial-gradient(circle at 50% 36%, #ffc2d1 0%, #e0507a 40%, #5a0c26 100%); }
 .theme-clover .sk-show-card, .club-poster.theme-clover { background: radial-gradient(circle at 50% 36%, #e6f9a8 0%, #6cc04a 40%, #1a5a26 100%); }
 .sk-show-rays { position: absolute; left: 50%; top: 36%; width: 640px; height: 640px; margin: -320px 0 0 -320px; background: repeating-conic-gradient(rgba(255, 255, 255, 0.16) 0deg 9deg, rgba(255, 255, 255, 0) 9deg 24deg); border-radius: 50%; -webkit-mask-image: radial-gradient(circle, #000 20%, transparent 62%); mask-image: radial-gradient(circle, #000 20%, transparent 62%); animation: skSpin 26s linear infinite; pointer-events: none; }
 @keyframes skSpin { to { transform: rotate(360deg); } }
@@ -852,6 +852,10 @@ button { font: inherit; color: inherit; border: 0; cursor: pointer; background: 
 .bo i { font-style: normal; }
 @keyframes boFade { from { opacity: 0; } }
 .bo.s-leave { transition: opacity 0.16s ease-in, transform 0.16s ease-in; opacity: 0; transform: scale(1.04); }
+/* the next box of a pack: straight on, no fade-in, no wave, the chest already on the beach */
+.bo.chained { animation: none; }
+.bo.chained .bo-wave, .bo.chained .bo-spray { display: none; }
+.bo.chained.s-out .bo-chest { animation: boLand 0.35s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
 /* the beach: sea at the top, a foamy shore line, sand below */
 .bo-beach { position: absolute; inset: 0; background: linear-gradient(180deg, #0c6489 0%, #1b8db4 20%, #43b4d0 31%, #8fdbe6 34%, #f7e6b8 36.5%, #f0d7a0 62%, #e4c68a 100%); }
 .bo-sea { position: absolute; left: 0; right: 0; top: 0; height: 34%; background-image: radial-gradient(circle, rgba(255, 255, 255, 0.75) 0 1.2px, transparent 2px), radial-gradient(circle, rgba(255, 255, 255, 0.45) 0 1px, transparent 1.6px); background-size: 46px 26px, 31px 19px; background-position: 0 0, 13px 9px; animation: boGlint 4s linear infinite; }

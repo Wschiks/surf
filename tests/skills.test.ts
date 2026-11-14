@@ -1,5 +1,4 @@
 import { describe, expect, it } from 'vitest';
-import { BALANCE } from '../src/config/balance';
 import { RING_RADIUS, TREE_UNIT, skillPosition, QUEST_POINTS, SKILL_NODES, SKILL_TREES, describeSkill, skillById } from '../src/config/skills';
 import { SPORTS, zoneById } from '../src/config/sports';
 import { buyFacility, buyManager, buyStat, discounts, facilityCost, managerCost, offlineCap, statCost, zoneStats } from '../src/core/economy';
@@ -198,16 +197,19 @@ describe('what the skills do', () => {
     expect(facilityCost('shop', 1, skillEffects(s).facilityCost)).toBeLessThan(cost);
   });
 
-  it('beach: away time is 2 hours and grows with skills', () => {
-    expect(BALANCE.offlineCapSeconds).toBe(2 * 3600);
+  it('beach: away time is 2 hours free, 4 with all the away skills (gems), 6 with the Surf Club too', () => {
+    // a new game starts with the free root skill: 1.5 hours + 0.5 = 2 hours
+    expect(offlineCap(newGame(0))).toBe(2 * 3600);
     const s = game();
-    expect(offlineCap(s)).toBe(2 * 3600);
+    expect(offlineCap(s)).toBe(1.5 * 3600);
     learnPath(s, 'beach:away1');
     learnPath(s, 'beach:away2');
-    expect(offlineCap(s)).toBe((2 + 0.5 + 1 + 1.5) * 3600); // 2 hours + the free root + two skills
+    expect(offlineCap(s)).toBe((1.5 + 0.5 + 0.5 + 0.5) * 3600); // the base + the free root + two skills
     const all = game();
     for (const n of SKILL_NODES.filter((x) => x.tree === 'beach')) all.skills[n.id] = true;
-    expect(offlineCap(all)).toBe((2 + 0.5 + 1 + 1.5 + 2 + 3) * 3600);
+    expect(offlineCap(all)).toBe(4 * 3600);
+    all.perks.club = true;
+    expect(offlineCap(all)).toBe(6 * 3600);
   });
 
   it('beach: quests pay more and everything pays a little more', () => {

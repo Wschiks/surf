@@ -530,3 +530,29 @@ The author asked for the whole dim-the-screen tutorial to go ("not 100% working"
   - Talons spread to the lines, and long tail plumes flowing to one side with peacock eyes.
   - Warm copper colours (#d98a36, #ffd27a, #7a3a12).
   - Also fixed: a figure skin's picture in the collection is measured on its own; the phoenix was using the Sky Dragon's frame and had its wing tips cut.
+- **Thanksgiving uses the friend's own phoenix** (13 Nov 2026, the author: "just copy this img"):
+  - The bird is cut out of the friend's Thanksgiving card (src/assets/club/phoenix.png, traced by hand with soft edges; the tail fades where the card's text covered it).
+  - It is drawn as the kite, its talons on the lines, with a soft golden glow behind, and the same picture shows in the collection, the showcase and the shop. It loads before the game starts.
+- **February's Rose is a rose, not a round board** (13 Nov 2026): the Shallows board is now a red rose seen from above, with rings of crimson petals that have a lighter rolled lip and dark depth in the cup, spiralling in to a tight bud, ridden like the animals. The author's reference picture was a stock image with a watermark, so it was only used to look at, not copied in.
+- **Thanksgiving uses the author's top-down phoenix design** (13 Nov 2026, it replaces the bird cut from the card):
+  - The phoenix kite from the author's picture: seen from above, wings spread wide, a crest of flame feathers and a long flame tail in orange, red and gold.
+  - It was cut from the blue sea by its warm colours; the kite lines that crossed its tail are painted over, it is turned head-up, and the edges are softened.
+  - The game's kite lines meet on its back where the picture's lines did. The same picture is the kite, the collection picture, the showcase and the shop header.
+- **St. Patrick's redrawn after the friend's design** (14 Nov 2026):
+  - The sail is a glossy rainbow, the seven bands running along its length, with a clear glassy panel along one edge, a soft shine and sparkles.
+  - The board is a real pot of gold: cast iron with a gold rim, a dark nose with a big gold Celtic knot behind a gold band, and the open pot at the back, its gold rim round a heap of shiny coins with four-leaf clovers and sparkles.
+- **St. Patrick's board: the rainbow streams out of the pot** (14 Nov 2026, read properly from the friend's design):
+  - The board's nose half is the pot of gold: gold trim, a black nose panel with the gold Celtic knot, a gold band, the dark iron pot and its open top full of coins and clovers.
+  - From the pot the rainbow runs down the back half to the tail, glossy and sparkling.
+  - On the sail the bands run violet on the outer curve to red, with a wide clear glass part on the inner curve.
+  - To copy a design 1:1, the friend can send the board and sail separately, seen from above on a transparent background; they are then cut out and used as pictures, like the phoenix.
+- **Club skin trails, the author's picks** (14 Nov 2026):
+  - St. Patrick's leaves a rainbow ribbon behind the board (as well as its clovers and coins).
+  - Thanksgiving drops only its autumn leaves, 2027 only its sparks and the Christmas Tree only its snow; the flame, fireworks and candy-cane ribbons were tried and taken out.
+  - The Rose drops little roses (small copies of its own rose) instead of petals, and no ribbon.
+  - A trail does not have to be a line: anything the skin leaves behind.
+- **Away time: 2 h free, 4 h with gems, 6 h with the Surf Club** (14 Nov 2026, the author's numbers; it was up to 10 h without paying money):
+  - Free: a 1.5 h base plus the free root skill (+0.5 h).
+  - With gems: the four Away time skills in the beach tree now give +0.5 h each (same gem costs 1, 2, 4, 7).
+  - The Surf Club still adds +2 h.
+- **The 3-box deal opens straight through** (14 Nov 2026, the author's ask): after a box of the pack is tapped away, the next one opens at once on top, with no shop in between and no wave (its chest already lies on the beach, it shakes and opens). The first box keeps its wave; after the last one you are back in the shop.

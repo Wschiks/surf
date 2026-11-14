@@ -6,7 +6,7 @@ import { add, arms, head, len, lerp, mul, PAL, rot, shadowOffset, sub, TAU, v, t
 import { BOATS, K, KITE, WIND, type Boat, type Gear } from './models';
 import { rigPoint, type Look } from './sim';
 import { UPRIGHT } from '../upright';
-import { figureTips, hasSpinSkin, hidesWindow, isFigure, skinBoard, skinEdge, trailOf, TRAIL_SIZE, type TrailKind } from './skinArt';
+import { figureTips, hasSpinSkin, hidesWindow, isFigure, ribbonOf, skinBoard, skinEdge, trailOf, TRAIL_SIZE, type Ribbon, type TrailKind } from './skinArt';
 
 export { shadowOffset };
 
@@ -122,9 +122,13 @@ export class GuestBody {
   private look!: Look;
   /** The skin the section wears, laid over the main gear (board, sail, kite or wing). */
   private skinImg?: Img;
-  /** A Club skin's touch: the bits it drops (leaves, snow, sparks, petals, clovers), each where it was let go. */
+  /** A Club skin's touch: the bits it drops (leaves, snow, sparks, little roses, clovers), each where it was let go. */
   private trail: { im: Img; x: number; y: number; cycle: number }[] = [];
   private trailKind: TrailKind | null = null;
+  /** A Club skin's ribbon trail: where the gear's tail has been lately, drawn as bands of colour. */
+  private ribbon: Ribbon | null = null;
+  private ribbonGfx?: Phaser.GameObjects.Graphics;
+  private ribbonPts: { x: number; y: number; t: number }[] = [];
   /** A skin's own board (the 1990 set), laid over the board. */
   private skinBoardImg?: Img;
   /** The skin's spinnaker (the offshore yachts). */
@@ -294,6 +298,11 @@ export class GuestBody {
     this.all = this.all.filter((im) => !this.trail.some((p) => p.im === im));
     this.trail = [];
     this.trailKind = null;
+    this.ribbonGfx?.destroy();
+    this.all = this.all.filter((im) => im !== (this.ribbonGfx as unknown as Img));
+    this.ribbonGfx = undefined;
+    this.ribbon = null;
+    this.ribbonPts = [];
     this.skinBoardImg?.destroy();
     this.skinSpinImg?.destroy();
     this.all = this.all.filter((im) => im !== this.skinImg && im !== this.skinBoardImg && im !== this.skinSpinImg);
@@ -356,11 +365,20 @@ export class GuestBody {
       this.all.push(bi);
       this.skinBoardImg = bi;
     }
+    const rb = ribbonOf(skin);
+    if (rb) {
+      this.ribbon = rb;
+      const fromKite = skin.sport === 'kitesurfing';
+      const gfx = this.scene.add.graphics();
+      gfx.setDepth(fromKite ? this.o.skyDepth - 0.001 : this.o.depth - 0.001);
+      this.ribbonGfx = gfx;
+      this.all.push(gfx as unknown as Img);
+    }
     const kind = trailOf(skin);
     if (kind) {
       // the bits fall from the sky (leaves, sparks, snow: just under the kite) or stay on the water behind the board
       this.trailKind = kind;
-      const onWater = kind === 'petal' || kind === 'clover';
+      const onWater = kind === 'rose' || kind === 'clover';
       const N = kind === 'snow' ? 9 : 7;
       for (let i = 0; i < N; i++) {
         const im = this.scene.add.image(0, 0, trailTexture(this.scene, kind, i % 3)) as Img;
@@ -483,12 +501,79 @@ export class GuestBody {
     this.drawParts(L, t, detail);
     this.syncSkin();
     this.drawTrail(L, t);
+    this.drawRibbon(L, t);
+  }
+
+  /**
+   * The ribbon: the tail of the board (or the kite) leaves a stream of colour bands behind it, widest at the gear,
+   * narrowing and fading as it falls behind; when the gear stops, it fades away.
+   */
+  private drawRibbon(L: Look, t: number) {
+    const rb = this.ribbon;
+    const gfx = this.ribbonGfx;
+    if (!rb || !gfx) return;
+    gfx.clear();
+    const fromKite = !!this.kite;
+    const src = fromKite ? this.kite : this.board;
+    const on = this.visible && this.detail >= 1 && !!src && (fromKite ? !!L.kite : true);
+    if (!on || !src) {
+      this.ribbonPts = [];
+      return;
+    }
+    const unit = this.k * (fromKite ? (L.kite?.scale ?? 1) : L.scale);
+    const tail = rot(v(0, fromKite ? 40 : 110), src.rotation);
+    const p = { x: src.x + tail.x * unit, y: src.y + tail.y * unit, t };
+    const pts = this.ribbonPts;
+    const last = pts[0];
+    // a jump (a guest put back at the start) starts a new ribbon
+    if (last && Math.hypot(p.x - last.x, p.y - last.y) > 120 * unit) pts.length = 0;
+    if (!last || Math.hypot(p.x - last.x, p.y - last.y) > 3 * unit || t - last.t > 0.08) pts.unshift(p);
+    else pts[0] = { ...p, t: last.t };
+    while (pts.length && t - pts[pts.length - 1].t > rb.life) pts.pop();
+    if (pts.length < 2) return;
+    const n = rb.colors.length;
+    const W = rb.width * unit;
+    // the side direction at each point
+    const side = pts.map((_, i) => {
+      const a = pts[Math.max(0, i - 1)];
+      const b = pts[Math.min(pts.length - 1, i + 1)];
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const l = Math.hypot(dx, dy) || 1;
+      return { x: -dy / l, y: dx / l };
+    });
+    for (let i = 0; i < pts.length - 1; i++) {
+      const age0 = (t - pts[i].t) / rb.life;
+      const age1 = (t - pts[i + 1].t) / rb.life;
+      const w0 = W * (0.55 + 0.45 * age0) * (1 - age0 * 0.3);
+      const w1 = W * (0.55 + 0.45 * age1) * (1 - age1 * 0.3);
+      const alpha = rb.alpha * (1 - age0) * L.alpha * Math.min(1, i / 2 + 0.3);
+      if (alpha <= 0.01) continue;
+      for (let k = 0; k < n; k++) {
+        const f0 = -0.5 + k / n;
+        const f1 = -0.5 + (k + 1) / n;
+        const a = pts[i];
+        const b = pts[i + 1];
+        const sa = side[i];
+        const sb = side[i + 1];
+        gfx.fillStyle(rb.colors[k], alpha);
+        gfx.fillPoints(
+          [
+            new Phaser.Math.Vector2(a.x + sa.x * w0 * f0, a.y + sa.y * w0 * f0),
+            new Phaser.Math.Vector2(a.x + sa.x * w0 * f1, a.y + sa.y * w0 * f1),
+            new Phaser.Math.Vector2(b.x + sb.x * w1 * f1, b.y + sb.y * w1 * f1),
+            new Phaser.Math.Vector2(b.x + sb.x * w1 * f0, b.y + sb.y * w1 * f0),
+          ],
+          true,
+        );
+      }
+    }
   }
 
   /**
    * A Club skin's trail: a few bits, each let go in turn at a fixed rhythm (nothing random) from the kite or the board,
    * then moving on their own: leaves sway down from the phoenix to the water, sparks pop round the 2027 kite, snow
-   * drifts down round the Christmas tree, petals and clovers stay on the water behind the board and fade.
+   * drifts down round the Christmas tree, little roses and clovers stay on the water behind the board and fade.
    */
   private drawTrail(L: Look, t: number) {
     const kind = this.trailKind;
@@ -553,10 +638,10 @@ export class GuestBody {
         size = 0.9 + 0.4 * hash(i, p.cycle, 3);
         r = age * 2 + i;
       } else {
-        // petals and clovers: left on the water, turning slowly, fading
+        // roses and clovers: left on the water, turning slowly, fading
         alpha = Math.min(1, age / 0.08) * (1 - age);
         r = age * 1.2 + i * 0.9;
-        size = 1.05;
+        size = kind === 'rose' ? 1.35 : 1.05;
       }
       p.im
         .setPosition(x, y)

@@ -3,6 +3,7 @@
 
 import type { SkinDef } from '../../config/skins';
 import { GEAR_PATHS, PATHS } from './models';
+import phoenixUrl from '../../assets/club/phoenix.png';
 
 /** The gear a skin goes on: its outline and its bounds (spec px, the pivot of the gear picture is 0,0). */
 export interface SkinShape {
@@ -471,7 +472,7 @@ export function isFigure(skin: SkinDef): boolean {
 
 /** The animals a surfer rides instead of a board (seen from above, snout to the front): their fins and tail stick out past the board. */
 export function isRide(skin: SkinDef): boolean {
-  return ['sharkRide', 'orca', 'dolphin', 'swordfish', 'carrot', 'rocket', 'mouse', 'xmasTree'].includes(skin.pattern);
+  return ['sharkRide', 'orca', 'dolphin', 'swordfish', 'carrot', 'rocket', 'mouse', 'xmasTree', 'rose'].includes(skin.pattern);
 }
 
 /** Skins that hide the gear's see-through window (the wing figures, Matchday so its club logo shows whole, the moon sail). */
@@ -613,7 +614,7 @@ export function skinBounds(skin: SkinDef, shape: SkinShape): { x0: number; y0: n
   if (isWingFigure(skin)) return { x0: shape.x0 - 40, y0: shape.y0 - 50, x1: shape.x1 + 40, y1: shape.y1 + 44 };
   if (skin.pattern === 'moon') return { x0: -6, y0: -16, x1: 180, y1: 208 };
   // the phoenix's raised wings, flame trails and long tail reach past the kite
-  if (skin.pattern === 'phoenix') return { x0: -160, y0: -134, x1: 160, y1: 86 };
+  if (skin.pattern === 'phoenix') return { x0: -164, y0: -114, x1: 150, y1: 113 };
   return shape;
 }
 
@@ -1824,12 +1825,17 @@ function drawFigure(c: Ctx, skin: SkinDef, shape: SkinShape) {
     return;
   }
   if (skin.pattern === 'phoenix') {
-    drawPhoenix(c, skin);
+    drawPhoenix(c);
     c.restore();
     return;
   }
   if (skin.pattern === 'xmasTree') {
     drawXmasTree(c, skin, shape);
+    c.restore();
+    return;
+  }
+  if (skin.pattern === 'rose') {
+    drawRose(c);
     c.restore();
     return;
   }
@@ -5950,99 +5956,54 @@ export function drawSkin(c: Ctx, skin: SkinDef, shape: SkinShape) {
       c.stroke(outline);
       break;
     }
-    case 'rose': {
-      // February: a round board with a black rim, a gold ring and a big red rose with leaves
-      fill(a);
-      const R = Math.min(w, hh) / 2;
-      c.fillStyle = '#5a0c12';
-      c.beginPath();
-      c.arc(0, 0, R * 0.78, 0, Math.PI * 2);
-      c.fill();
-      // leaves peeking out between the petals
-      for (let k = 0; k < 4; k++) {
-        const ang = Math.PI / 4 + (k * Math.PI) / 2;
-        jungleLeaf(c, Math.cos(ang) * R * 0.42, Math.sin(ang) * R * 0.42, R * 0.34, ang, '#4f9a34', 1);
-      }
-      // the rose: rings of round, cupped petals (a shadow on the inner side, a light lip outside), a swirl in the middle
-      const rings: [number, number, number, string, number][] = [
-        [0.5, 0.3, 5, '#b3121c', 0],
-        [0.32, 0.22, 5, '#d0202a', 0.63],
-        [0.17, 0.15, 4, '#e33a35', 0.2],
-      ];
-      for (const [rc, lobe, n, col, off] of rings)
-        for (let k = 0; k < n; k++) {
-          const ang = off + (k / n) * Math.PI * 2;
-          const px = Math.cos(ang) * R * rc;
-          const py = Math.sin(ang) * R * rc;
-          const L = R * lobe;
-          const petal = new Path2D();
-          petal.arc(px, py, L, 0, Math.PI * 2);
-          c.fillStyle = col;
-          c.fill(petal);
-          c.save();
-          c.clip(petal);
-          // the shadow where it curls in toward the middle
-          c.strokeStyle = 'rgba(70,0,8,0.5)';
-          c.lineWidth = L * 0.55;
-          c.beginPath();
-          c.arc(px - Math.cos(ang) * L * 0.25, py - Math.sin(ang) * L * 0.25, L * 0.95, ang + Math.PI - 1.1, ang + Math.PI + 1.1);
-          c.stroke();
-          // a light lip on the outer edge
-          c.strokeStyle = 'rgba(255,140,120,0.6)';
-          c.lineWidth = L * 0.16;
-          c.beginPath();
-          c.arc(px, py, L * 0.92, ang - 1, ang + 1);
-          c.stroke();
-          c.restore();
-          c.strokeStyle = 'rgba(70,0,8,0.8)';
-          c.lineWidth = 0.9;
-          c.stroke(petal);
-        }
-      // the tight bud in the middle, a swirl
-      c.fillStyle = '#9c0e18';
-      c.beginPath();
-      c.arc(0, 0, R * 0.12, 0, Math.PI * 2);
-      c.fill();
-      c.strokeStyle = '#ff7a64';
-      c.lineWidth = 1.1;
-      c.beginPath();
-      for (let k = 0; k <= 30; k++) {
-        const t = k / 30;
-        const ang = t * Math.PI * 3.2;
-        const rr = R * 0.11 * t;
-        if (k === 0) c.moveTo(0, 0);
-        else c.lineTo(Math.cos(ang) * rr, Math.sin(ang) * rr);
-      }
-      c.stroke();
-      // the gold ring, and little gold leaves on the black rim
-      c.strokeStyle = d;
-      c.lineWidth = 2.2;
-      c.beginPath();
-      c.arc(0, 0, R * 0.8, 0, Math.PI * 2);
-      c.stroke();
-      for (let k = 0; k < 4; k++) {
-        const ang = (k * Math.PI) / 2;
-        const x = Math.cos(ang) * R * 0.9;
-        const y = Math.sin(ang) * R * 0.9;
-        jungleLeaf(c, x, y, R * 0.12, ang + Math.PI / 2, d, 1);
-        jungleLeaf(c, x, y, R * 0.12, ang - Math.PI / 2, d, 1);
-      }
-      break;
-    }
     case 'stPatrick': {
-      // March: a rainbow sail with sparkles
-      fill('#ffffff');
-      const bands = ['#e53935', '#fb8c00', '#fdd835', '#43a047', '#1e88e5', '#8e24aa'];
-      c.save();
-      c.translate((x0 + x1) / 2, (y0 + y1) / 2);
-      c.rotate(-0.95);
-      const bw = 13 * s;
-      for (let k = -9; k < 9; k++) {
-        c.fillStyle = bands[((k % 6) + 6) % 6];
-        c.fillRect(-400, k * bw, 800, bw + 0.5);
+      // March, after the friend's design: a glossy rainbow sail, the bands running along its length, a clear glassy
+      // panel along the leech, sparkles
+      const sp = spineOf(shape);
+      const bands = ['#e8352f', '#ff8a1c', '#ffd22e', '#3fb04a', '#2f8ae0', '#5a4fd0', '#a33fc8'].reverse();
+      const band = (o0: number, o1: number) => {
+        const p = new Path2D();
+        for (let k = 0; k <= 24; k++) {
+          const q = beside(sp, -0.06 + (1.12 * k) / 24, o0);
+          if (k === 0) p.moveTo(q.x, q.y);
+          else p.lineTo(q.x, q.y);
+        }
+        for (let k = 24; k >= 0; k--) {
+          const q = beside(sp, -0.06 + (1.12 * k) / 24, o1);
+          p.lineTo(q.x, q.y);
+        }
+        p.closePath();
+        return p;
+      };
+      fill(bands[0]);
+      const from = -1.08;
+      const to = 0.3;
+      bands.forEach((col, k) => {
+        c.fillStyle = col;
+        c.fill(band(from + ((to - from) * k) / bands.length, from + ((to - from) * (k + 1)) / bands.length + 0.02));
+      });
+      // the clear panel along the leech: pale and glassy
+      const glass = band(to, 1.3);
+      const gg = c.createLinearGradient(x0, y0, x1, y1);
+      gg.addColorStop(0, 'rgba(225,245,255,0.9)');
+      gg.addColorStop(1, 'rgba(190,225,245,0.85)');
+      c.fillStyle = gg;
+      c.fill(glass);
+      c.strokeStyle = 'rgba(40,40,60,0.35)';
+      c.lineWidth = 1.4 * s;
+      c.stroke(lineU(sp, -0.05, 1.05, to));
+      // gloss: a soft white streak down the sail and a lighter top
+      c.strokeStyle = 'rgba(255,255,255,0.35)';
+      c.lineCap = 'round';
+      c.lineWidth = 6 * s;
+      c.stroke(lineU(sp, 0.08, 0.85, -0.3));
+      c.strokeStyle = 'rgba(255,255,255,0.55)';
+      c.lineWidth = 2 * s;
+      c.stroke(lineU(sp, 0.12, 0.7, -0.3));
+      for (let i = 0; i < 16; i++) {
+        const q = beside(sp, 0.05 + h(seed, i + 300) * 0.9, -0.95 + h(seed, i + 400) * 1.9);
+        sparkle(c, q.x, q.y, (2 + 3 * h(seed, i + 500)) * s, '#ffffff');
       }
-      c.restore();
-      for (let i = 0; i < 14; i++) sparkle(c, x0 + h(seed, i + 300) * w, y0 + h(seed, i + 400) * hh, (2.5 + 2.5 * h(seed, i + 500)) * s, '#ffffff');
       break;
     }
     case 'dad90': {
@@ -6810,401 +6771,25 @@ function drawFishBoard(c: Ctx, sp: Spine, colors: [string, string, string], s: n
 
 // ---- the Surf Club's monthly skins (the author's friend's designs)
 
+/** Skins that are pictures (cut out): loaded once before the game starts. */
+const PHOENIX_IMG = typeof Image === 'undefined' ? null : new Image();
+export function loadSkinArt(): Promise<void> {
+  if (!PHOENIX_IMG) return Promise.resolve();
+  PHOENIX_IMG.src = phoenixUrl;
+  return PHOENIX_IMG.decode().catch(() => undefined);
+}
+
 /**
- * November: a phoenix kite after the friend's card. Big smooth shapes, lit from behind: a golden glow, wings raised high
- * in a V (one smooth silhouette each, ending in long finger feathers, a lighter layer of coverts over it), light gold
- * inside and deep bronze at the tips; an upright golden body, the head in profile facing left with a hooked beak and a
- * crest of curly plumes, talons spread forward, long flowing tail plumes curling to one side with peacock eyes, golden
- * sparkles and a few maple leaves. Kite coordinates: flying toward -y, the lines at its talons.
+ * November: the phoenix kite of the author's chosen design (src/assets/club/phoenix.png): seen from above, wings spread
+ * wide, a crest of flame feathers on its head, a long flame tail, in fiery orange, red and gold. The picture is turned
+ * head-up; the lines meet on its back where the design's lines did (380.75, 292.5 in the picture). Kite coordinates:
+ * flying toward -y, the lines at (0, 12).
  */
-function drawPhoenix(c: Ctx, skin: SkinDef) {
-  const [a] = skin.colors;
-  const ink = '#4a220a';
-  type P = [number, number];
-  const bez = (p0: P, p1: P, p2: P, p3: P, t: number): P => {
-    const u = 1 - t;
-    return [u * u * u * p0[0] + 3 * u * u * t * p1[0] + 3 * u * t * t * p2[0] + t * t * t * p3[0], u * u * u * p0[1] + 3 * u * u * t * p1[1] + 3 * u * t * t * p2[1] + t * t * t * p3[1]];
-  };
-  /** A ribbon along a curve: tapered at both ends, widest toward its end (a plume). */
-  const ribbon = (pts: P[], wmax: number): Path2D => {
-    const left: P[] = [];
-    const right: P[] = [];
-    pts.forEach((q, i) => {
-      const t = i / (pts.length - 1);
-      const n0 = pts[Math.max(0, i - 1)];
-      const n1 = pts[Math.min(pts.length - 1, i + 1)];
-      const dx = n1[0] - n0[0];
-      const dy = n1[1] - n0[1];
-      const l = Math.hypot(dx, dy) || 1;
-      const w = wmax * Math.pow(Math.sin(Math.PI * Math.min(1, t * 0.82 + 0.06)), 0.7) * (t > 0.92 ? (1 - t) / 0.08 : 1);
-      left.push([q[0] - (dy / l) * w, q[1] + (dx / l) * w]);
-      right.push([q[0] + (dy / l) * w, q[1] - (dx / l) * w]);
-    });
-    const p = new Path2D();
-    p.moveTo(left[0][0], left[0][1]);
-    for (const q of left) p.lineTo(q[0], q[1]);
-    for (const q of right.reverse()) p.lineTo(q[0], q[1]);
-    p.closePath();
-    return p;
-  };
-
-  // the glow behind it all: the bird is lit from behind
-  // (an ellipse that fades out inside the picture's bounds, so no edge shows)
-  c.save();
-  c.translate(0, -26);
-  c.scale(1.45, 1);
-  const glow = c.createRadialGradient(0, -14, 3, 0, -10, 88);
-  glow.addColorStop(0, 'rgba(255,232,160,0.85)');
-  glow.addColorStop(0.3, 'rgba(255,200,100,0.42)');
-  glow.addColorStop(0.6, 'rgba(255,170,70,0.12)');
-  glow.addColorStop(0.85, 'rgba(255,170,70,0)');
-  c.fillStyle = glow;
-  c.beginPath();
-  c.arc(0, -10, 88, 0, Math.PI * 2);
-  c.fill();
-  c.restore();
-
-  // the tail: long plumes flowing down and curling to the right, two to the left, peacock eyes near their ends
-  const plumes: [P, P, P, P, number, boolean][] = [
-    [[2, 10], [26, 34], [60, 36], [92, 56], 7, true],
-    [[2, 12], [14, 46], [44, 60], [62, 80], 8, true],
-    [[0, 12], [4, 44], [16, 66], [24, 84], 7.5, true],
-    [[-2, 12], [-10, 42], [-28, 58], [-46, 72], 6.5, true],
-    [[-2, 10], [-22, 30], [-50, 34], [-74, 48], 5.5, false],
-  ];
-  for (const [p0, p1, p2, p3, w, eye] of plumes) {
-    const pts: P[] = [];
-    for (let k = 0; k <= 30; k++) pts.push(bez(p0, p1, p2, p3, k / 30));
-    const path = ribbon(pts, w);
-    const g = c.createLinearGradient(p0[0], p0[1], p3[0], p3[1]);
-    g.addColorStop(0, '#ffb43c');
-    g.addColorStop(0.5, '#d2701e');
-    g.addColorStop(1, '#6a2a0a');
-    c.fillStyle = g;
-    c.fill(path);
-    // soft barbs along the plume
-    c.save();
-    c.clip(path);
-    c.strokeStyle = 'rgba(255,236,180,0.45)';
-    c.lineWidth = 0.8;
-    for (let k = 3; k < 28; k += 2) {
-      const q = pts[k];
-      const n = pts[k + 1];
-      c.beginPath();
-      c.moveTo(q[0], q[1]);
-      c.lineTo(q[0] + (n[1] - q[1]) * 2.5 + (n[0] - q[0]) * 2, q[1] - (n[0] - q[0]) * 2.5 + (n[1] - q[1]) * 2);
-      c.stroke();
-    }
-    c.restore();
-    c.strokeStyle = 'rgba(74,34,10,0.7)';
-    c.lineWidth = 1.1;
-    c.stroke(path);
-    if (eye) {
-      const [ex, ey] = bez(p0, p1, p2, p3, 0.8);
-      c.fillStyle = '#ffd27a';
-      c.beginPath();
-      c.ellipse(ex, ey, w * 0.85, w * 0.7, 0, 0, Math.PI * 2);
-      c.fill();
-      c.fillStyle = '#1f6a74';
-      c.beginPath();
-      c.ellipse(ex, ey, w * 0.5, w * 0.4, 0, 0, Math.PI * 2);
-      c.fill();
-      c.fillStyle = '#18242a';
-      c.beginPath();
-      c.arc(ex, ey, w * 0.2, 0, Math.PI * 2);
-      c.fill();
-    }
-  }
-
-  // the wings: one smooth silhouette each, raised high, ending in long finger feathers
-  for (const side of [-1, 1]) {
-    c.save();
-    c.scale(side, 1);
-    const wing = new Path2D();
-    wing.moveTo(8, -30);
-    wing.quadraticCurveTo(34, -82, 64, -110);
-    // finger feathers round the top and the outside: [notch, tip]
-    const fingers: [P, P][] = [
-      [[70, -112], [76, -132]],
-      [[86, -106], [100, -128]],
-      [[100, -96], [122, -116]],
-      [[110, -82], [138, -96]],
-      [[116, -66], [148, -72]],
-      [[116, -50], [150, -46]],
-    ];
-    let prev: P = [64, -110];
-    for (const [notch, tip] of fingers) {
-      wing.quadraticCurveTo(prev[0] + (tip[0] - prev[0]) * 0.3, tip[1] + 2, tip[0], tip[1]);
-      wing.quadraticCurveTo(tip[0] - 2, tip[1] + 10, notch[0] + 8, notch[1] + 4);
-      prev = [notch[0] + 8, notch[1] + 4];
-    }
-    // the trailing edge: rounded secondaries back down to the body
-    const secs: P[] = [
-      [134, -26],
-      [112, -8],
-      [86, 2],
-      [58, 6],
-      [32, 4],
-    ];
-    for (const tip of secs) {
-      wing.quadraticCurveTo(prev[0] + 6, tip[1] - 2, tip[0], tip[1]);
-      const back: P = [tip[0] - 6, tip[1] - 10];
-      wing.quadraticCurveTo(tip[0] - 2, tip[1] - 4, back[0], back[1]);
-      prev = back;
-    }
-    wing.quadraticCurveTo(18, -6, 12, -14);
-    wing.closePath();
-    const wg = c.createRadialGradient(34, -56, 4, 46, -56, 118);
-    wg.addColorStop(0, '#ffd56a');
-    wg.addColorStop(0.3, '#f39a2e');
-    wg.addColorStop(0.6, '#c8621a');
-    wg.addColorStop(0.85, '#8a3410');
-    wg.addColorStop(1, '#4a1a06');
-    c.fillStyle = wg;
-    c.fill(wing);
-    c.save();
-    c.clip(wing);
-    // a soft shadow beside every long feather (depth), then the line between them
-    c.strokeStyle = 'rgba(90,30,6,0.2)';
-    c.lineWidth = 7;
-    for (const [notch] of fingers) {
-      c.beginPath();
-      c.moveTo(64, -62);
-      c.quadraticCurveTo((60 + notch[0]) / 2 + 10, (-66 + notch[1]) / 2 + 3, notch[0] + 11, notch[1] + 7);
-      c.stroke();
-    }
-    c.strokeStyle = 'rgba(90,36,8,0.6)';
-    c.lineWidth = 1.3;
-    for (const [notch] of fingers) {
-      c.beginPath();
-      c.moveTo(60, -66);
-      c.quadraticCurveTo((60 + notch[0]) / 2 + 6, (-66 + notch[1]) / 2, notch[0] + 8, notch[1] + 4);
-      c.stroke();
-    }
-    for (const tip of secs) {
-      c.beginPath();
-      c.moveTo(54, -50);
-      c.lineTo(tip[0] - 6, tip[1] - 10);
-      c.stroke();
-    }
-    // the light through the inner wing, and a bright rim along the top
-    c.strokeStyle = 'rgba(255,250,215,0.85)';
-    c.lineWidth = 3;
-    c.beginPath();
-    c.moveTo(12, -32);
-    c.quadraticCurveTo(36, -80, 64, -106);
-    c.stroke();
-    c.restore();
-    // the middle layer: a row of rounded feathers between the coverts and the long feathers
-    const midL = new Path2D();
-    midL.moveTo(8, -30);
-    midL.quadraticCurveTo(34, -82, 64, -110);
-    midL.quadraticCurveTo(90, -108, 98, -90);
-    const ms: P[] = [
-      [104, -72],
-      [104, -54],
-      [96, -38],
-      [82, -24],
-      [64, -14],
-      [44, -8],
-      [26, -8],
-    ];
-    let mp: P = [98, -90];
-    for (const q of ms) {
-      midL.quadraticCurveTo((mp[0] + q[0]) / 2 + 8, (mp[1] + q[1]) / 2 + 6, q[0], q[1]);
-      mp = q;
-    }
-    midL.quadraticCurveTo(16, -10, 12, -16);
-    midL.closePath();
-    const mg = c.createRadialGradient(30, -60, 4, 40, -56, 80);
-    mg.addColorStop(0, '#ffd56a');
-    mg.addColorStop(0.55, '#f39a2e');
-    mg.addColorStop(1, '#b8501a');
-    c.fillStyle = mg;
-    c.fill(midL);
-    c.save();
-    c.clip(midL);
-    c.strokeStyle = 'rgba(120,50,10,0.45)';
-    c.lineWidth = 1.1;
-    for (const q of ms) {
-      c.beginPath();
-      c.moveTo(40, -60);
-      c.lineTo(q[0], q[1]);
-      c.stroke();
-    }
-    c.restore();
-    c.strokeStyle = 'rgba(110,46,10,0.6)';
-    c.lineWidth = 1;
-    c.stroke(midL);
-    // a smooth layer of golden coverts over the inner wing, its lower edge in soft scallops
-    const cov = new Path2D();
-    cov.moveTo(8, -30);
-    cov.quadraticCurveTo(34, -82, 64, -110);
-    cov.quadraticCurveTo(74, -100, 76, -84);
-    const sc: P[] = [
-      [68, -70],
-      [58, -58],
-      [46, -46],
-      [34, -36],
-      [22, -26],
-    ];
-    let cp: P = [76, -84];
-    for (const q of sc) {
-      cov.quadraticCurveTo((cp[0] + q[0]) / 2 + 7, (cp[1] + q[1]) / 2 + 7, q[0], q[1]);
-      cp = q;
-    }
-    cov.quadraticCurveTo(18, -12, 12, -16);
-    cov.closePath();
-    const cg = c.createLinearGradient(20, -100, 80, -30);
-    cg.addColorStop(0, '#fff0b0');
-    cg.addColorStop(1, '#ffc24a');
-    c.fillStyle = cg;
-    c.globalAlpha = 0.95;
-    c.fill(cov);
-    c.globalAlpha = 1;
-    c.strokeStyle = 'rgba(150,80,20,0.5)';
-    c.lineWidth = 1;
-    c.stroke(cov);
-    c.strokeStyle = ink;
-    c.lineWidth = 1.6;
-    c.stroke(wing);
-    c.restore();
-  }
-
-  // the body: upright, golden, lit from behind
-  const body = new Path2D();
-  body.moveTo(-4, -44);
-  body.bezierCurveTo(14, -42, 19, -14, 10, 6);
-  body.quadraticCurveTo(0, 16, -10, 6);
-  body.bezierCurveTo(-19, -14, -18, -38, -4, -44);
-  const bg = c.createLinearGradient(-14, -40, 12, 12);
-  bg.addColorStop(0, '#fff0b0');
-  bg.addColorStop(0.45, '#ffb43c');
-  bg.addColorStop(1, '#c8621a');
-  c.fillStyle = bg;
-  c.fill(body);
-  c.save();
-  c.clip(body);
-  c.strokeStyle = 'rgba(150,80,20,0.3)';
-  c.lineWidth = 0.9;
-  for (let row = 0; row < 5; row++)
-    for (let k = -1; k <= 1; k++) {
-      c.beginPath();
-      c.arc(k * 7 + (row % 2) * 3.5 - 1, -28 + row * 8, 4, 0.2 * Math.PI, 0.8 * Math.PI);
-      c.stroke();
-    }
-  c.fillStyle = 'rgba(122,58,18,0.22)';
-  c.beginPath();
-  c.ellipse(10, -8, 8, 24, 0.15, 0, Math.PI * 2);
-  c.fill();
-  c.restore();
-  c.strokeStyle = ink;
-  c.lineWidth = 1.6;
-  c.stroke(body);
-
-  // the legs and spread talons, reaching forward to the lines
-  for (const sd of [-1, 1]) {
-    c.strokeStyle = '#8a4a1a';
-    c.lineWidth = 3.2;
-    c.beginPath();
-    c.moveTo(sd * 5, 6);
-    c.lineTo(sd * 8, 12);
-    c.stroke();
-    c.strokeStyle = '#2a140a';
-    c.lineWidth = 1.7;
-    for (const k of [-0.7, 0, 0.7]) {
-      const ang = -Math.PI / 2 + sd * 0.4 + k;
-      c.beginPath();
-      c.moveTo(sd * 8, 12);
-      c.quadraticCurveTo(sd * 8 + Math.cos(ang) * 5, 12 + Math.sin(ang) * 5 - 1, sd * 8 + Math.cos(ang + sd * 0.5) * 7, 12 + Math.sin(ang + sd * 0.5) * 7);
-      c.stroke();
-    }
-  }
-
-  // the neck and head in profile, facing left
-  const neck = new Path2D();
-  neck.moveTo(-12, -36);
-  neck.quadraticCurveTo(-15, -54, -9, -64);
-  neck.lineTo(3, -62);
-  neck.quadraticCurveTo(9, -50, 10, -36);
-  neck.closePath();
-  const ng = c.createLinearGradient(-12, -64, 8, -36);
-  ng.addColorStop(0, '#fff0b0');
-  ng.addColorStop(1, '#ffb43c');
-  c.fillStyle = ng;
-  c.fill(neck);
-  // the crest: curling feather plumes sweeping up and back from the crown, gold tips
-  for (const [p1, p2, p3, w] of [
-    [[2, -84], [16, -92], [22, -80], 3.4],
-    [[10, -78], [26, -84], [28, -70], 3.2],
-    [[12, -70], [28, -72], [26, -60], 3],
-  ] as [P, P, P, number][]) {
-    const pts: P[] = [];
-    for (let k = 0; k <= 20; k++) pts.push(bez([-3, -66], p1, p2, p3, k / 20));
-    const path = ribbon(pts, w);
-    const g = c.createLinearGradient(-3, -66, p3[0], p3[1]);
-    g.addColorStop(0, a);
-    g.addColorStop(1, '#ffd27a');
-    c.fillStyle = g;
-    c.fill(path);
-    c.strokeStyle = 'rgba(74,34,10,0.7)';
-    c.lineWidth = 0.9;
-    c.stroke(path);
-  }
-  const head = new Path2D();
-  head.ellipse(-4, -62, 10, 9, -0.2, 0, Math.PI * 2);
-  const hg = c.createRadialGradient(-7, -66, 1, -4, -62, 11);
-  hg.addColorStop(0, '#fff0b0');
-  hg.addColorStop(1, '#f39a2e');
-  c.fillStyle = hg;
-  c.fill(head);
-  c.strokeStyle = ink;
-  c.lineWidth = 1.5;
-  c.stroke(head);
-  // the hooked beak
-  const beak = new Path2D();
-  beak.moveTo(-11, -66);
-  beak.quadraticCurveTo(-22, -68, -25, -59);
-  beak.quadraticCurveTo(-21, -61, -18, -58);
-  beak.quadraticCurveTo(-14, -56, -11, -57);
-  beak.closePath();
-  const kg = c.createLinearGradient(-25, -66, -11, -57);
-  kg.addColorStop(0, '#c98a1a');
-  kg.addColorStop(1, '#ffe08a');
-  c.fillStyle = kg;
-  c.fill(beak);
-  c.strokeStyle = ink;
-  c.lineWidth = 1.2;
-  c.stroke(beak);
-  // the eye
-  c.fillStyle = '#fff6d8';
-  c.beginPath();
-  c.ellipse(-7, -64, 2.8, 2.4, 0, 0, Math.PI * 2);
-  c.fill();
-  c.fillStyle = '#1a0d06';
-  c.beginPath();
-  c.arc(-7.6, -64, 1.5, 0, Math.PI * 2);
-  c.fill();
-  c.fillStyle = '#fff';
-  c.beginPath();
-  c.arc(-8.1, -64.6, 0.55, 0, Math.PI * 2);
-  c.fill();
-  c.strokeStyle = ink;
-  c.lineWidth = 1.2;
-  c.beginPath();
-  c.moveTo(-11, -67.2);
-  c.quadraticCurveTo(-7, -68.4, -3.5, -66.6);
-  c.stroke();
-
-  // a few golden sparkles close round it (the showcase and the water add the falling leaves)
-  for (const [x, y, r] of [
-    [-40, -112, 3.4],
-    [44, -118, 3.8],
-    [0, -96, 3],
-    [-70, 20, 3],
-    [74, 24, 3],
-  ] as const)
-    sparkle(c, x, y, r, '#fff3c4');
+function drawPhoenix(c: Ctx) {
+  const img = PHOENIX_IMG;
+  if (!img || !img.complete || !img.naturalWidth) return;
+  const k = 0.42;
+  c.drawImage(img, -380.75 * k, 12 - 292.5 * k, img.naturalWidth * k, img.naturalHeight * k);
 }
 
 /** December: the board is a Christmas tree: tiers of green branches out past the rails, a garland, baubles, the gold star at the nose and the trunk at the tail. */
@@ -7353,65 +6938,163 @@ function trinityKnot(c: Ctx, x: number, y: number, r: number, col: string) {
   c.restore();
 }
 
-/** March's board: a pot of gold: dark iron with a gold rim, a Celtic knot at the nose, a heap of gold coins and clovers on the deck. */
+/**
+ * March's board, after the friend's design: the pot of gold with the rainbow streaming out of it. The nose is the pot:
+ * gold trim round a black panel with a gold Celtic knot, a gold band, the dark iron pot and its open top full of
+ * shining coins and clovers; out of the pot the rainbow runs down the back half of the board to its rounded tail.
+ */
 function drawPotBoard(c: Ctx, sp: Spine, shape: SkinShape, s: number, gold: string) {
   const { x0, y0, x1, y1 } = shape;
-  const g = c.createLinearGradient(x0, 0, x1, 0);
-  g.addColorStop(0, '#24272b');
-  g.addColorStop(0.5, '#4a4f56');
-  g.addColorStop(1, '#24272b');
-  c.fillStyle = g;
-  c.fillRect(x0 - 4, y0 - 4, x1 - x0 + 8, y1 - y0 + 8);
-  // gold rim inside the edge
-  c.strokeStyle = gold;
-  c.lineWidth = 6 * s;
-  c.stroke(new Path2D(shape.path));
-  const k = beside(sp, 0.14, 0);
-  trinityKnot(c, k.x, k.y, k.half * 0.6, gold);
-  // the heap of coins
-  const coins: { x: number; y: number }[] = [];
-  for (let i = 0; i < 46; i++) {
-    const u = 0.5 + 0.34 * h(0x90d, i);
-    const q = beside(sp, u, (h(0x90d, i + 100) - 0.5) * 1.5);
-    coins.push({ x: q.x, y: q.y });
-  }
-  coins.sort((p, q) => p.y - q.y);
-  for (const p of coins) {
-    c.fillStyle = gold;
-    c.strokeStyle = '#a8740a';
-    c.lineWidth = 1;
-    c.beginPath();
-    c.ellipse(p.x, p.y, 5 * s, 3.6 * s, 0, 0, Math.PI * 2);
-    c.fill();
-    c.stroke();
-    c.fillStyle = 'rgba(255,248,200,0.8)';
-    c.beginPath();
-    c.ellipse(p.x - 1.4 * s, p.y - 1 * s, 1.6 * s, 0.9 * s, 0, 0, Math.PI * 2);
-    c.fill();
-  }
-  // clovers in the gold
-  for (const [u, o] of [
-    [0.58, -0.35],
-    [0.7, 0.4],
-    [0.8, -0.2],
-  ]) {
-    const q = beside(sp, u, o);
-    for (let k = 0; k < 4; k++) {
-      c.fillStyle = '#2f9e44';
-      c.beginPath();
-      c.arc(q.x + Math.cos((k * Math.PI) / 2) * 3 * s, q.y + Math.sin((k * Math.PI) / 2) * 3 * s, 2.8 * s, 0, Math.PI * 2);
-      c.fill();
+  const W = x1 - x0;
+  const H = y1 - y0;
+  const outline = new Path2D(shape.path);
+  const strip = (u0: number, u1: number, o0 = -1.7, o1 = 1.7) => {
+    const p = new Path2D();
+    for (let k = 0; k <= 16; k++) {
+      const q = beside(sp, u0 + ((u1 - u0) * k) / 16, o0);
+      if (k === 0) p.moveTo(q.x, q.y);
+      else p.lineTo(q.x, q.y);
     }
+    for (let k = 16; k >= 0; k--) {
+      const q = beside(sp, u0 + ((u1 - u0) * k) / 16, o1);
+      p.lineTo(q.x, q.y);
+    }
+    p.closePath();
+    return p;
+  };
+  const POT = 0.62; // where the rainbow comes out of the pot
+  // the rainbow down the back half: bands along the board, glossy, sparkling
+  const bands = ['#e8352f', '#ff8a1c', '#ffd22e', '#3fb04a', '#2f8ae0', '#8a3fc8'];
+  bands.forEach((col, k) => {
+    c.fillStyle = col;
+    c.fill(strip(POT - 0.05, 1.08, -1.05 + (2.1 * k) / bands.length, -1.05 + (2.1 * (k + 1)) / bands.length + 0.02));
+  });
+  c.fillStyle = bands[0];
+  c.fill(strip(POT - 0.05, 1.08, -1.8, -1.04));
+  c.fillStyle = bands[bands.length - 1];
+  c.fill(strip(POT - 0.05, 1.08, 1.04, 1.8));
+  c.strokeStyle = 'rgba(255,255,255,0.35)';
+  c.lineCap = 'round';
+  c.lineWidth = 6 * s;
+  c.stroke(lineU(sp, POT + 0.05, 0.95, -0.35));
+  for (let i = 0; i < 9; i++) {
+    const q = beside(sp, POT + 0.06 + h(0x51a, i) * 0.4, -0.9 + h(0x51a, i + 30) * 1.8);
+    sparkle(c, q.x, q.y, (2.5 + 3 * h(0x51a, i + 60)) * s, '#ffffff');
   }
+  // the iron pot (nose half): dark, stony
+  const pot = strip(-0.06, POT);
+  c.save();
+  c.clip(pot);
+  const g = c.createLinearGradient(x0, 0, x1, 0);
+  g.addColorStop(0, '#1c1e21');
+  g.addColorStop(0.45, '#50555c');
+  g.addColorStop(1, '#16181b');
+  c.fillStyle = g;
+  c.fillRect(x0 - 4, y0 - 4, W + 8, H + 8);
+  for (let i = 0; i < 70; i++) {
+    c.fillStyle = i % 2 ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.12)';
+    c.beginPath();
+    c.arc(x0 + h(0x7a1, i) * W, y0 + h(0x7a1, i + 99) * H * POT, (0.8 + 1.4 * h(0x7a1, i + 199)) * s, 0, Math.PI * 2);
+    c.fill();
+  }
+  // the black nose panel with the gold Celtic knot
+  c.fillStyle = '#0e0f11';
+  c.fill(strip(-0.06, 0.24));
+  const kn = beside(sp, 0.12, 0);
+  trinityKnot(c, kn.x, kn.y, kn.half * 0.85, gold);
+  c.restore();
+  // gold trim: along both rails of the pot, the band behind the nose panel
+  const rail = (u0: number, u1: number, o: number) => lineU(sp, u0, u1, o);
+  for (const [col, wd] of [
+    ['#7a5208', 6.5],
+    [gold, 4],
+  ] as const) {
+    c.strokeStyle = col;
+    c.lineWidth = wd * s;
+    c.save();
+    c.clip(pot);
+    c.stroke(outline);
+    c.restore();
+    const a = beside(sp, 0.25, -1.6);
+    const b = beside(sp, 0.25, 1.6);
+    c.save();
+    c.clip(outline);
+    c.beginPath();
+    c.moveTo(a.x, a.y);
+    c.lineTo(b.x, b.y);
+    c.stroke();
+    c.restore();
+  }
+  void rail;
+  // the pot's open top: a gold rim round a heap of shining coins, clovers on top; the rainbow streams out of it
+  const pc = sp.at(POT - 0.08);
+  const rx = pc.half * 0.95;
+  const ry = H * 0.11;
+  c.fillStyle = '#0c0d0f';
+  c.beginPath();
+  c.ellipse(pc.x, pc.y, rx, ry, 0, 0, Math.PI * 2);
+  c.fill();
+  c.save();
+  c.beginPath();
+  c.ellipse(pc.x, pc.y, rx * 0.9, ry * 0.88, 0, 0, Math.PI * 2);
+  c.clip();
+  const coins: [number, number][] = [];
+  for (let i = 0; i < 46; i++) {
+    const a = h(0x90d, i) * Math.PI * 2;
+    const r = Math.sqrt(h(0x90d, i + 100));
+    coins.push([pc.x + Math.cos(a) * r * rx, pc.y + Math.sin(a) * r * ry]);
+  }
+  coins.sort((p, q) => p[1] - q[1]);
+  for (const [x, y] of coins) {
+    const cg = c.createLinearGradient(x - 5 * s, y - 4 * s, x + 5 * s, y + 4 * s);
+    cg.addColorStop(0, '#fff2a0');
+    cg.addColorStop(0.5, gold);
+    cg.addColorStop(1, '#b07a0c');
+    c.fillStyle = cg;
+    c.beginPath();
+    c.ellipse(x, y, 4.6 * s, 3.5 * s, 0, 0, Math.PI * 2);
+    c.fill();
+    c.strokeStyle = '#8a5a06';
+    c.lineWidth = 0.8 * s;
+    c.stroke();
+  }
+  c.restore();
+  for (const [col, wd] of [
+    ['#7a5208', 5],
+    [gold, 3.2],
+  ] as const) {
+    c.strokeStyle = col;
+    c.lineWidth = wd * s;
+    c.beginPath();
+    c.ellipse(pc.x, pc.y, rx, ry, 0, 0, Math.PI * 2);
+    c.stroke();
+  }
+  for (const [o, rot] of [
+    [-0.35, 0.4],
+    [0.3, -0.6],
+  ] as const) {
+    const q = beside(sp, POT - 0.08, o);
+    c.save();
+    c.translate(q.x, q.y);
+    c.rotate(rot);
+    c.scale(0.7 * s, 0.7 * s);
+    drawTrailBit(c, 'clover', 0);
+    c.restore();
+  }
+  sparkle(c, pc.x + rx * 0.3, pc.y - ry * 0.3, 3.5 * s, '#ffffff');
+  // a dark outline round the whole board
+  c.strokeStyle = '#16181b';
+  c.lineWidth = 2.2 * s;
+  c.stroke(outline);
 }
 
 // ---- the Club skins' touch on the water: what each one drops
 
-/** What a Club skin drops on the water: autumn leaves from the phoenix, snow round the tree, sparks round the 2027 kite, rose petals, clovers and coins. */
-export type TrailKind = 'leaf' | 'snow' | 'spark' | 'petal' | 'clover';
+/** What a Club skin drops on the water: autumn leaves from the phoenix, snow round the tree, sparks round the 2027 kite, little roses, clovers and coins. */
+export type TrailKind = 'leaf' | 'snow' | 'spark' | 'rose' | 'clover';
 
 export function trailOf(skin: SkinDef): TrailKind | null {
-  const map: Partial<Record<SkinDef['pattern'], TrailKind>> = { phoenix: 'leaf', xmasTree: 'snow', kite2027: 'spark', rose: 'petal', stPatrick: 'clover' };
+  const map: Partial<Record<SkinDef['pattern'], TrailKind>> = { phoenix: 'leaf', xmasTree: 'snow', kite2027: 'spark', rose: 'rose', stPatrick: 'clover' };
   return map[skin.pattern] ?? null;
 }
 
@@ -7482,21 +7165,12 @@ export function drawTrailBit(c: Ctx, kind: TrailKind, variant: number) {
     c.beginPath();
     c.arc(0, 0, 2.6, 0, Math.PI * 2);
     c.fill();
-  } else if (kind === 'petal') {
-    // a rose petal
-    c.fillStyle = ['#d9262c', '#b5161d', '#e8453a'][variant % 3];
-    c.beginPath();
-    c.moveTo(0, 10);
-    c.bezierCurveTo(-11, 2, -9, -10, 0, -10);
-    c.bezierCurveTo(9, -10, 11, 2, 0, 10);
-    c.fill();
-    c.strokeStyle = 'rgba(90,6,12,0.6)';
-    c.lineWidth = 1;
-    c.stroke();
-    c.fillStyle = 'rgba(255,170,150,0.55)';
-    c.beginPath();
-    c.ellipse(-2.5, -3, 2.5, 4.5, -0.3, 0, Math.PI * 2);
-    c.fill();
+  } else if (kind === 'rose') {
+    // a little rose: the Rose board's own rose, small
+    c.save();
+    c.scale(0.27, 0.27);
+    drawRose(c);
+    c.restore();
   } else if (variant === 1) {
     // a gold coin
     c.fillStyle = '#f2c230';
@@ -7539,4 +7213,105 @@ export function drawTrailBit(c: Ctx, kind: TrailKind, variant: number) {
     c.stroke();
   }
   c.restore();
+}
+
+/**
+ * February: the board is a red rose seen from above (no board round it): rings of velvety crimson petals, each with
+ * pointed, rolled-back corners and a lighter lip, dark deep in the cup, spiralling in to a tight bud in the middle.
+ */
+function drawRose(c: Ctx) {
+  const pol = (r: number, a: number): [number, number] => [Math.cos(a) * r, Math.sin(a) * r];
+  const petal = (ang: number, rIn: number, rOut: number, span: number, light: string, mid: string, deep: string) => {
+    const p = new Path2D();
+    const b0 = pol(rIn, ang - span * 0.55);
+    const c0 = pol(rOut * 0.92, ang - span);
+    const tip = pol(rOut * 1.03, ang);
+    const c1 = pol(rOut * 0.92, ang + span);
+    const b1 = pol(rIn, ang + span * 0.55);
+    p.moveTo(b0[0], b0[1]);
+    const m0 = pol(rOut * 0.7, ang - span * 1.05);
+    p.quadraticCurveTo(m0[0], m0[1], c0[0], c0[1]);
+    // the outer edge: from one pointed corner, bulging out past the tip, to the other
+    const e0 = pol(rOut * 1.05, ang - span * 0.55);
+    const e1 = pol(rOut * 1.05, ang + span * 0.55);
+    p.bezierCurveTo(e0[0], e0[1], e0[0] * 0.5 + tip[0] * 0.5, e0[1] * 0.5 + tip[1] * 0.5, tip[0], tip[1]);
+    p.bezierCurveTo(e1[0] * 0.5 + tip[0] * 0.5, e1[1] * 0.5 + tip[1] * 0.5, e1[0], e1[1], c1[0], c1[1]);
+    const m1 = pol(rOut * 0.7, ang + span * 1.05);
+    p.quadraticCurveTo(m1[0], m1[1], b1[0], b1[1]);
+    p.closePath();
+    const g = c.createRadialGradient(0, 0, rIn * 0.6, 0, 0, rOut * 1.05);
+    g.addColorStop(0, deep);
+    g.addColorStop(0.55, mid);
+    g.addColorStop(1, light);
+    c.fillStyle = g;
+    c.fill(p);
+    c.save();
+    c.clip(p);
+    // the rolled lip: a lighter band along the outer edge, a soft shadow just inside it
+    c.strokeStyle = 'rgba(255,140,150,0.6)';
+    c.lineWidth = 2.6;
+    c.stroke(p);
+    c.strokeStyle = 'rgba(40,0,6,0.35)';
+    c.lineWidth = 7;
+    c.beginPath();
+    const s0 = pol(rOut * 0.78, ang - span * 0.8);
+    const s1 = pol(rOut * 0.86, ang);
+    const s2 = pol(rOut * 0.78, ang + span * 0.8);
+    c.moveTo(s0[0], s0[1]);
+    c.quadraticCurveTo(s1[0], s1[1], s2[0], s2[1]);
+    c.stroke();
+    c.restore();
+    c.strokeStyle = 'rgba(50,0,8,0.85)';
+    c.lineWidth = 0.9;
+    c.stroke(p);
+  };
+  const rings: [number, number, number, number, number, string, string, string][] = [
+    [6, 15, 46, 0.6, 0.15, '#e23a4a', '#a8101e', '#2a0006'],
+    [5, 11, 36, 0.68, 0.75, '#de3848', '#9c0e1c', '#2a0006'],
+    [5, 7, 27, 0.74, 0.2, '#da3444', '#940c1a', '#260005'],
+    [4, 4, 19, 0.85, 1.1, '#d43040', '#8a0a18', '#220004'],
+    [3, 2, 12, 1.0, 0.5, '#c01e30', '#7e0814', '#280106'],
+  ];
+  for (const [n, rIn, rOut, span, off, light, mid, deep] of rings)
+    for (let k = 0; k < n; k++) petal(off + (k / n) * Math.PI * 2, rIn, rOut, span, light, mid, deep);
+  // the tight bud: a dark heart with a spiral of petal edges
+  const core = c.createRadialGradient(0, 0, 0, 0, 0, 8);
+  core.addColorStop(0, '#1e0004');
+  core.addColorStop(1, 'rgba(60,0,8,0)');
+  c.fillStyle = core;
+  c.beginPath();
+  c.arc(0, 0, 8, 0, Math.PI * 2);
+  c.fill();
+  c.lineCap = 'round';
+  for (const [col, w, off] of [
+    ['#d84050', 1.4, 0],
+    ['#5a0410', 0.9, 0.35],
+  ] as const) {
+    c.strokeStyle = col;
+    c.lineWidth = w;
+    c.beginPath();
+    for (let k = 0; k <= 40; k++) {
+      const t = k / 40;
+      const a = off + t * Math.PI * 3.4;
+      const r = 1 + 8 * t;
+      if (k === 0) c.moveTo(Math.cos(a) * r, Math.sin(a) * r);
+      else c.lineTo(Math.cos(a) * r, Math.sin(a) * r);
+    }
+    c.stroke();
+  }
+}
+
+/** A ribbon trail: bands of colour streaming behind the board, fading as they fall behind (St. Patrick's rainbow). */
+export interface Ribbon {
+  /** The bands across the ribbon, side to side. */
+  colors: number[];
+  /** Width at the gear (spec px) and how long a stretch of it lasts (seconds). */
+  width: number;
+  life: number;
+  alpha: number;
+}
+export function ribbonOf(skin: SkinDef): Ribbon | null {
+  // only St. Patrick's: a rainbow streaming behind the board (the author's pick; the others keep what they drop)
+  if (skin.pattern === 'stPatrick') return { colors: [0xe8352f, 0xff8a1c, 0xffd22e, 0x3fb04a, 0x2f8ae0, 0x8a3fc8], width: 64, life: 2.2, alpha: 0.9 };
+  return null;
 }

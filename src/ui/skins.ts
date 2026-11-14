@@ -850,8 +850,8 @@ export class BoxShop {
     this.open(what === 'golden' ? 'golden' : 'normal');
   }
 
-  /** Open one box, full screen (src/ui/boxOpen.ts): the wave, the chest, the card. Tap for the next one. */
-  private open(kind: BoxKind) {
+  /** Open one box, full screen (src/ui/boxOpen.ts): the wave, the chest, the card. Tap for the next one. `chained`: the next box of a bought pack (no wave). */
+  private open(kind: BoxKind, chained = false) {
     const s = this.ctx.game.state;
     const r = openBox(s, kind);
     if (!r) return;
@@ -874,6 +874,8 @@ export class BoxShop {
       hero: skinGear(r.skin, 560),
       title: `${look.name}!`,
       onTap: () => this.afterOpening(),
+      more: this.chain > 0 && this.ctx.game.state.skins.boxes > 0,
+      chained,
     });
   }
 
@@ -930,7 +932,7 @@ export class BoxShop {
     this.opening = false;
     if (this.chain > 0 && this.ctx.game.state.skins.boxes > 0) {
       this.chain--;
-      this.open('normal');
+      this.open('normal', true);
       return;
     }
     this.chain = 0;
