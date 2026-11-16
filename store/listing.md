@@ -39,8 +39,14 @@ FEATURES
 
 The game is free to play with ads (short ad breaks and optional video ads for bonuses). The shop has gem packs, treasure boxes (the odds are shown before you buy), two optional one-time purchases (Remove ads, Coins x5) and the Surf Club, a monthly subscription with an exclusive skin every month.
 
-## What's new (first release)
-First release.
+## What's new (version 2.0)
+Version 2 is a whole new Surf Tycoon!
+• New riders and gear for every section, with real barrel waves, a jet ski at Nazaré and a race committee boat
+• Over 70 skins for boards, sails, kites and wings: collect them from treasure boxes (the odds are shown in the shop)
+• The Surf Club: an exclusive skin every month, coins x2, no ads, 5 gems and a treasure box every day
+• A daily rewards calendar and a rescue helicopter that brings gifts
+• Beach volleyball and beach soccer on the sand, beach buildings, skill trees and rebirths
+• Smoother on every phone
 
 ## In-app purchases (create these in both stores before testing)
 Five products. The ids must match `PRODUCTS[].storeId` and `GEM_PACKS[].storeId` in `src/config/shop.ts`. The gem packs are **consumable** (App Store: Consumable; Google Play: a normal in-app product, which the app consumes after payout); Remove ads and Coins x5 are **non-consumable**.

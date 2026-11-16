@@ -6,7 +6,7 @@ https://appstoreconnect.apple.com. Texts to copy are in `store/listing.md`, pict
 ## 1. A new build (Mac with Xcode)
 1. `npm run phone:sync:live` (a live build: real ads, no test coins; it refuses to run with VITE_TEST_COINS=1).
 2. `npm run phone:open:ios` opens Xcode.
-3. In Xcode, target App > General: raise **Build** from 3 to **4** (every upload needs a higher build number). Version stays 1.0.0.
+3. Version **2.0.0**, build **1** are already set (the original game is version 1, tagged `v1` in git). Every next upload of 2.0.0 needs a higher build number (2, 3, ...).
 4. Choose "Any iOS Device (arm64)", then Product > Archive. In the Organizer: Distribute App > App Store Connect > Upload.
 5. After 10 to 30 minutes the build shows under TestFlight.
 
@@ -33,7 +33,10 @@ display name and description, and a review screenshot: `store/screenshots/iphone
 * Price: Free.
 * App Availability: **untick Belgium** (paid loot boxes count as gambling there).
 
-## 6. The version page (1.0.0)
+## 6. The version page (2.0.0)
+* The app already exists in App Store Connect: on its page click **+** next to "iOS App" and add version **2.0.0**
+  (do not make a new app). The age rating, availability and in-app purchases belong to the same app.
+* What's New: from `store/listing.md` > "What's new (version 2.0)".
 * Screenshots: the 6.9" slot from `store/screenshots/iphone-6.9/` (9 pictures, 1290x2796); if a 6.5" slot is asked,
   `store/screenshots/iphone-6.5/`.
 * Promotional text, description, keywords, support URL, copyright: from `store/listing.md`.
