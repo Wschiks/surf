@@ -1182,6 +1182,13 @@ export class GameUI {
     this.calendar?.update();
     this.skins?.update();
     if (this.game.offlineReport) this.showOffline(this.game.offlineReport);
+    // a Surf Club member just got the daily gift by itself
+    if (this.game.newClubGift) {
+      const g = this.game.newClubGift;
+      this.game.newClubGift = null;
+      this.toast(`${icon('star')} Surf Club: ${icon('gem')} +${g.gems} and ${g.boxes} treasure box!`);
+      this.refreshTop();
+    }
     // a Surf Club member just got this month's skin: its showcase, as soon as nothing else is open
     if (this.game.newClubSkin && this.refs.modal.hidden && !this.coachOpen) {
       const skin = this.game.newClubSkin as ClubSkinDef;

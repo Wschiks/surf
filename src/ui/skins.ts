@@ -635,7 +635,8 @@ export class SkinScreen {
   private drawCollection() {
     const s = this.ctx.game.state;
     const el = this.root.querySelector('[data-collection]')!;
-    el.innerHTML = SPORTS.map(
+    // the Surf Club row first, on top (the author's choice), then every sport
+    el.innerHTML = this.clubRow() + SPORTS.map(
       (sport) => `
       <h4>${icon(sport.icon)} ${sport.name}</h4>
       ${ZONES.filter((z) => z.sport.id === sport.id)
@@ -661,7 +662,7 @@ export class SkinScreen {
         </div>`,
         )
         .join('')}`,
-    ).join('') + this.clubRow();
+    ).join('');
     el.querySelectorAll<HTMLElement>('[data-pic]').forEach((holder) => {
       const skin = skinById(holder.dataset.pic!)!;
       holder.appendChild(puzzleCanvas(skin, skinProgress(s, skin.id).pieces, 60));

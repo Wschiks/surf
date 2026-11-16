@@ -234,7 +234,8 @@ export function claimQuest(state: GameState, index: number): number {
   state.coins += reward;
   state.totalCoins += reward;
   addSkillPoints(state, v.points);
-  giveBox(state); // every quest also gives a box
+  // a box only for the rare expansion quest (the author's choice: boxes are rare, not a quest reward)
+  if (q.kind === 'expand') giveBox(state);
   state.questsDone += 1;
   state.quests[index] = null as unknown as Quest; // the slot gets a new quest, in the same place
   refreshQuests(state);

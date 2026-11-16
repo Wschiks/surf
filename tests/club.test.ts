@@ -106,3 +106,30 @@ describe('Surf Club: the monthly skins', () => {
     expect(s.skins.boxes).toBe(boxes + CLUB.boxesPerDay);
   });
 });
+
+describe('free treasure boxes are rare', () => {
+  it('a normal quest gives no box, an expansion quest does; a new section gives none', async () => {
+    const { claimQuest, refreshQuests } = await import('../src/core/quests');
+    const { unlockLevel } = await import('../src/core/unlocks');
+    const s = newGame(0);
+    s.coins = 1e30;
+    refreshQuests(s);
+    const before = s.skins.boxes;
+    // finish a level quest by hand and claim it
+    const i = s.quests.findIndex((q) => q.kind === 'level');
+    s.zones[s.quests[i].zone!].price = s.quests[i].target;
+    expect(claimQuest(s, i)).toBeGreaterThan(0);
+    expect(s.skins.boxes).toBe(before);
+    // an expansion quest gives one
+    s.quests[0] = { kind: 'expand', target: 0, reward: 1 };
+    claimQuest(s, 0);
+    expect(s.skins.boxes).toBe(before + 1);
+    // unlocking a section: no box
+    const boxes = s.skins.boxes;
+    s.zones['wave-1'].price = 500;
+    s.zones['wave-1'].capacity = 50;
+    s.zones['wave-1'].speed = 50;
+    expect(unlockLevel(s, 'wave-2')).toBe(true);
+    expect(s.skins.boxes).toBe(boxes);
+  });
+});

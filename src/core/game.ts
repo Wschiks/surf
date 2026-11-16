@@ -1,6 +1,8 @@
 import { applyOffline, tick, type OfflineReport } from './economy';
 import { loadPerks, refreshClub } from './perks';
 import { grantClubSkin, tidyClubSkins } from './skins';
+import { claimClubGems } from './shop';
+import { CLUB } from '../config/shop';
 import type { SkinDef } from '../config/skins';
 import { refreshQuests } from './quests';
 import { loadGame, saveGame } from './save';
@@ -13,6 +15,8 @@ export class Game {
   offlineReport: OfflineReport | null = null;
   /** Set when a Surf Club member just got this month's skin (the screen shows it). */
   newClubSkin: SkinDef | null = null;
+  /** Set when a Surf Club member just got the daily gift by itself (the screen says so). */
+  newClubGift: { gems: number; boxes: number } | null = null;
   private last: number;
   private saveTimer = 0;
   private saving = true;
@@ -35,6 +39,9 @@ export class Game {
     refreshClub(this.state.perks, now); // a subscription can run out while the game is open
     // a member gets this month's skin on the 1st (or right when joining)
     tidyClubSkins(this.state, now);
+    // a member gets the daily gems and box by itself, as soon as the game is open and 24 hours have passed
+    const gems = claimClubGems(this.state, now);
+    if (gems > 0) this.newClubGift = { gems, boxes: CLUB.boxesPerDay };
     const club = grantClubSkin(this.state, now);
     if (club) this.newClubSkin = club;
     let dt = (now - this.last) / 1000;

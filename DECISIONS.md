@@ -584,3 +584,8 @@ The author asked for the whole dim-the-screen tutorial to go ("not 100% working"
   - The showcase and the skin-of-the-month banner have a Take off button when the skin is on.
 - **Surf Club: a member on the 1st gets that month's skin** (16 Nov 2026, the author's choice): joining on the 24th gives this month's skin at once and next month's on the 1st, because the paid month runs past it. This holds even if the renewal was cancelled, or the game is first opened after the paid month ended (it is checked against the paid-until date). A month in which you are not a member on its 1st is not given later. The Terms say so.
 - **Version 2.0.0** (16 Nov 2026, the author's choice): the original game is version 1, tagged `v1` in git (main before the merge). `beforeMain` was merged into `main`, which is now version 2: 2.0.0 in package.json, Xcode (build 1) and Android (versionCode 2), with a "What's new (version 2.0)" text in store/listing.md. From now on every release gets a tag (`v2` when 2.0.0 is out), and new work goes on a branch and is merged into main when done.
+- **Free treasure boxes are rare** (16 Nov 2026, the author's choice after the bot measured 18 free boxes in the first 10 minutes, 36 in an hour):
+  - Quests give a box only for the rare expansion quest; unlocking a section gives none.
+  - Free boxes now come now and then: the daily calendar, the rescue helicopter, an expansion quest and the Surf Club.
+- **Surf Club daily gift comes by itself** (16 Nov 2026): a member gets the 5 gems and the box automatically when the game is open and 24 hours have passed, with a short message. The claim button is gone; the shop card shows "Next daily gift in ...".
+- **The Surf Club row is at the top of the skin menu** (16 Nov 2026), above the sports.

@@ -3,7 +3,7 @@ import { BALANCE } from '../config/balance';
 import { AD_STEPS, CLUB, COIN_PACKS, GEM_PACKS, PRODUCTS, type AdStep, type CoinPackId, type GemPackId, type ProductId } from '../config/shop';
 import type { Game } from '../core/game';
 import { adFree } from '../core/perks';
-import { adStreak, buyCoinPack, claimAdStep, claimClubGems, clubStatus, coinPackValue, grantGemPack } from '../core/shop';
+import { adStreak, buyCoinPack, claimAdStep, clubStatus, coinPackValue, grantGemPack } from '../core/shop';
 import { fmt } from './format';
 import { buy, buyClub, buyPack, canBuy, manageClub, restore, storePrices, type PriceKey } from '../purchases';
 import { icon, tile } from './icons';
@@ -193,7 +193,7 @@ export class Shop {
         <ul class="club-perks">${perks.map(([ic, t]) => `<li><i>${ic}</i>${t}</li>`).join('')}</ul>
         ${
           club.active
-            ? `<button class="go big ready" data-club-claim ${club.nextIn > 0 || busy ? 'disabled' : ''}>${icon('gem')} ${club.nextIn > 0 ? `Next gems in ${clock(club.nextIn)}` : `Claim ${CLUB.gemsPerDay} gems + box`}</button>
+            ? `<p class="club-gift">${icon('gem')} ${club.nextIn > 0 ? `Next daily gift in ${clock(club.nextIn)}` : 'Daily gift on its way'}</p>
                <button class="go alt big" data-club-manage>Manage subscription</button>`
             : `<button class="go big club-join" data-club-join ${busy ? 'disabled' : ''}><span>Join for ${price} / month</span></button>`
         }
@@ -208,7 +208,6 @@ export class Shop {
       this.root.querySelector('[data-club-head]')!.prepend(this.poster);
     }
     this.root.querySelector('[data-club-join]')?.addEventListener('click', () => void this.joinClub());
-    this.root.querySelector('[data-club-claim]')?.addEventListener('click', () => this.claimClub());
     this.root.querySelector('[data-club-manage]')?.addEventListener('click', () => void manageClub());
     this.root.querySelectorAll<HTMLElement>('[data-legal]').forEach((b) => b.addEventListener('click', () => this.ctx.openLegal(b.dataset.legal as 'terms' | 'privacy')));
 
@@ -306,16 +305,7 @@ export class Shop {
     this.update();
   }
 
-  private claimClub() {
-    const got = claimClubGems(this.ctx.game.state, Date.now());
-    if (got > 0) {
-      sound.coin();
-      this.ctx.toast(`+${got} gems and a box!`);
-      this.ctx.game.save();
-    }
-    this.ctx.refreshTop();
-    this.update();
-  }
+
 
   private async buyPack(id: GemPackId) {
     if (this.buying) return;
