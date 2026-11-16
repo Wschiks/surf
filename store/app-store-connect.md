@@ -4,6 +4,8 @@ Everything the computer can do is done (`npm run store:check` passes). These ste
 https://appstoreconnect.apple.com. Texts to copy are in `store/listing.md`, pictures in `store/screenshots/`.
 
 ## 1. A new build (Mac with Xcode)
+The quick way: raise the build number (CURRENT_PROJECT_VERSION in Xcode), then `npm run phone:upload:ios` builds, archives
+and uploads in one go (with the Apple account signed in to Xcode). By hand:
 1. `npm run phone:sync:live` (a live build: real ads, no test coins; it refuses to run with VITE_TEST_COINS=1).
 2. `npm run phone:open:ios` opens Xcode.
 3. Version **2.0.0**, build **1** are already set (the original game is version 1, tagged `v1` in git). Every next upload of 2.0.0 needs a higher build number (2, 3, ...).

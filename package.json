@@ -14,6 +14,7 @@
     "phone:sync:live": "test \"$VITE_TEST_COINS\" != 1 && VITE_ADS_LIVE=1 npm run build && cap sync",
     "phone:open:ios": "cap open ios",
     "phone:open:android": "cap open android",
+    "phone:upload:ios": "sh scripts/upload-ios.sh",
     "smoke": "node scripts/smoke.mjs",
     "bench": "npm run build && node scripts/bench/bench.mjs",
     "bench:saves": "tsx scripts/bench/make-saves.ts",
