@@ -582,3 +582,4 @@ The author asked for the whole dim-the-screen tutorial to go ("not 100% working"
   - A skin of a month that has not started cannot be worn, and an old save that has one loses it (`tidyClubSkins`).
   - Each month's skin comes on the 1st at 00:00, by the phone's own clock.
   - The showcase and the skin-of-the-month banner have a Take off button when the skin is on.
+- **Surf Club: a member on the 1st gets that month's skin** (16 Nov 2026, the author's choice): joining on the 24th gives this month's skin at once and next month's on the 1st, because the paid month runs past it. This holds even if the renewal was cancelled, or the game is first opened after the paid month ended (it is checked against the paid-until date). A month in which you are not a member on its 1st is not given later. The Terms say so.

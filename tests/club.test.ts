@@ -57,6 +57,19 @@ describe('Surf Club: the monthly skins', () => {
     expect(grantClubSkin(s, midnight)!.id).toBe('club-2026-12');
   });
 
+  it('joining on the 24th gives this month and next month: a member at 00:00 on the 1st gets that month, even opening the game after the paid month ended', () => {
+    const s = newGame(0);
+    // joined 24 November for one month: paid until 24 December, renewal cancelled
+    s.perks.club = true;
+    s.perks.clubUntil = new Date(2026, 11, 24, 15, 0).getTime();
+    expect(grantClubSkin(s, new Date(2026, 10, 24, 15, 0).getTime())!.id).toBe('club-2026-11');
+    // not opened again until 28 December: no longer a member, but a member on 1 December
+    s.perks.club = false;
+    expect(grantClubSkin(s, new Date(2026, 11, 28, 12, 0).getTime())!.id).toBe('club-2026-12');
+    // January: not a member on 1 January, nothing
+    expect(grantClubSkin(s, new Date(2027, 0, 3, 12, 0).getTime())).toBeNull();
+  });
+
   it('a skin of a month that has not started cannot be worn, and an old save that has one loses it', () => {
     const s = newGame(0);
     const dec = CLUB_SKINS.find((k) => k.month === '2026-12')!;

@@ -221,11 +221,16 @@ export function clubSkinOfMonth(now: number): ClubSkinDef | undefined {
 }
 
 /**
- * A member gets this month's Club skin, complete (Silver), and puts it on. Only the current month: a missed month is
- * gone. Returns the skin when it was just given (null otherwise). Call it often (joining mid-month gives it at once).
+ * A member gets this month's Club skin, complete (Silver), and puts it on. Only the current month: a month without
+ * membership on its 1st is gone. Returns the skin when it was just given (null otherwise). Call it often (joining
+ * mid-month gives it at once).
  */
 export function grantClubSkin(state: GameState, now: number): ClubSkinDef | null {
-  if (!state.perks.club) return null;
+  // a member now, or a member at 00:00 on the 1st of this month (the paid month ran past the 1st): the month's skin is
+  // theirs, whenever in the month they open the game. So joining on the 24th gives this month's skin and next month's.
+  const d = new Date(now);
+  const monthStart = new Date(d.getFullYear(), d.getMonth(), 1).getTime();
+  if (!state.perks.club && (state.perks.clubUntil ?? 0) <= monthStart) return null;
   const skin = clubSkinOfMonth(now);
   if (!skin || (state.skins.pieces[skin.id] ?? 0) >= MAX_PIECES) return null;
   state.skins.pieces[skin.id] = MAX_PIECES;
