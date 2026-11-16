@@ -540,7 +540,7 @@ export class SkinScreen {
         <span class="sk-gives">${givesChips(skin, 3)}</span>
         ${
           have
-            ? `<button class="go big ${worn ? 'auto' : ''}" data-show-wear>${worn ? `${icon('check')} Worn` : 'Wear'}</button>`
+            ? `<button class="go big ${worn ? 'alt' : ''}" data-show-wear>${worn ? 'Take off' : 'Wear'}</button>`
             : `<button class="go big ready" data-show-join>${icon('star')} Join the Surf Club</button>`
         }
       </div>`;
@@ -555,7 +555,8 @@ export class SkinScreen {
       this.ctx.openClub();
     });
     el.querySelector('[data-show-wear]')?.addEventListener('click', () => {
-      if (!worn && wearSkin(s, skin.id)) {
+      // Wear, or Take off when it is on (wearing it again takes it off)
+      if (wearSkin(s, skin.id)) {
         sound.tap();
         this.ctx.game.save();
         this.signature = '';
@@ -611,7 +612,7 @@ export class SkinScreen {
         </div>
         ${
           have
-            ? `<button class="go sk-month-go ${worn ? 'auto' : ''}" data-month-wear>${worn ? icon('check') : 'Wear'}</button>`
+            ? `<button class="go sk-month-go ${worn ? 'alt' : ''}" data-month-wear>${worn ? 'Take off' : 'Wear'}</button>`
             : `<button class="go ready sk-month-go" data-month-join>${icon('star')} Join</button>`
         }
       </div>`;
@@ -622,7 +623,7 @@ export class SkinScreen {
       this.ctx.openClub();
     });
     el.querySelector('[data-month-wear]')?.addEventListener('click', () => {
-      if (!worn && wearSkin(s, skin.id)) {
+      if (wearSkin(s, skin.id)) {
         sound.tap();
         this.ctx.game.save();
         this.signature = '';

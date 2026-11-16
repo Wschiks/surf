@@ -11,5 +11,5 @@ export const DEV_UNLIMITED_GEMS = true;
 /** Every skin unlocked while testing (4 pieces each, the look only: Bronze and Silver still need boxes). */
 export const DEV_ALL_SKINS = true;
 
-/** The Surf Club's monthly skins while testing: every month shows in the collection (also the coming ones) and is unlocked. Set to false to see them as players will: the coming months hidden. */
-export const DEV_CLUB_PREVIEW = true;
+/** The Surf Club's monthly skins while testing: true shows every month in the collection (also the coming ones), unlocked. Off (the author's choice, 16 Nov 2026): only the months that have started show, as players see them. */
+export const DEV_CLUB_PREVIEW = false;

@@ -3,7 +3,7 @@ import { CLUB_SKINS, MAX_PIECES, skinById } from '../src/config/skins';
 import { CLUB } from '../src/config/shop';
 import { ZONES } from '../src/config/sports';
 import { claimClubGems } from '../src/core/shop';
-import { clubSkinOfMonth, clubSkinsShown, giveBox, grantClubSkin, openBox, skinSpeed } from '../src/core/skins';
+import { clubSkinOfMonth, clubSkinsShown, giveBox, grantClubSkin, openBox, skinSpeed, tidyClubSkins, wearSkin } from '../src/core/skins';
 import { newGame } from '../src/core/state';
 
 const at = (y: number, m: number, d = 1, h = 12) => new Date(y, m - 1, d, h).getTime();
@@ -45,6 +45,37 @@ describe('Surf Club: the monthly skins', () => {
     expect(clubSkinsShown(at(2026, 11, 13)).map((k) => k.month)).toEqual(['2026-11']);
     expect(clubSkinsShown(at(2027, 2, 1)).length).toBe(4);
     expect(clubSkinsShown(at(2026, 11, 13), true).length).toBe(5);
+  });
+
+  it("the next month's skin comes on the 1st at 00:00, not a minute before", () => {
+    const s = newGame(0);
+    s.perks.club = true;
+    grantClubSkin(s, at(2026, 11, 13));
+    const before = new Date(2026, 10, 30, 23, 59).getTime();
+    const midnight = new Date(2026, 11, 1, 0, 0).getTime();
+    expect(grantClubSkin(s, before)).toBeNull();
+    expect(grantClubSkin(s, midnight)!.id).toBe('club-2026-12');
+  });
+
+  it('a skin of a month that has not started cannot be worn, and an old save that has one loses it', () => {
+    const s = newGame(0);
+    const dec = CLUB_SKINS.find((k) => k.month === '2026-12')!;
+    s.skins.pieces[dec.id] = MAX_PIECES;
+    s.skins.worn[dec.zone] = dec.id;
+    const nov = at(2026, 11, 16);
+    expect(wearSkin(s, dec.id, nov)).toBe(false);
+    tidyClubSkins(s, nov);
+    expect(s.skins.pieces[dec.id]).toBeUndefined();
+    expect(s.skins.worn[dec.zone]).toBeUndefined();
+  });
+
+  it('a Club skin can be taken off again', () => {
+    const s = newGame(0);
+    s.perks.club = true;
+    const got = grantClubSkin(s, at(2026, 11, 13))!;
+    expect(s.skins.worn[got.zone]).toBe(got.id);
+    expect(wearSkin(s, got.id, at(2026, 11, 14))).toBe(true);
+    expect(s.skins.worn[got.zone]).toBeUndefined();
   });
 
   it('a Club skin never comes out of a box', () => {

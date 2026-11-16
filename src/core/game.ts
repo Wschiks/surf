@@ -1,6 +1,6 @@
 import { applyOffline, tick, type OfflineReport } from './economy';
 import { loadPerks, refreshClub } from './perks';
-import { grantClubSkin } from './skins';
+import { grantClubSkin, tidyClubSkins } from './skins';
 import type { SkinDef } from '../config/skins';
 import { refreshQuests } from './quests';
 import { loadGame, saveGame } from './save';
@@ -34,6 +34,7 @@ export class Game {
   update(now = Date.now()) {
     refreshClub(this.state.perks, now); // a subscription can run out while the game is open
     // a member gets this month's skin on the 1st (or right when joining)
+    tidyClubSkins(this.state, now);
     const club = grantClubSkin(this.state, now);
     if (club) this.newClubSkin = club;
     let dt = (now - this.last) / 1000;

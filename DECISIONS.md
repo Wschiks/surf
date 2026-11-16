@@ -577,3 +577,8 @@ The author asked for the whole dim-the-screen tutorial to go ("not 100% working"
     - The new Surf Club perks, the description and the reviewer notes.
   - The store check now allows exactly the two random exceptions (Math.random only for the helicopter; boxes from a generator kept in the save). It also checks the 2 h away time, that the lab page is not in the build, and that the Terms and listing explain the boxes.
   - New store screenshots (also a Skins screen and the new Surf Club card), made from the production build; the calendar no longer pops up in them.
+- **Surf Club skins: only months that have started, and they can be taken off** (16 Nov 2026, the author's asks):
+  - The preview of the coming months is off (`DEV_CLUB_PREVIEW = false`), so the collection shows only the months so far, as players see them.
+  - A skin of a month that has not started cannot be worn, and an old save that has one loses it (`tidyClubSkins`).
+  - Each month's skin comes on the 1st at 00:00, by the phone's own clock.
+  - The showcase and the skin-of-the-month banner have a Take off button when the skin is on.

@@ -139,9 +139,11 @@ export function openBox(state: GameState, kind: BoxKind): BoxResult | null {
 }
 
 /** Wear an unlocked skin in its section (or take it off with the same id). */
-export function wearSkin(state: GameState, id: string): boolean {
+export function wearSkin(state: GameState, id: string, now = Date.now()): boolean {
   const skin = skinById(id);
   if (!skin || tierOf(state.skins.pieces[id] ?? 0) < 1) return false;
+  // a Surf Club skin of a month that has not started yet cannot be worn
+  if (skin.rarity === 'club' && !clubMonthStarted(skin as ClubSkinDef, now)) return false;
   if (state.skins.worn[skin.zone] === id) delete state.skins.worn[skin.zone];
   else state.skins.worn[skin.zone] = id;
   return true;
@@ -235,6 +237,21 @@ export function grantClubSkin(state: GameState, now: number): ClubSkinDef | null
 export function clubSkinsShown(now: number, all = false): ClubSkinDef[] {
   const m = monthOf(now);
   return CLUB_SKINS.filter((k) => all || k.month <= m);
+}
+
+/** Whether a Club skin's month has started (it is given on the 1st at 00:00, by the player's own clock). */
+export function clubMonthStarted(skin: ClubSkinDef, now: number): boolean {
+  return skin.month <= monthOf(now);
+}
+
+/** A Club skin of a month that has not started yet is not there: taken out of a save that has it (an old test save). */
+export function tidyClubSkins(state: GameState, now: number) {
+  const s = state.skins;
+  for (const k of CLUB_SKINS) {
+    if (clubMonthStarted(k, now)) continue;
+    if (s.worn[k.zone] === k.id) delete s.worn[k.zone];
+    delete s.pieces[k.id];
+  }
 }
 
 /** Testing only: every Club skin complete. */
